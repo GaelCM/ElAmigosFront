@@ -1,0 +1,156 @@
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { useListaProductos } from "@/contexts/listaProductos";
+import type { EstadoVenta } from "@/types/Venta";
+import { Check, Loader2, AlertCircle } from "lucide-react";
+import { useState } from "react";
+
+
+type dialogProps={
+    isOpen: boolean,
+    onClose: (open:boolean) => void,
+    inputRef?: React.RefObject<{ focus: () => void } | null>,
+    metodoPago: number,
+}
+
+
+export default function DialogConfirmVenta({isOpen,onClose,inputRef,metodoPago}:dialogProps){
+
+
+
+    const [estado,setEstado]=useState<EstadoVenta>("Inicio");
+    const {carrito,getTotalPrice}=useListaProductos();
+    const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
+
+    const reloadVenta=async()=>{
+        setCambioEfectivo(0);
+        setEstado("Inicio");
+        await onClose(false);
+         // Usar setTimeout para asegurarnos que el focus se aplique después de que el diálogo se cierre
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, 100);  
+    }
+
+    const nuevaVenta=async ()=>{
+        // iniciar proceso
+        setEstado("Cargando");
+        try{
+            // simular llamada asíncrona (reemplazar con tu lógica real)
+            await new Promise((res)=>setTimeout(res, 1400));
+            // marcar listo
+            setEstado("Listo");
+        }catch(error){
+            setEstado("Error");
+            console.error("Error al procesar la venta:", error);
+        }
+    }
+
+
+    return(
+        <Dialog open={isOpen} onOpenChange={()=>{onClose(false);  setTimeout(() => {
+          inputRef?.current?.focus();
+        }, 100); }}>
+            <DialogContent className="sm:max-w-4xl p-12">
+                <DialogHeader>
+                <DialogTitle className="text-2xl">Procesar Venta</DialogTitle>
+                <DialogDescription>Selecciona el método de pago para completar la venta</DialogDescription>
+                </DialogHeader>
+
+                                <div className="space-y-6 py-4">
+                                    {estado === "Inicio" && (
+                                        <>
+                                            {/* Summary */}
+                                            <div className="space-y-3 p-4 bg-muted rounded-lg">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">Productos</span>
+                                                    <span className="font-medium">{carrito.length}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">Cantidad total</span>
+                                                    <span className="font-medium">{carrito.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                                                </div>
+                                                <Separator />
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-semibold">Total a pagar</span>
+                                                    <span className="text-2xl font-bold">${getTotalPrice().toFixed(2)}</span>
+                                                </div>
+                                            </div>
+
+                                       
+
+                                            <h1 className="text-4xl text-center p-2">PAGÓ CON:</h1>
+                                            <div className="flex justify-center p-2">
+                                                <input
+                                                    type="text"
+                                                    className="text-6xl text-center font-bold w-[50%] bg-blue-100 border-2 border-blue-600"
+                                                    autoFocus
+                                                    onChange={(e) => {
+                                                        setCambioEfectivo(Number(e.target.value))
+                                                    }}
+                                                />
+                                            </div>
+
+                                            {/* Actions */}
+                                            <div className="flex gap-3">            
+                                                <Button onClick={nuevaVenta} className="flex-1" disabled={metodoPago === undefined}>
+                                                    Completar Venta
+                                                </Button>
+                                                <Button variant="outline" onClick={()=>onClose(false)} className="flex-1 bg-transparent" >
+                                                    Cancelar
+                                                </Button>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {estado === "Cargando" && (
+                                        <div className="py-12 flex flex-col items-center justify-center gap-4">
+                                            <div className="animate-spin">
+                                                <Loader2 className="h-8 w-8 text-primary" />
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">Procesando la venta, por favor espera...</p>
+                                        </div>
+                                    )}
+
+                                    {estado === "Listo" && (
+                                        <div className="py-12 flex flex-col items-center justify-center gap-4">
+                                            <div className="p-3 rounded-full bg-green-200 text-green-500">
+                                                <Check className="h-18 w-18" />
+                                            </div>
+                                            <p className="text-xl font-semibold">Venta procesada</p>
+                                                                <p className="text-sm text-muted-foreground">La venta se completó correctamente.</p>
+                                                                {metodoPago === 0 && (
+                                                                    <p className="text-6xl font-bold">Cambio: ${Math.max(0, (cambioEfectivo - getTotalPrice())).toFixed(2)}</p>
+                                                                )}
+                                            <div className="w-full flex gap-2 mt-4">
+                                                <Button className="flex-1" autoFocus onClick={reloadVenta}>
+                                                    Cerrar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {estado === "Error" && (
+                                        <div className="py-12 flex flex-col items-center justify-center gap-4">
+                                            <div className="p-3 rounded-full bg-destructive/10 text-destructive">
+                                                <AlertCircle className="h-8 w-8" />
+                                            </div>
+                                            <p className="text-xl font-semibold">Error al procesar</p>
+                                            <p className="text-sm text-muted-foreground">Ocurrió un error al completar la venta. Intenta de nuevo.</p>
+                                            <div className="w-full flex gap-2 mt-4">
+                                                <Button variant="outline" className="flex-1" onClick={() => setEstado("Inicio")}>
+                                                    Volver
+                                                </Button>
+                                                <Button className="flex-1" onClick={nuevaVenta}>
+                                                    Reintentar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+            </DialogContent>
+        </Dialog>
+    )
+
+}
