@@ -1,7 +1,9 @@
 import ProductTable from "@/components/productTable";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/contexts/currentUser";
-import { ArrowLeft, Plus} from "lucide-react";
+import { ArrowLeft, ChevronDown, Plus} from "lucide-react";
 import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
@@ -42,10 +44,27 @@ export default function ProductosXSuc(){
              </div>
              <div className="flex justify-end px-10">
                 <div>
-                    <Link to={`/productos/nuevoProducto?id=${id}`} className="bg-primary text-white p-2 flex font-semibold rounded-2xl">
-                        <Plus></Plus>
-                        Nuevo Producto
-                    </Link>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Nuevo Producto
+                            <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Link to={`/productos/nuevoProducto?tipo=0&id=${id}`} className="cursor-pointer">
+                            Producto Normal
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link to={`/productos/nuevoProducto?tipo=1&id=${id}`} className="cursor-pointer">
+                            Producto Compuesto
+                            </Link>
+                        </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
              </div>
              <div className="p-10">

@@ -11,6 +11,7 @@ import { toast } from "sonner"
 
 
 
+
 type Props = {
   idSucursal:number
   inputRef?: React.RefObject<{ focus: () => void } | null>;
@@ -25,7 +26,15 @@ export function ProductTable({idSucursal,inputRef }: Props) {
 
  useEffect(()=>{
     setLoading(true)
-    getProductos(idSucursal).then(res=>{setProductos(res.data);setFilteredProductos(res.data)}).finally(()=>{setLoading(false)})
+    getProductos(idSucursal).then(res=>{
+        if(res.success){
+          setProductos(res.data);
+          setFilteredProductos(res.data)
+        }else{
+          setProductos([]);
+          setFilteredProductos([]);
+        }}
+      ).finally(()=>{setLoading(false)})
  },[idSucursal])
 
   useEffect(() => {
@@ -41,8 +50,7 @@ export function ProductTable({idSucursal,inputRef }: Props) {
   const [pageSize, setPageSize] = useState<number>(50)
 
 
-
-  const totalItems = filteredProductos.length
+  const totalItems = filteredProductos.length||0
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
 
   useEffect(() => {

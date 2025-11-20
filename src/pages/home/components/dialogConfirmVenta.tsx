@@ -20,12 +20,17 @@ export default function DialogConfirmVenta({isOpen,onClose,inputRef,metodoPago}:
 
 
     const [estado,setEstado]=useState<EstadoVenta>("Inicio");
-    const {carrito,getTotalPrice}=useListaProductos();
+    const {getCarritoActivo,getTotalPrice,carritoActivo,eliminarCarrito}=useListaProductos();
+    const carritoActual = getCarritoActivo();
     const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
 
     const reloadVenta=async()=>{
         setCambioEfectivo(0);
         setEstado("Inicio");
+        // Eliminar el carrito actual después de confirmar la venta
+        if (carritoActivo) {
+            eliminarCarrito(carritoActivo);
+        }
         await onClose(false);
          // Usar setTimeout para asegurarnos que el focus se aplique después de que el diálogo se cierre
         setTimeout(() => {
@@ -65,11 +70,11 @@ export default function DialogConfirmVenta({isOpen,onClose,inputRef,metodoPago}:
                                             <div className="space-y-3 p-4 bg-muted rounded-lg">
                                                 <div className="flex items-center justify-between text-sm">
                                                     <span className="text-muted-foreground">Productos</span>
-                                                    <span className="font-medium">{carrito.length}</span>
+                                                    <span className="font-medium">{carritoActual?.productos?.length ?? 0}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between text-sm">
                                                     <span className="text-muted-foreground">Cantidad total</span>
-                                                    <span className="font-medium">{carrito.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                                                    <span className="font-medium">{carritoActual?.productos?.reduce((sum, item) => sum + item.quantity, 0) ?? 0}</span>
                                                 </div>
                                                 <Separator />
                                                 <div className="flex items-center justify-between">

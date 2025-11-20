@@ -44,27 +44,43 @@ export type ProductoVentaResponse={
 }
 
 
-export interface PrecioPresentacion {
-    id_precio?: number;
-    id_unidad_venta?: number;
-    precio_venta: number;
-}
 
-export interface PresentacionForm {
-    nombre_presentacion: string;
-    factor_conversion_cantidad: number;
-    sku_presentacion?: string;
-    precios: PrecioPresentacion[];
-}
-
-export interface ProductoForm {
+export interface ProductoFormFinal{
     nombre_producto: string;
-    descripcion?: string;
-    id_categoria: number;
+    descripcion?: string | undefined;
+    id_categoria: string;
     precio_costo: number;
-    sku_pieza?: string;
-    stock:number;
-    stock_minimo:number;
-    presentaciones: PresentacionForm[];
-    sucursales_con_inventario: number[]; // <-- CAMBIO: Renombrado para coincidir con el form
+    sku_pieza?: string | undefined;
+    cantidad_actual: number;
+    cantidad_minima: number;
+    sucursales_inventario: number[];
+    variantes: {
+        nombre_presentacion: string;
+        factor_conversion_cantidad: number;
+        sku_presentacion?: string | undefined;
+        sucursales_venta: {
+            id_sucursal: number;
+            precio_venta: number;
+        }[];
+    }[];
 }
+
+
+type ComponenteProductoEspecial = {
+  id_unidad_venta: number;
+  nombre_producto: string;
+  nombre_presentacion: string;
+  cantidad: number;
+  precio_unitario: number;
+};
+
+export type ProductoEspecialInput = {
+  sku_pieza: string;
+  nombre_producto: string;
+  descripcion?: string|undefined;
+  id_categoria: string | number;  // Puede venir como string del form
+  precio_venta: number;
+  isEspecial: number;  // 1 para especial, 0 para normal
+  componentes: ComponenteProductoEspecial[];
+};
+

@@ -16,6 +16,7 @@ import AddCliente from "@/components/dialogAddCliente";
 import { getProductoVenta } from "@/api/productosApi/productosApi";
 import DialiogErrorProducto from "./Dialogs/noEncontrado";
 import { useOutletContext } from "react-router";
+import CarritoTabs from "@/components/carritoTabs";
 
 export default function Home(){ 
 
@@ -27,9 +28,18 @@ export default function Home(){
     const [openCliente,setOpenCliente]=useState(false);
     const [error,setError]=useState(false);
 
-    const {carrito,clearCart,removeProduct,decrementQuantity,incrementQuantity,getTotalPrice,addProduct}=useListaProductos();
+    const {clearCart,removeProduct,decrementQuantity,incrementQuantity,getTotalPrice,addProduct,getCarritoActivo,crearCarrito,carritoActivo}=useListaProductos();
     const {cliente}=useCliente();
     const { setFocusScanner } = useOutletContext<{ setFocusScanner: (fn: () => void) => void }>();
+    
+    const carritoActual = getCarritoActivo();
+
+    // Crear un carrito por defecto si no existe carrito activo
+    useEffect(() => {
+        if (!carritoActivo) {
+            crearCarrito("Venta Principal");
+        }
+    }, [carritoActivo, crearCarrito]);
 
 
     useHotkeys('alt+m', () => {
@@ -92,6 +102,11 @@ export default function Home(){
 
     return(
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 h-full">
+              {/* Tabs de Carritos */}
+              <div className="xl:col-span-2">
+                <CarritoTabs />
+              </div>
+
               {/* Scanner y Lista de Productos */}
               <div className="xl:col-span-2 space-y-4 flex flex-col">
                 {/* Scanner de Código de Barras */}
@@ -132,7 +147,7 @@ export default function Home(){
                     <CardTitle className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <ShoppingCart className="w-5 h-5" />
-                        Productos ({carrito.length})
+                        Productos ({carritoActual?.productos?.length ?? 0})
                       </span>
                       <Button
                         variant="outline"
@@ -141,7 +156,7 @@ export default function Home(){
                           clearCart();
                           inputRef.current?.focus();
                         }}
-                        disabled={carrito.length === 0}
+                        disabled={(carritoActual?.productos?.length ?? 0) === 0}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Limpiar
@@ -150,48 +165,48 @@ export default function Home(){
                   </CardHeader>
                   <CardContent className="flex-1 overflow-hidden">
                     <div className="h-full overflow-y-auto space-y-3">
-                      {carrito.length === 0 ? (
+                      {(carritoActual?.productos?.length ?? 0) === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">
                           <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-50" />
                           <p>No hay Productos en el carrito</p>
                           <p className="text-sm">Escanea un código de barras para comenzar</p>
                         </div>
                       ) : (
-                        carrito.map((Medicamento) => (
-                          <div key={Medicamento.product.id_producto} className="flex items-center gap-3 p-3 border rounded-lg">
+                        carritoActual?.productos?.map((medicamento) => (
+                          <div key={medicamento.product.id_producto} className="flex items-center gap-3 p-3 border rounded-lg">
                             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
                               <Pill className="w-5 h-5 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{Medicamento.product.nombre_producto}</p>
-                              <p className="text-sm text-muted-foreground">${Medicamento.product.precio_venta.toFixed(2)} c/u</p>
+                              <p className="font-medium truncate">{medicamento.product.nombre_producto}</p>
+                              <p className="text-sm text-muted-foreground">${medicamento.product.precio_venta.toFixed(2)} c/u</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => decrementQuantity(Medicamento.product.id_producto)}
+                                onClick={() => decrementQuantity(medicamento.product.id_producto)}
                                 className="w-8 h-8 p-0"
                               >
                                 <Minus className="w-3 h-3" />
                               </Button>
-                              <span className="w-8 text-center font-medium">{Medicamento.quantity}</span>
+                              <span className="w-8 text-center font-medium">{medicamento.quantity}</span>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => incrementQuantity(Medicamento.product.id_producto)}
+                                onClick={() => incrementQuantity(medicamento.product.id_producto)}
                                 className="w-8 h-8 p-0"
                               >
                                 <Plus className="w-3 h-3" />
                               </Button>
                             </div>
                             <div className="text-right min-w-0">
-                              <p className="font-bold text-primary">${(Medicamento.product.precio_venta * Medicamento.quantity).toFixed(2)}</p>
+                              <p className="font-bold text-primary">${(medicamento.product.precio_venta * medicamento.quantity).toFixed(2)}</p>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  removeProduct(Medicamento.product.id_producto)
+                                  removeProduct(medicamento.product.id_producto)
                                   inputRef.current?.focus();
                                 }}
                                 className="w-8 h-8 p-0 text-destructive hover:text-destructive"
@@ -219,7 +234,7 @@ export default function Home(){
                           ${getTotalPrice().toFixed(2)}
                         </div>
                         <p className="text-sm text-muted-foreground mt-2">
-                          {carrito.length} Medicamento{carrito.length !== 1 ? "s" : ""}
+                          {carritoActual?.productos?.length ?? 0} Medicamento{(carritoActual?.productos?.length ?? 0) !== 1 ? "s" : ""}
                         </p>
                       </div>
 
@@ -253,7 +268,7 @@ export default function Home(){
                       className={`h-12 ${metodoPago === 0 
                       ? "bg-blue-500 text-white border-blue-600 shadow-lg" 
                       : "bg-gray-200 text-gray-700 border-gray-300"}`}
-                      disabled={carrito.length === 0}
+                      disabled={(carritoActual?.productos?.length ?? 0) === 0}
                       tabIndex={2}
                       onClick={()=>setMetodoPago(0)}
                     >
@@ -263,7 +278,7 @@ export default function Home(){
                       className={`h-12 bg-transparent ${metodoPago === 1 
                       ? "bg-blue-500 text-white border-blue-600 shadow-lg" 
                       : "bg-gray-200 text-gray-700 border-gray-300 "}`}
-                      disabled={carrito.length === 0}
+                      disabled={(carritoActual?.productos?.length ?? 0) === 0}
                       tabIndex={3}
                       onClick={()=>setMetodoPago(1)}
                     >
@@ -272,7 +287,7 @@ export default function Home(){
                   </div>
 
                   <Button className="w-full h-14 text-lg font-semibold" 
-                   disabled={carrito.length === 0}
+                   disabled={(carritoActual?.productos?.length ?? 0) === 0}
                    onClick={()=>setIsOpen(true)}
                    tabIndex={1}>
                     <CreditCard className="w-5 h-5 mr-2" />
@@ -282,8 +297,8 @@ export default function Home(){
                   <Button
                     variant="destructive"
                     className="w-full h-12"
-                    onClick={() => clearCart}
-                    disabled={carrito.length === 0}
+                    onClick={() => clearCart()}
+                    disabled={(carritoActual?.productos?.length ?? 0) === 0}
                     tabIndex={5}
                   >
                     Cancelar Venta (ESC)

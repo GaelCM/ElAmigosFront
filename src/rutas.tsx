@@ -5,7 +5,7 @@ import LoginPage from "./auth/login"
 import { AuthGuard } from "./auth/authguard"
 import ProductosPage from "./pages/productos/productosPage"
 import ProductosXSuc from "./pages/productos/components/productosXsuc"
-import NuevoProductoForm from "./pages/productos/components/nuevoProductoForm"
+import TipoProductoPage from "./pages/productos/components/tipoProductoRoute"
 
 
 
@@ -32,7 +32,7 @@ export const rutas=createHashRouter([
                     },
                      {
                         path:"/productos/nuevoProducto",
-                        element:<NuevoProductoForm/>
+                        element:<TipoProductoPage/>
                     }
                 ]
             }

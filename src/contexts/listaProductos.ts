@@ -4,169 +4,347 @@
 
 
 import type { ProductoItem, ProductoVenta } from "@/types/Producto";
+import type { Cliente } from "@/types/Cliente";
 import {create} from "zustand"
 import {createJSONStorage, persist} from "zustand/middleware"
 
+export type Carrito = {
+    id: string;
+    nombre: string;
+    productos: ProductoItem[];
+    cliente?: Cliente;
+    fechaCreacion: Date;
+}
+
 type ListaProductosModel = {
-    carrito: ProductoItem[]; // <--- El carrito ahora contiene CartItems
-    addProduct: (product: ProductoVenta) => void; // Añade o incrementa cantidad
-    removeProduct: (id_producto: number) => void; // Elimina completamente el Producto
-    updateQuantity: (id_producto: number, newQuantity: number) => void; // Establece una cantidad específica
-    decrementQuantity: (id_producto: number) => void; // Disminuye la cantidad en 1 (o elimina si llega a 0)
-    incrementQuantity: (id_producto: number) => void; // Aumenta la cantidad en 1 (si ya existe)
-    clearCart: () => void; // Elimina todos los Productos
-    // Opcional: Selector para obtener la cantidad total de ítems (suma de quantities)
+    // CARRITOS
+    carritos: Carrito[];
+    carritoActivo: string | null;
+    
+    // ACCIONES DE CARRITOS
+    crearCarrito: (nombre?: string) => string; // Retorna el ID del nuevo carrito
+    cambiarCarritoActivo: (id: string) => void;
+    eliminarCarrito: (id: string) => void;
+    renombrarCarrito: (id: string, nuevoNombre: string) => void;
+    asignarClienteCarrito: (id: string, cliente: Cliente) => void;
+    
+    // ACCIONES DEL CARRITO ACTIVO
+    addProduct: (product: ProductoVenta) => void;
+    removeProduct: (id_producto: number) => void;
+    updateQuantity: (id_producto: number, newQuantity: number) => void;
+    decrementQuantity: (id_producto: number) => void;
+    incrementQuantity: (id_producto: number) => void;
+    clearCart: () => void;
+    
+    // SELECTORES
     getTotalItems: () => number;
-     // Opcional: Selector para obtener el precio total del carrito
     getTotalPrice: () => number;
+    getCarritoActivo: () => Carrito | undefined;
+    getCarritoById: (id: string) => Carrito | undefined;
 };
 
 export const useListaProductos = create(
     persist<ListaProductosModel>(
         (set, get) => ({
             // --- ESTADO INICIAL ---
-            carrito: [], // Inicializamos la lista vacía de CartItems
+            carritos: [],
+            carritoActivo: null,
 
-            // --- ACCIONES ---
+            // --- ACCIONES DE CARRITOS ---
+            
+            /**
+             * Crea un nuevo carrito y lo asigna como activo
+             */
+            crearCarrito: (nombre?: string) => {
+                const id = `carrito_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+                const nuevoCarrito: Carrito = {
+                    id,
+                    nombre: nombre || `Venta ${new Date().toLocaleTimeString()}`,
+                    productos: [],
+                    fechaCreacion: new Date(),
+                };
+                
+                const currentCarritos = get().carritos;
+                set({
+                    carritos: [...currentCarritos, nuevoCarrito],
+                    carritoActivo: id,
+                });
+                
+                console.log("Nuevo carrito creado:", id);
+                return id;
+            },
 
             /**
-             * Añade un Producto al carrito.
-             * Si el Producto ya existe, incrementa su cantidad en 1.
-             * Si no existe, lo añade con cantidad 1.
+             * Cambia el carrito activo
+             */
+            cambiarCarritoActivo: (id: string) => {
+                const existe = get().carritos.find(c => c.id === id);
+                if (existe) {
+                    set({ carritoActivo: id });
+                    console.log("Carrito activo cambiado a:", id);
+                } else {
+                    console.warn("Carrito no encontrado:", id);
+                }
+            },
+
+            /**
+             * Elimina un carrito (normalmente después de confirmar la venta)
+             */
+            eliminarCarrito: (id: string) => {
+                const currentCarritos = get().carritos;
+                const carritoActual = get().carritoActivo;
+                
+                const updatedCarritos = currentCarritos.filter(c => c.id !== id);
+                let nuevoCarritoActivo = carritoActual;
+                
+                // Si eliminamos el carrito activo, cambiar a otro
+                if (carritoActual === id) {
+                    nuevoCarritoActivo = updatedCarritos.length > 0 ? updatedCarritos[0].id : null;
+                }
+                
+                set({
+                    carritos: updatedCarritos,
+                    carritoActivo: nuevoCarritoActivo,
+                });
+                
+                console.log("Carrito eliminado:", id);
+            },
+
+            /**
+             * Renombra un carrito existente
+             */
+            renombrarCarrito: (id: string, nuevoNombre: string) => {
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(c =>
+                    c.id === id ? { ...c, nombre: nuevoNombre } : c
+                );
+                set({ carritos: updated });
+                console.log("Carrito renombrado:", id, "->", nuevoNombre);
+            },
+
+            /**
+             * Asigna un cliente a un carrito específico
+             */
+            asignarClienteCarrito: (id: string, cliente: Cliente) => {
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(c =>
+                    c.id === id ? { ...c, cliente } : c
+                );
+                set({ carritos: updated });
+                console.log("Cliente asignado al carrito:", id);
+            },
+
+            // --- ACCIONES DEL CARRITO ACTIVO ---
+
+            /**
+             * Añade un Producto al carrito activo
              */
             addProduct: (product: ProductoVenta) => {
-                console.log("Agregando Producto:", product.nombre_producto);
-                const currentCarrito = get().carrito;
-                const existingItemIndex = currentCarrito.findIndex(
-                    (item) => item.product.id_producto === product.id_producto
-                );
-
-                if (existingItemIndex > -1) {
-                    // Producto ya existe: Incrementar cantidad
-                    const updatedCarrito = currentCarrito.map((item, index) =>
-                        index === existingItemIndex
-                            ? { ...item, quantity: item.quantity + 1 }
-                            : item
-                    );
-                    console.log("Producto existente, incrementando cantidad. Nuevo carrito:", updatedCarrito);
-                    set({ carrito: updatedCarrito });
-                } else {
-                    // Producto no existe: Añadir nuevo item con cantidad 1
-                    const newItem: ProductoItem = { product, quantity: 1 };
-                    const updatedCarrito = [...currentCarrito, newItem];
-                    console.log("Nuevo Producto agregado. Nuevo carrito:", updatedCarrito);
-                    set({ carrito: updatedCarrito });
+                const carritoActivo = get().carritoActivo;
+                if (!carritoActivo) {
+                    console.warn("No hay carrito activo");
+                    return;
                 }
+
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(carrito => {
+                    if (carrito.id === carritoActivo) {
+                        const existingItemIndex = carrito.productos.findIndex(
+                            (item) => item.product.id_producto === product.id_producto
+                        );
+
+                        if (existingItemIndex > -1) {
+                            // Producto ya existe: incrementar cantidad
+                            const updatedProductos = carrito.productos.map((item, index) =>
+                                index === existingItemIndex
+                                    ? { ...item, quantity: item.quantity + 1 }
+                                    : item
+                            );
+                            return { ...carrito, productos: updatedProductos };
+                        } else {
+                            // Producto nuevo: añadir con cantidad 1
+                            return {
+                                ...carrito,
+                                productos: [...carrito.productos, { product, quantity: 1 }],
+                            };
+                        }
+                    }
+                    return carrito;
+                });
+
+                set({ carritos: updated });
+                console.log("Producto agregado al carrito:", product.nombre_producto);
             },
 
             /**
-             * Elimina un Producto completamente del carrito, sin importar su cantidad.
+             * Elimina un Producto del carrito activo
              */
             removeProduct: (id_producto: number) => {
-                console.log("Eliminando Producto con ID:", id_producto);
-                const currentCarrito = get().carrito;
-                const updatedCarrito = currentCarrito.filter(
-                    (item) => item.product.id_producto !== id_producto
-                );
-                console.log("Producto eliminado. Nuevo carrito:", updatedCarrito);
-                set({ carrito: updatedCarrito });
+                const carritoActivo = get().carritoActivo;
+                if (!carritoActivo) return;
+
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(carrito => {
+                    if (carrito.id === carritoActivo) {
+                        return {
+                            ...carrito,
+                            productos: carrito.productos.filter(
+                                (item) => item.product.id_producto !== id_producto
+                            ),
+                        };
+                    }
+                    return carrito;
+                });
+
+                set({ carritos: updated });
+                console.log("Producto eliminado del carrito:", id_producto);
             },
 
             /**
-             * Actualiza la cantidad de un Producto específico.
-             * Si la nueva cantidad es 0 o menor, elimina el Producto.
+             * Actualiza la cantidad de un Producto en el carrito activo
              */
             updateQuantity: (id_producto: number, newQuantity: number) => {
-                if (newQuantity < 1) {
-                    // Si la cantidad es 0 o negativa, eliminar el Producto
-                    get().removeProduct(id_producto);
-                } else {
-                    // Actualizar la cantidad del Producto
-                    const currentCarrito = get().carrito;
-                    const updatedCarrito = currentCarrito.map((item) =>
-                        item.product.id_producto === id_producto
-                            ? { ...item, quantity: newQuantity }
-                            : item
-                    );
-                    // Filtrar por si acaso el item no existía (aunque map no lo añadiría)
-                    const finalCarrito = updatedCarrito.filter(item => item.product.id_producto === id_producto ? item.quantity >= 1 : true);
-                    set({ carrito: finalCarrito });
-                }
-            },
+                const carritoActivo = get().carritoActivo;
+                if (!carritoActivo) return;
 
-             /**
-             * Incrementa la cantidad de un Producto existente en 1.
-             * No hace nada si el Producto no está en el carrito.
-             */
-            incrementQuantity: (id_producto: number) => {
-                console.log("Incrementando cantidad para Producto:", id_producto);
-                const currentCarrito = get().carrito;
-                const updatedCarrito = currentCarrito.map((item) =>
-                    item.product.id_producto === id_producto
-                        ? { ...item, quantity: item.quantity + 1 }
-                        : item
-                );
-                 // Solo actualiza si realmente encontró y modificó el item
-                 if (JSON.stringify(currentCarrito) !== JSON.stringify(updatedCarrito)) {
-                    console.log("Cantidad incrementada. Nuevo carrito:", updatedCarrito);
-                    set({ carrito: updatedCarrito });
-                 }
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(carrito => {
+                    if (carrito.id === carritoActivo) {
+                        if (newQuantity < 1) {
+                            // Eliminar si la cantidad es 0 o menor
+                            return {
+                                ...carrito,
+                                productos: carrito.productos.filter(
+                                    (item) => item.product.id_producto !== id_producto
+                                ),
+                            };
+                        } else {
+                            // Actualizar la cantidad
+                            return {
+                                ...carrito,
+                                productos: carrito.productos.map((item) =>
+                                    item.product.id_producto === id_producto
+                                        ? { ...item, quantity: newQuantity }
+                                        : item
+                                ),
+                            };
+                        }
+                    }
+                    return carrito;
+                });
+
+                set({ carritos: updated });
             },
 
             /**
-             * Disminuye la cantidad de un Producto en 1.
-             * Si la cantidad llega a 0, elimina el Producto del carrito.
+             * Incrementa la cantidad de un Producto en el carrito activo
+             */
+            incrementQuantity: (id_producto: number) => {
+                const carritoActivo = get().carritoActivo;
+                if (!carritoActivo) return;
+
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(carrito => {
+                    if (carrito.id === carritoActivo) {
+                        return {
+                            ...carrito,
+                            productos: carrito.productos.map((item) =>
+                                item.product.id_producto === id_producto
+                                    ? { ...item, quantity: item.quantity + 1 }
+                                    : item
+                            ),
+                        };
+                    }
+                    return carrito;
+                });
+
+                set({ carritos: updated });
+            },
+
+            /**
+             * Disminuye la cantidad de un Producto en el carrito activo
              */
             decrementQuantity: (id_producto: number) => {
-                console.log("Decrementando cantidad para Producto:", id_producto);
-                const currentCarrito = get().carrito;
-                const itemToDecrement = currentCarrito.find(
+                const carritoActivo = get().carritoActivo;
+                if (!carritoActivo) return;
+
+                const currentCarritos = get().carritos;
+                const carrito = currentCarritos.find(c => c.id === carritoActivo);
+                if (!carrito) return;
+
+                const itemToDecrement = carrito.productos.find(
                     (item) => item.product.id_producto === id_producto
                 );
 
                 if (itemToDecrement) {
                     if (itemToDecrement.quantity > 1) {
-                        // Disminuir cantidad
                         get().updateQuantity(id_producto, itemToDecrement.quantity - 1);
                     } else {
-                        // Eliminar Producto si la cantidad es 1
                         get().removeProduct(id_producto);
                     }
                 }
-                // No hacer nada si el Producto no se encuentra
             },
 
             /**
-             * Elimina todos los Productos del carrito.
+             * Limpia todos los Productos del carrito activo
              */
             clearCart: () => {
-                console.log("Limpiando carrito");
-                set({ carrito: [] });
+                const carritoActivo = get().carritoActivo;
+                if (!carritoActivo) return;
+
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(carrito => {
+                    if (carrito.id === carritoActivo) {
+                        return { ...carrito, productos: [] };
+                    }
+                    return carrito;
+                });
+
+                set({ carritos: updated });
+                console.log("Carrito limpiado");
             },
 
-            // --- SELECTORES (Opcionales pero útiles) ---
+            // --- SELECTORES ---
 
             /**
-             * Calcula el número total de ítems individuales en el carrito.
+             * Obtiene el carrito activo
+             */
+            getCarritoActivo: () => {
+                const carritoActivo = get().carritoActivo;
+                if (!carritoActivo) return undefined;
+                return get().carritos.find(c => c.id === carritoActivo);
+            },
+
+            /**
+             * Obtiene un carrito por ID
+             */
+            getCarritoById: (id: string) => {
+                return get().carritos.find(c => c.id === id);
+            },
+
+            /**
+             * Obtiene el total de items del carrito activo
              */
             getTotalItems: () => {
-                const currentCarrito = get().carrito;
-                return currentCarrito.reduce((total, item) => total + item.quantity, 0);
+                const carritoActivo = get().getCarritoActivo();
+                if (!carritoActivo) return 0;
+                return carritoActivo.productos.reduce((total, item) => total + item.quantity, 0);
             },
 
-             /**
-             * Calcula el precio total de todos los Productos en el carrito.
+            /**
+             * Obtiene el precio total del carrito activo
              */
             getTotalPrice: () => {
-                 const currentCarrito = get().carrito;
-                 const total = currentCarrito.reduce((total, item) => total + (item.product.precio_venta * item.quantity), 0);
-                 //console.log("Calculando total del carrito:", total, "Productos:", currentCarrito.length);
-                 return total;
+                const carritoActivo = get().getCarritoActivo();
+                if (!carritoActivo) return 0;
+                return carritoActivo.productos.reduce(
+                    (total, item) => total + (item.product.precio_venta * item.quantity),
+                    0
+                );
             },
-
         }),
         {
-            name: "lista-Productos", // nombre para guardar la lista en el storage
+            name: "lista-Productos-v2",
             storage: createJSONStorage(() => localStorage),
         }
     )
