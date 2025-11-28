@@ -28,6 +28,7 @@ const formSchema = z.object({
   descripcion: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
   precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
+  precio_mayoreo: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
   cantidad_actual: z.number(),
   cantidad_minima: z.number(),
   componentes: z.array(
@@ -73,6 +74,7 @@ export default function EditarProductoCompuestoForm() {
       descripcion: "",
       id_categoria: "",
       precio_venta: 0,
+      precio_mayoreo: 0,
       cantidad_actual: 0,
       cantidad_minima: 0,
       componentes: []
@@ -147,6 +149,7 @@ export default function EditarProductoCompuestoForm() {
             descripcion: data.descripcion,
             id_categoria: String(data.id_categoria),
             precio_venta: data.precio_venta,
+            precio_mayoreo: data.precio_mayoreo,
             cantidad_actual: data.cantidad_actual,
             cantidad_minima: data.cantidad_minima,
             componentes: data.componentes
@@ -343,6 +346,47 @@ export default function EditarProductoCompuestoForm() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Precio de Venta del Paquete *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={field.value}
+                                onChange={(e) =>
+                                  field.onChange(parseFloat(e.target.value))
+                                }
+                                placeholder="Ej: 150.00"
+                              />
+                            </FormControl>
+                            <FormMessage />
+
+                            {field.value > 0 && (
+                              <p className="text-sm mt-2">
+                                {field.value > costoTotal ? (
+                                  <span className="text-green-600">
+                                    ✓ Ganancia: ${(field.value - costoTotal).toFixed(2)}
+                                  </span>
+                                ) : field.value < costoTotal ? (
+                                  <span className="text-red-600">
+                                    ⚠ Pérdida: ${(costoTotal - field.value).toFixed(2)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-600">
+                                    Sin ganancia ni pérdida
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Precio mayoreo */}
+                      <FormField
+                        control={form.control}
+                        name="precio_mayoreo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Precio de Mayoreo del Paquete *</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"

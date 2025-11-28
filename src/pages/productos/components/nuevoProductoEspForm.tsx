@@ -26,8 +26,7 @@ const formSchema = z.object({
   descripcion: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
   precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
-  cantidad_actual: z.number(),
-  cantidad_minima: z.number(),
+  precio_mayoreo: z.coerce.number().positive({ message: 'El precio de mayoreo debe ser mayor a 0' }),
   componentes: z.array(
     z.object({
       id_unidad_venta: z.number(),
@@ -68,8 +67,7 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
       descripcion: "",
       id_categoria: "",
       precio_venta: 0,
-      cantidad_actual: 0,
-      cantidad_minima: 0,
+      precio_mayoreo: 0,
       componentes: []
     }
   });
@@ -339,12 +337,13 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
                         )}
                       />
 
+                      {/* Precio Mayoreo */}
                       <FormField
                         control={form.control}
-                        name="cantidad_actual"
+                        name="precio_mayoreo"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Cantidad_actual *</FormLabel>
+                            <FormLabel>Precio de Mayoreo *</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -353,35 +352,31 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
                                 onChange={(e) =>
                                   field.onChange(parseFloat(e.target.value))
                                 }
+                                placeholder="Ej: 150.00"
                               />
                             </FormControl>
                             <FormMessage />
+
+                            {field.value > 0 && (
+                              <p className="text-sm mt-2">
+                                {field.value > costoTotal ? (
+                                  <span className="text-green-600">
+                                    ✓ Ganancia: ${(field.value - costoTotal).toFixed(2)}
+                                  </span>
+                                ) : field.value < costoTotal ? (
+                                  <span className="text-red-600">
+                                    ⚠ Pérdida: ${(costoTotal - field.value).toFixed(2)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-600">
+                                    Sin ganancia ni pérdida
+                                  </span>
+                                )}
+                              </p>
+                            )}
                           </FormItem>
                         )}
                       />
-
-
-                      <FormField
-                        control={form.control}
-                        name="cantidad_minima"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cantidad_minima *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={field.value}
-                                onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value))
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
                     </CardContent>
                   </Card>
 

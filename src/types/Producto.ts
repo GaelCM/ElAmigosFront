@@ -11,6 +11,7 @@ export type Producto = {
     sku_presentacion: string;
     id_precio: number;
     precio_venta: number;
+    precio_mayoreo: number;
     id_sucursal: number;
     stock_piezas: number;
     stock_disponible_presentacion: number;
@@ -19,13 +20,14 @@ export type Producto = {
 export interface ProductoItem {
     product: ProductoVenta;
     quantity: number;
+    usarPrecioMayoreo: boolean;
 }
 
 export interface ProductoVenta{
     id_producto: number;
     sku_pieza: string;
     nombre_producto: string;
-    descripcion: string | null;
+    descripcion: string ;
     precio_costo: number;
     es_producto_compuesto: number;
     id_unidad_venta: number;
@@ -34,6 +36,7 @@ export interface ProductoVenta{
     sku_presentacion: string;
     id_precio: number;
     precio_venta: number;
+    precio_mayoreo: number;
     id_sucursal: number;
     stock_piezas: number;
     stock_disponible_presentacion: number;
@@ -66,6 +69,7 @@ export interface ProductoFormFinal{
         sucursales_venta: {
             id_sucursal: number;
             precio_venta: number;
+            precio_mayoreo: number;
         }[];
     }[];
 }
@@ -91,8 +95,7 @@ export type ProductoEspecialInput = {
   descripcion?: string|undefined;
   id_categoria: string | number;  // Puede venir como string del form
   precio_venta: number;
-  cantidad_actual: number;
-  cantidad_minima: number;
+  precio_mayoreo: number;
   isEspecial: number;  // 1 para especial, 0 para normal
   componentes: ComponenteProductoEspecial[];
 };

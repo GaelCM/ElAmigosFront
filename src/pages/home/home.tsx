@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+
 import { useListaProductos } from "@/contexts/listaProductos";
 import { CreditCard, Minus, Pill, Plus, Scan, ShoppingCart, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +18,7 @@ import { getProductoVenta } from "@/api/productosApi/productosApi";
 import DialiogErrorProducto from "./Dialogs/noEncontrado";
 import { useOutletContext } from "react-router";
 import CarritoTabs from "@/components/carritoTabs";
+import { Switch } from "@/components/ui/switch";
 
 export default function Home(){ 
 
@@ -28,7 +30,7 @@ export default function Home(){
     const [openCliente,setOpenCliente]=useState(false);
     const [error,setError]=useState(false);
 
-    const {clearCart,removeProduct,decrementQuantity,incrementQuantity,getTotalPrice,addProduct,getCarritoActivo,crearCarrito,carritoActivo}=useListaProductos();
+    const {clearCart,removeProduct,decrementQuantity,incrementQuantity,getTotalPrice,addProduct,getCarritoActivo,crearCarrito,carritoActivo,togglePrecioMayoreo}=useListaProductos();
     const {cliente}=useCliente();
     const { setFocusScanner } = useOutletContext<{ setFocusScanner: (fn: () => void) => void }>();
     
@@ -99,6 +101,9 @@ export default function Home(){
     useEffect(() => {
         setFocusScanner(() => focusInput);
     }, [setFocusScanner]);
+
+
+    
 
     return(
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 h-full">
@@ -172,41 +177,62 @@ export default function Home(){
                           <p className="text-sm">Escanea un código de barras para comenzar</p>
                         </div>
                       ) : (
-                        carritoActual?.productos?.map((medicamento) => (
-                          <div key={medicamento.product.id_producto} className="flex items-center gap-3 p-3 border rounded-lg">
-                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                              <Pill className="w-5 h-5 text-primary" />
+                        carritoActual?.productos?.map((producto) => (
+                          <div key={producto.product.sku_presentacion} className="space-y-2 p-3 border rounded-lg">
+                            {/* Fila principal con información del producto */}
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                                <Pill className="w-5 h-5 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{producto.product.nombre_producto}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  ${(producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta).toFixed(2)} c/u
+                                </p>
+                              </div>
+                              <div className="text-right min-w-0">
+                                <p className="font-bold text-primary">${((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}</p>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{medicamento.product.nombre_producto}</p>
-                              <p className="text-sm text-muted-foreground">${medicamento.product.precio_venta.toFixed(2)} c/u</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => decrementQuantity(medicamento.product.id_producto)}
-                                className="w-8 h-8 p-0"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </Button>
-                              <span className="w-8 text-center font-medium">{medicamento.quantity}</span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => incrementQuantity(medicamento.product.id_producto)}
-                                className="w-8 h-8 p-0"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </Button>
-                            </div>
-                            <div className="text-right min-w-0">
-                              <p className="font-bold text-primary">${(medicamento.product.precio_venta * medicamento.quantity).toFixed(2)}</p>
+                            
+                            {/* Fila de controles */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => decrementQuantity(producto.product.id_unidad_venta)}
+                                  className="w-8 h-8 p-0"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <span className="w-8 text-center font-medium">{producto.quantity}</span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => incrementQuantity(producto.product.id_unidad_venta)}
+                                  className="w-8 h-8 p-0"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                              
+                              {/* Toggle Precio Mayoreo */}
+                              <div className="flex items-center gap-2">
+                                <label className="text-xs font-medium text-muted-foreground">
+                                  Precio Mayoreo
+                                </label>
+                                <Switch
+                                  checked={producto.usarPrecioMayoreo || false}
+                                  onCheckedChange={() => togglePrecioMayoreo(producto.product.id_unidad_venta)}
+                                />
+                              </div>
+                              
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  removeProduct(medicamento.product.id_producto)
+                                  removeProduct(producto.product.id_unidad_venta)
                                   inputRef.current?.focus();
                                 }}
                                 className="w-8 h-8 p-0 text-destructive hover:text-destructive"
@@ -234,7 +260,7 @@ export default function Home(){
                           ${getTotalPrice().toFixed(2)}
                         </div>
                         <p className="text-sm text-muted-foreground mt-2">
-                          {carritoActual?.productos?.length ?? 0} Medicamento{(carritoActual?.productos?.length ?? 0) !== 1 ? "s" : ""}
+                          {carritoActual?.productos?.length ?? 0} producto{(carritoActual?.productos?.length ?? 0) !== 1 ? "s" : ""}
                         </p>
                       </div>
 
@@ -245,14 +271,10 @@ export default function Home(){
                           <span>Subtotal:</span>
                           <span>${getTotalPrice().toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>IVA (16%):</span>
-                          <span>${(getTotalPrice() * 0.16).toFixed(2)}</span>
-                        </div>
                         <Separator />
                         <div className="flex justify-between font-bold">
                           <span>Total:</span>
-                          <span>${(getTotalPrice() * 1.16).toFixed(2)}</span>
+                          <span>${(getTotalPrice()).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>

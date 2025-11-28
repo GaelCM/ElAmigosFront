@@ -1,10 +1,14 @@
+import { nuevaVentaApi } from "@/api/ventasApi/ventasApi";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { useCurrentUser } from "@/contexts/currentUser";
+import { useCliente } from "@/contexts/globalClient";
 import { useListaProductos } from "@/contexts/listaProductos";
 import type { EstadoVenta } from "@/types/Venta";
 import { Check, Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 
 type dialogProps={
@@ -21,6 +25,8 @@ export default function DialogConfirmVenta({isOpen,onClose,inputRef,metodoPago}:
 
     const [estado,setEstado]=useState<EstadoVenta>("Inicio");
     const {getCarritoActivo,getTotalPrice,carritoActivo,eliminarCarrito}=useListaProductos();
+    const {cliente}=useCliente();
+    const {user}=useCurrentUser()
     const carritoActual = getCarritoActivo();
     const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
 
@@ -40,12 +46,33 @@ export default function DialogConfirmVenta({isOpen,onClose,inputRef,metodoPago}:
 
     const nuevaVenta=async ()=>{
         // iniciar proceso
+        if(cambioEfectivo < getTotalPrice() && metodoPago === 0){
+            toast.error('Error en el pago', {
+                description:`El monto recibido es menor al total a pagar.`,});
+            return;
+        }
         setEstado("Cargando");
         try{
-            // simular llamada asíncrona (reemplazar con tu lógica real)
-            await new Promise((res)=>setTimeout(res, 1400));
-            // marcar listo
-            setEstado("Listo");
+            
+            const ventaFinal = {
+                id_usuario: user.id_usuario,
+                usuario: user.usuario,
+                id_sucursal: user.id_sucursal,
+                monto_recibido: cambioEfectivo,
+                metodo_pago: metodoPago,
+                productos: getCarritoActivo()?.productos || [],
+                id_cliente: cliente.idCliente,
+            };
+            console.log("Venta final a enviar:", ventaFinal);
+            const res = await nuevaVentaApi(ventaFinal);
+            if (res?.success) {
+                toast.success('Venta generada correctamente', {
+                description:`La venta se ha generado correctamente, FOLIO ${res.data}`,});
+                setEstado("Listo");
+            } else {
+                console.error("Error del servidor al crear venta:", res);
+                setEstado("Error");
+            }
         }catch(error){
             setEstado("Error");
             console.error("Error al procesar la venta:", error);

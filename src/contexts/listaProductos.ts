@@ -35,6 +35,7 @@ type ListaProductosModel = {
     decrementQuantity: (id_producto: number) => void;
     incrementQuantity: (id_producto: number) => void;
     clearCart: () => void;
+    togglePrecioMayoreo: (id_producto: number) => void;
     
     // SELECTORES
     getTotalItems: () => number;
@@ -149,31 +150,33 @@ export const useListaProductos = create(
                 const currentCarritos = get().carritos;
                 const updated = currentCarritos.map(carrito => {
                     if (carrito.id === carritoActivo) {
-                        const existingItemIndex = carrito.productos.findIndex(
-                            (item) => item.product.id_producto === product.id_producto
-                        );
+                    const existingItemIndex = carrito.productos.findIndex(
+                        (item) => item.product.id_unidad_venta === product.id_unidad_venta
+                    );
 
-                        if (existingItemIndex > -1) {
-                            // Producto ya existe: incrementar cantidad
-                            const updatedProductos = carrito.productos.map((item, index) =>
-                                index === existingItemIndex
-                                    ? { ...item, quantity: item.quantity + 1 }
-                                    : item
-                            );
-                            return { ...carrito, productos: updatedProductos };
-                        } else {
-                            // Producto nuevo: añadir con cantidad 1
-                            return {
-                                ...carrito,
-                                productos: [...carrito.productos, { product, quantity: 1 }],
-                            };
-                        }
+                    if (existingItemIndex > -1) {
+                        // Ya existe → solo incrementar cantidad
+                        const updatedProductos = carrito.productos.map((item, index) =>
+                        index === existingItemIndex
+                            ? { ...item, quantity: item.quantity + 1 }
+                            : item
+                        );
+                        return { ...carrito, productos: updatedProductos };
+                    } else {
+                        // NUEVO PRODUCTO → añadir con usarPrecioMayoreo por defecto
+                        return {
+                        ...carrito,
+                        productos: [
+                            ...carrito.productos,
+                            { product, quantity: 1, usarPrecioMayoreo: false }
+                        ],
+                        };
+                    }
                     }
                     return carrito;
                 });
-
                 set({ carritos: updated });
-                console.log("Producto agregado al carrito:", product.nombre_producto);
+                console.log("Producto agregado:", product.nombre_producto);
             },
 
             /**
@@ -189,7 +192,7 @@ export const useListaProductos = create(
                         return {
                             ...carrito,
                             productos: carrito.productos.filter(
-                                (item) => item.product.id_producto !== id_producto
+                                (item) => item.product.id_unidad_venta !== id_producto
                             ),
                         };
                     }
@@ -215,7 +218,7 @@ export const useListaProductos = create(
                             return {
                                 ...carrito,
                                 productos: carrito.productos.filter(
-                                    (item) => item.product.id_producto !== id_producto
+                                    (item) => item.product.id_unidad_venta !== id_producto
                                 ),
                             };
                         } else {
@@ -223,7 +226,7 @@ export const useListaProductos = create(
                             return {
                                 ...carrito,
                                 productos: carrito.productos.map((item) =>
-                                    item.product.id_producto === id_producto
+                                    item.product.id_unidad_venta === id_producto
                                         ? { ...item, quantity: newQuantity }
                                         : item
                                 ),
@@ -249,7 +252,7 @@ export const useListaProductos = create(
                         return {
                             ...carrito,
                             productos: carrito.productos.map((item) =>
-                                item.product.id_producto === id_producto
+                                item.product.id_unidad_venta === id_producto
                                     ? { ...item, quantity: item.quantity + 1 }
                                     : item
                             ),
@@ -273,7 +276,7 @@ export const useListaProductos = create(
                 if (!carrito) return;
 
                 const itemToDecrement = carrito.productos.find(
-                    (item) => item.product.id_producto === id_producto
+                    (item) => item.product.id_unidad_venta === id_producto
                 );
 
                 if (itemToDecrement) {
@@ -338,9 +341,40 @@ export const useListaProductos = create(
                 const carritoActivo = get().getCarritoActivo();
                 if (!carritoActivo) return 0;
                 return carritoActivo.productos.reduce(
-                    (total, item) => total + (item.product.precio_venta * item.quantity),
+                    (total, item) => {
+                        const precio = item.usarPrecioMayoreo ? item.product.precio_mayoreo : item.product.precio_venta;
+                        return total + (precio * item.quantity);
+                    },
                     0
                 );
+            },
+
+            /**
+             * Alterna entre precio mayoreo y precio venta para un producto
+             */
+            togglePrecioMayoreo: (id_producto: number) => {
+                const carritoActivo = get().carritoActivo;
+                if (!carritoActivo) return;
+
+                const currentCarritos = get().carritos;
+
+                const updated = currentCarritos.map(carrito => {
+                    if (carrito.id === carritoActivo) {
+                    const nuevosProductos = carrito.productos.map(item =>
+                        item.product.id_unidad_venta === id_producto
+                        ? { 
+                            ...item, 
+                            usarPrecioMayoreo: !item.usarPrecioMayoreo 
+                            }
+                        : item
+                    );
+
+                    return { ...carrito, productos: nuevosProductos };
+                    }
+                    return carrito;
+                });
+
+                set({ carritos: updated });
             },
         }),
         {

@@ -40,7 +40,8 @@ const formSchema = z.object({
         z.object({
           id_precio: z.number().optional(), // ID para actualizar
           id_sucursal: z.number(),
-          precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' })
+          precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
+          precio_mayoreo: z.coerce.number().positive({ message: 'El precio de mayoreo debe ser mayor a 0' })
         })
       ).min(1, 'Asigna al menos una sucursal a esta presentación')
     })
@@ -204,7 +205,7 @@ export default function EditarProductoForm() {
     } else {
       form.setValue(
         `variantes.${varIndex}.sucursales_venta`,
-        [...curr, { id_sucursal: idSucursal, precio_venta: 0 }]
+        [...curr, { id_sucursal: idSucursal, precio_venta: 0, precio_mayoreo: 0 }]
       );
     }
   };
@@ -503,25 +504,46 @@ export default function EditarProductoForm() {
                     </div>
 
                     {selected && (
-                      <FormField
-                        control={form.control}
-                        name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_venta`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Precio *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={field.value}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div>
+                        <FormField
+                          control={form.control}
+                          name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_venta`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Precio *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_mayoreo`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Precio Mayoreo*</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     )}
+                    
                   </div>
                 );
               })}
