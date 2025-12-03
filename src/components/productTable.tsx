@@ -151,12 +151,12 @@ export function ProductTable({idSucursal,inputRef }: Props) {
             <tr className="text-left text-sm text-muted-foreground border-b">
               <th className="px-3 py-2">Sku Presentación</th>
               <th className="px-3 py-2">Nombre</th>
+              <th className="px-3 py-2">Unidad</th> 
               <th className="px-3 py-2">Descripción</th>
               <th className="px-3 py-2">Precio</th>
               <th className="px-3 py-2">Stock Disponible</th>
               <th className="px-3 py-2">Stock Piezas</th>
-              <th className="px-3 py-2">Precio Mayoreo</th>
-              <th className="px-3 py-2">Unidad</th>        
+              <th className="px-3 py-2">Precio Mayoreo</th>              
               <th className="px-3 py-2 text-center">Acción</th>
             </tr>
           </thead>
@@ -181,6 +181,11 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                   <td className="px-3 py-3 align-middle">
                     <div className="font-medium text-sm">{p.nombre_producto}</div>
                   </td>
+
+                  <td className="px-3 py-3 align-middle text-sm ">
+                    <Badge className={`${p.nombre_presentacion==="Pieza"?'bg-blue-600':'bg-orange-600'}`}>{p.nombre_presentacion}</Badge>
+                    </td>
+
                   <td className="px-3 py-3 align-middle">
                     <div className="text-sm text-muted-foreground max-w-md truncate">{p.descripcion}</div>
                   </td>
@@ -203,7 +208,8 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                   <td className="px-3 py-3 align-middle">
                     <div className="text-sm font-semibold">${p.precio_mayoreo.toFixed(2)}</div>
                   </td>
-                  <td className="px-3 py-3 align-middle text-sm text-muted-foreground"><Badge>{p.nombre_presentacion}</Badge></td>
+
+                 
                   
                   <td className="px-3 py-3 align-middle flex justify-center ">
                     <Button
@@ -225,7 +231,7 @@ export function ProductTable({idSucursal,inputRef }: Props) {
                     
                     {user.id_rol===1&&p.es_producto_compuesto===0?(
                       <Link to={`/productos/editProducto?id=${p.id_producto}`} >
-                        <Button size="sm" variant={"outline"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
+                        <Button size="sm" variant={"default"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`}>
                           <SquarePen></SquarePen>
                         </Button>
                       </Link>

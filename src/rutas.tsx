@@ -8,6 +8,8 @@ import ProductosXSuc from "./pages/productos/components/productosXsuc"
 import TipoProductoPage from "./pages/productos/components/tipoProductoRoute"
 import EditarProductoForm from "./pages/productos/components/editarProductoForm"
 import EditarProductoCompuestoForm from "./pages/productos/components/editarProductoEspForm"
+import TransferenciasPage from "./pages/trasferencias/transferenciasPage"
+import NuevaTransferenciaPage from "./pages/trasferencias/components/nuevaTransferenciaPage"
 
 
 
@@ -43,6 +45,14 @@ export const rutas=createHashRouter([
                     {
                         path:"/productos/editProductoEspecial",
                         element:<EditarProductoCompuestoForm/>
+                    },
+                    {
+                        path:"/transferencias",
+                        element:<TransferenciasPage/>
+                    },
+                    {
+                        path:"/transferencias/nueva",
+                        element:<NuevaTransferenciaPage/>
                     }
                 ]
             }
