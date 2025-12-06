@@ -12,8 +12,25 @@ export interface Sucursal {
   productos_sin_stock: number;
 }
 
-export type SucursalResponse={
-    success: boolean;
-    message: string;
-    data: Sucursal[];
+export type SucursalResponse = {
+  success: boolean;
+  message: string;
+  data: Sucursal[];
+}
+
+
+
+export interface SucursalDTO {
+  id_sucursal?: number;
+  nombre: string;
+  direccion: string;
+  telefono: string;
+}
+
+
+export interface SucursalOutput {
+  id_sucursal: number;
+  nombre: string;
+  direccion: string;
+  telefono: string;
 }

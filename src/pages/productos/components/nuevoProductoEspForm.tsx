@@ -1,4 +1,5 @@
 
+import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
 import { getProductos, insertarProductoEspecialApi } from "@/api/productosApi/productosApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { Categoria } from "@/types/Categoria";
 import type { Producto } from "@/types/Producto";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +22,7 @@ import { z } from "zod";
 
 const formSchema = z.object({
   id_sucur: z.number().positive(),
-  isEspecial:z.number().positive(),
+  isEspecial: z.number().positive(),
   sku_pieza: z.string().min(1, 'El código es requerido'),
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
   descripcion: z.string().optional(),
@@ -45,24 +47,30 @@ type FormValues = z.infer<typeof formSchema>;
 
 
 
-export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:number}) {
+export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursal: number }) {
 
-  const navigate=useNavigate();
-  const [productosDisponibles,setProductosDisponibles]=useState<Producto[]>([]);
+  const navigate = useNavigate();
+  const [productosDisponibles, setProductosDisponibles] = useState<Producto[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
-  const [categorias] = useState([
-    { id_categoria: 1, category_name: "Bebidas" },
-    { id_categoria: 2, category_name: "Paquetes" }
-  ]);
+  useEffect(() => {
+    obtenerCategoriasApi().then(res => {
+      if (res.success) {
+        setCategorias(res.data);
+      } else {
+        setCategorias([]);
+      }
+    });
+  }, [])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      id_sucur:id_sucursal,
-      isEspecial:1,
-      sku_pieza:"",
+      id_sucur: id_sucursal,
+      isEspecial: 1,
+      sku_pieza: "",
       nombre_producto: "",
       descripcion: "",
       id_categoria: "",
@@ -118,25 +126,25 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
     }, 0);
   };
 
-  useEffect(()=>{
-    getProductos(id_sucursal).then(res=>{
-      if(res.success){
+  useEffect(() => {
+    getProductos(id_sucursal).then(res => {
+      if (res.success) {
         setProductosDisponibles(res.data);
-      }else{
+      } else {
         setProductosDisponibles([]);
       }
     });
-  },[id_sucursal])
+  }, [id_sucursal])
 
-  const onSubmit = async(values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     console.log("PRODUCTO COMPUESTO:", values);
-   const res=await insertarProductoEspecialApi(values);
-    if(res.success){
+    const res = await insertarProductoEspecialApi(values);
+    if (res.success) {
       toast.success('Producto compuesto creado con éxito');
       form.reset();
       navigate('/productos');
-    }else{
-      toast.error('Error al crear el producto compuesto: '+res.message);
+    } else {
+      toast.error('Error al crear el producto compuesto: ' + res.message);
     }
   };
 
@@ -168,8 +176,8 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
                   <Card>
                     <CardHeader>
                       <div className="flex items-center">
-                      <p className="p-4 mx-4 bg-blue-300 rounded-b-full">1</p>
-                      <CardTitle>Información Básica</CardTitle>
+                        <p className="p-4 mx-4 bg-blue-300 rounded-b-full">1</p>
+                        <CardTitle>Información Básica</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -257,8 +265,8 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
                   <Card>
                     <CardHeader>
                       <div className="flex items-center">
-                      <p className="p-4 mx-4 bg-blue-300 rounded-b-full">3</p>
-                      <CardTitle>Seleccion precios</CardTitle>
+                        <p className="p-4 mx-4 bg-blue-300 rounded-b-full">3</p>
+                        <CardTitle>Seleccion precios</CardTitle>
                       </div>
                     </CardHeader>
 
@@ -384,12 +392,12 @@ export default function NuevoProductoCompuestoForm({id_sucursal}:{id_sucursal:nu
 
 
                 <div className="space-y-6">
-                           
+
                   <Card>
                     <CardHeader>
                       <div className="flex items-center">
-                      <p className="p-4 mx-4 bg-blue-300 rounded-b-full">2</p>
-                      <CardTitle>Seleccione los productos que lo conforman</CardTitle>
+                        <p className="p-4 mx-4 bg-blue-300 rounded-b-full">2</p>
+                        <CardTitle>Seleccione los productos que lo conforman</CardTitle>
                       </div>
                     </CardHeader>
 

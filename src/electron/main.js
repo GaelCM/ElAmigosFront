@@ -24,7 +24,7 @@ function createWindow() {
         // En producción, carga el archivo generado
         mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
     }*/
-   
+
     mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
 }
 

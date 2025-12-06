@@ -3,7 +3,6 @@ import type { TransferenciaDTO } from "./Transferencias";
 export interface TransferenciasPendientesProps {
   transferencias: TransferenciaDTO[];
   onRecibir: (id: number) => void;
-  onCancelar: (id: number) => void;
 }
 
 

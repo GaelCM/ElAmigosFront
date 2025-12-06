@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,8 @@ import { insertarProductoApi } from "@/api/productosApi/productosApi";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import type { ProductoFormFinal } from "@/types/Producto";
+import type { Categoria } from "@/types/Categoria";
+import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
 
 const formSchema = z.object({
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
@@ -53,16 +55,24 @@ type FormValues = z.infer<typeof formSchema>;
 export default function NuevoProductoForm() {
 
   const [currentStep, setCurrentStep] = useState(1);
-  const navigate=useNavigate();
+  const navigate = useNavigate();
   const [sucursales] = useState([
     { id_sucursal: 1, nombre: 'Sucursal Central' },
     { id_sucursal: 2, nombre: 'Sucursal Xoxo' },
     { id_sucursal: 3, nombre: 'Sucursal Test' }
   ]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
 
-  const [categorias] = useState([
-    { id_categoria: 1, category_name: 'Bebidas' }
-  ]);
+  useEffect(() => {
+    obtenerCategoriasApi().then(res => {
+      if (res.success) {
+        setCategorias(res.data);
+      } else {
+        setCategorias([]);
+      }
+    });
+  }, [])
+
 
   const [creating, setCreating] = useState(false);
 
@@ -89,21 +99,21 @@ export default function NuevoProductoForm() {
   const { watch } = form;
 
   const variantes = watch("variantes");
-  const sucursalesInventario = watch("sucursales_inventario")||[];
+  const sucursalesInventario = watch("sucursales_inventario") || [];
   const sucursalesInventarioIds = (sucursalesInventario as any[]).map((s) => s.id_sucursal);
 
   /* ---------------------- ON SUBMIT ----------------------- */
   const onSubmit = async (values: FormValues) => {
     console.log(values);
     setCreating(true);
-    const res=await insertarProductoApi(values as ProductoFormFinal)
-    if(res.success){
+    const res = await insertarProductoApi(values as ProductoFormFinal)
+    if (res.success) {
       toast.success('Producto creado con éxito');
       form.reset();
       setCreating(false);
       navigate('/productos');
-    }else{
-      toast.error('Error al crear el producto: '+res.message);
+    } else {
+      toast.error('Error al crear el producto: ' + res.message);
       setCreating(false);
     }
   };
@@ -552,14 +562,14 @@ export default function NuevoProductoForm() {
       <Card>
         <CardHeader>
           <div className="w-full flex justify-between">
-                    <Link to={"/productos"} className="bg-primary text-white p-2 flex rounded-2xl">
-                        <ArrowLeft></ArrowLeft>
-                        regresar
-                    </Link>
+            <Link to={"/productos"} className="bg-primary text-white p-2 flex rounded-2xl">
+              <ArrowLeft></ArrowLeft>
+              regresar
+            </Link>
           </div>
           <CardTitle>Crear Producto</CardTitle>
           <CardDescription>Formulario paso a paso</CardDescription>
-          
+
         </CardHeader>
 
         <CardContent>
