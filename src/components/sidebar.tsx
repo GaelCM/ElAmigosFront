@@ -140,6 +140,7 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                         <Button variant="ghost" size="sm" onClick={() => {
                             localStorage.removeItem("tkn");
                             localStorage.removeItem("currentUser");
+                            localStorage.removeItem("openCaja");
                             navigate("/login");
                         }}>
                             <LogOut className="w-4 h-4" />

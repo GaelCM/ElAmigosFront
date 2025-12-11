@@ -23,7 +23,7 @@ export const crearCompra = async (data: CompraPayload) => {
 
 export const obtenerCompras = async (data: { id_rol: number, id_sucursal: number, id_turno?: number, fecha_desde?: string, fecha_hasta?: string }) => {
 
-    const res = await fetch(`http://localhost:3000/api/egresos/compras`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/compras`, {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
@@ -43,7 +43,7 @@ export const obtenerCompras = async (data: { id_rol: number, id_sucursal: number
 }
 
 export const actualizarCompra = async (data: CompraUpdateInput) => {
-    const res = await fetch(`http://localhost:3000/api/egresos/actualizarCompra`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/actualizarCompra`, {
         method: "PUT",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,

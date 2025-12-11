@@ -36,7 +36,7 @@ export const nuevoCorteApi = async (corte: nuevoCorte): Promise<{ success: boole
 }
 
 export const cerrarCorteApi = async (corte: CerrarCorteBody): Promise<{ success: boolean, message: string, data: CerrarCorteResponse }> => {
-    const res = await fetch("http://localhost:3000/api/cortes/cerrar", {
+    const res = await fetch("https://elamigos-elamigosapi.xj7zln.easypanel.host/api/cortes/cerrar", {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${localStorage.getItem("tkn")}`,

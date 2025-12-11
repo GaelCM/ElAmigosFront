@@ -10,6 +10,9 @@ import { iniciarSesionApi } from "@/api/authApi/authApi";
 import { useNavigate } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
 
+import logito from "../assets/logo-legit.png";
+import { toast } from "sonner";
+
 const formSchema = z.object({
   usuario: z.string().min(2, {
     message: "El usuario debe tener al menos 2 caracteres.",
@@ -20,8 +23,8 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-    const navigate=useNavigate();
-    const {addUser}=useCurrentUser();
+  const navigate = useNavigate();
+  const { addUser } = useCurrentUser();
 
   const {
     register,
@@ -35,23 +38,26 @@ export default function LoginPage() {
     },
   });
 
-  async function  login(values: z.infer<typeof formSchema>) {
-        const res=await iniciarSesionApi(values.usuario,values.password);
-        if(res.success){
-            localStorage.setItem('tkn',res.token);
-            addUser(res.data)
-            navigate(res.ruta);
-        }else{
-            alert('Error al iniciar sesion: '+res.message);
-            navigate(res.ruta);
-        }
+  async function login(values: z.infer<typeof formSchema>) {
+    const res = await iniciarSesionApi(values.usuario, values.password);
+    if (res.success) {
+      localStorage.setItem('tkn', res.token);
+      addUser(res.data)
+      navigate(res.ruta);
+      toast.success('Sesion iniciada correctamente');
+    } else {
+      toast.error('Error al iniciar sesion: ' + res.message);
+      navigate(res.ruta);
+    }
   }
 
   return (
     <div className="login-bg min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-md p-8 shadow-2xl bg-white/90 backdrop-blur-md border-none">
         <CardHeader className="mb-6 text-center">
-          <img src="/logo.png" alt="Logo" className="mx-auto mb-2 w-16 h-16 rounded-full shadow-lg" />
+
+          <h1 className="text-6xl font-bold text-primary mb-1">EL AMIGO</h1>
+
           <CardTitle className="text-3xl font-bold text-primary mb-1">Bienvenido</CardTitle>
           <CardDescription className="text-base text-muted-foreground">Sistema POS de Abarrotes y Bebidas</CardDescription>
         </CardHeader>

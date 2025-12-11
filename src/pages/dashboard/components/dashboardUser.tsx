@@ -40,7 +40,7 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch(`http://localhost:3000/api/dashboard/${idTurno}`, {
+                const response = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/dashboard/${idTurno}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',

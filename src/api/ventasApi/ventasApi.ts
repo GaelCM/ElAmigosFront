@@ -2,7 +2,7 @@ import type { CarritoPayload } from "@/types/Venta";
 
 
 export const nuevaVentaApi = async (formData: CarritoPayload) => {
-    const res = await fetch(`http://localhost:3000/api/ventas/nuevaVenta`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/ventas/nuevaVenta`, {
         method: "post",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,

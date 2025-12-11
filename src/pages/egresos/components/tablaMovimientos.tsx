@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2, Edit } from "lucide-react";
+import { Plus, Edit } from "lucide-react";
 
 import type { MovimientoEfectivo, MovimientoPayload } from "@/types/Egresos";
 import { toZonedTime } from "date-fns-tz";
@@ -63,10 +63,7 @@ export default function TablaMovimientos({ turnoId }: { turnoId: number | null }
         setFormData({});
     };
 
-    const handleDelete = (id: number) => {
-        console.log(`Eliminar Movimiento con ID: ${id}`);
-        setMovimientos(movimientos.filter(m => m.id_movimiento !== id));
-    };
+
 
     const handleSave = async () => {
         const payload: MovimientoPayload = {

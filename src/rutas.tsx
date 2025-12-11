@@ -19,6 +19,7 @@ import EditarCategoriaForm from "./pages/categorias/components/EditarCategoriaFo
 import EgresosPage from "./pages/egresos/egresos"
 import CerrarCajaPage from "./pages/caja/CerrarCajaPage"
 import DashboardPage from "./pages/dashboard/dashboard"
+import MisVentasReport from "./pages/reportes/ventas/misVentas"
 
 
 
@@ -98,6 +99,10 @@ export const rutas = createHashRouter([
                     {
                         path: "/dashboard",
                         element: <DashboardPage />
+                    },
+                    {
+                        path: "/reportes/misVentas",
+                        element: <MisVentasReport />
                     }
                 ]
             }

@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2, Edit } from "lucide-react";
+import { Plus, Edit } from "lucide-react";
 
 import type { Compra, CompraPayload } from "@/types/Egresos";
 import { toZonedTime } from "date-fns-tz";
@@ -66,10 +66,6 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
         setFormData({});
     };
 
-    const handleDelete = (id: number) => {
-        console.log(`Eliminar Compra con ID: ${id}`);
-        setCompras(compras.filter(c => c.id_compra !== id));
-    };
 
     const handleSave = async () => {
         const payload: CompraPayload = {
