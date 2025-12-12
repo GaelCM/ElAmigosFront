@@ -26,7 +26,6 @@ export default function CategoriasPage() {
             const response = await obtenerCategoriasApi();
             if (response.success) {
                 setCategorias(response.data);
-                console.log(response.data);
                 setLoading(false);
             } else {
                 setError(response.message);
@@ -70,7 +69,7 @@ export default function CategoriasPage() {
     }
 
     return (
-        <div className="container mx-auto p-6 space-y-8">
+        <div className="p-10 space-y-8">
             <DialogEliminarCategoria id_categoria={id_categoria} isOpen={open} setIsOpen={setOpen} obtenerCategorias={obtenerCategorias} />
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>

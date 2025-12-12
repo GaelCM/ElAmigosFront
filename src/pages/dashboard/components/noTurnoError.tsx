@@ -12,7 +12,7 @@ export default function NoTurnoError() {
     };
 
     return (
-        <div className="h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-gray-900 dark:via-purple-900 dark:to-gray-900">
+        <div className="h-[80dvh] flex items-center justify-center ">
             <Card className="max-w-xl  shadow-2xl">
                 <CardHeader className="text-center space-y-4">
                     <div className="flex justify-center">
@@ -37,12 +37,12 @@ export default function NoTurnoError() {
                         </AlertDescription>
                     </Alert>
 
-                    <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-                        <Info className="text-blue-600 dark:text-blue-400" />
-                        <AlertTitle className="text-blue-900 dark:text-blue-100">
+                    <Alert className="bg-primary text-white">
+                        <Info className="text-white dark:text-blue-400" />
+                        <AlertTitle className="text-white dark:text-blue-100">
                             Sugerencia
                         </AlertTitle>
-                        <AlertDescription className="text-blue-800 dark:text-blue-200">
+                        <AlertDescription className="text-white dark:text-blue-200">
                             Dirígete a la página de inicio y abre un nuevo turno para comenzar a trabajar.
                             Esto te permitirá acceder a todas las funcionalidades del sistema.
                         </AlertDescription>

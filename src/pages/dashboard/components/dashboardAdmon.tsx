@@ -134,19 +134,19 @@ export default function DashboardAdmon() {
                                 <p className="turno-id">Turno #{turno.id_turno}</p>
                             </div>
                             <div className="turno-status">
-                                🟢 Activo
+                                Activo
                             </div>
                         </div>
 
                         {/* Información del usuario */}
                         <div className="turno-usuario">
-                            <span className="usuario-icon">👤</span>
+                            <span className="usuario-icon"></span>
                             <span className="usuario-nombre">{turno.usuario.nombre}</span>
                         </div>
 
                         {/* Fecha de apertura */}
                         <div className="turno-fecha">
-                            <span className="fecha-icon">📅</span>
+                            <span className="fecha-icon"></span>
                             <span className="fecha-text">{formatDate(turno.fecha_apertura)}</span>
                         </div>
 

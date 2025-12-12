@@ -41,7 +41,6 @@
 .admin-title {
     font-size: 2rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -56,7 +55,6 @@
 
 .refresh-button {
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-radius: 50px;
     font-weight: 600;
@@ -342,7 +340,6 @@
     padding: 1rem;
     background: #f1f5f9;
     border-radius: 8px;
-    color: #667eea;
     font-weight: 600;
     font-size: 0.95rem;
     transition: all 0.3s ease;

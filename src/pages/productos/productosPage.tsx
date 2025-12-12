@@ -12,7 +12,7 @@ export default function ProductosPage() {
   const { user } = useCurrentUser();
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string|null>();
+  const [error, setError] = useState<string | null>();
 
   useEffect(() => {
     if (user.id_rol === 2) {
@@ -20,7 +20,7 @@ export default function ProductosPage() {
       return;
     }
     setLoading(true);
-    obtenerSucursalesApi().then(data => setSucursales(data.data)).catch(err=>{setError(err.message)}).finally(() => setLoading(false));
+    obtenerSucursalesApi().then(data => setSucursales(data.data)).catch(err => { setError(err.message) }).finally(() => setLoading(false));
   }, [user.id_rol, navigate]);
 
   if (loading) {
@@ -46,8 +46,8 @@ export default function ProductosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="h-screen bg-linear-to-br from-slate-50 to-slate-100 p-6">
+      <div className="p-6 mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -67,10 +67,10 @@ export default function ProductosPage() {
         {/* Cards responsive en grid */}
         <div className="flex flex-col gap-6 md:gap-8">
           {sucursales.map((sucursal) => (
-            <Card 
+            <Card
               key={sucursal.id_sucursal}
               className="hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-blue-500 group w-full"
-              onClick={()=>{navigate(`/productos/sucursal?id=${sucursal.id_sucursal}&sucursal=${sucursal.nombre}`)}}
+              onClick={() => { navigate(`/productos/sucursal?id=${sucursal.id_sucursal}&sucursal=${sucursal.nombre}`) }}
             >
               <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:gap-8 h-full justify-between">
                 {/* Info Principal */}
@@ -127,7 +127,7 @@ export default function ProductosPage() {
                 </div>
 
                 {/* Botón de acción */}
-                <Button 
+                <Button
                   className="group-hover:bg-blue-600 transition-colors w-full md:w-auto mt-auto md:mt-0"
                   size="lg"
                 >
@@ -139,12 +139,7 @@ export default function ProductosPage() {
           ))}
         </div>
 
-        {/* Footer con información */}
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>Tip:</strong> Al seleccionar una sucursal, podrás gestionar productos, precios y stock específicos de esa ubicación.
-          </p>
-        </div>
+
       </div>
     </div>
   );

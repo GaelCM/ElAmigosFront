@@ -49,7 +49,6 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
         };
     });
 
-    console.log(sidebarItemsFiltrados)
 
     return (
         <>

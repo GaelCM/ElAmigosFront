@@ -70,7 +70,7 @@ export default function SucursalesPage() {
     }
 
     return (
-        <div className="container mx-auto p-6 space-y-8">
+        <div className="p-10 space-y-8">
             <DialogEliminarSucursal id_sucursal={id_sucursal} isOpen={open} setIsOpen={setOpen} obtenerSucursales={obtenerSucursales} />
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>

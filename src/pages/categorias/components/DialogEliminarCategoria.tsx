@@ -40,7 +40,7 @@ export default function DialogEliminarCategoria({ id_categoria, isOpen, setIsOpe
                     <DialogClose asChild>
                         <Button variant="outline">Cancelar</Button>
                     </DialogClose>
-                    <Button variant="destructive" onClick={eliminarCategoria}>Eliminar</Button>
+                    <Button variant="default" onClick={eliminarCategoria}>Eliminar</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
