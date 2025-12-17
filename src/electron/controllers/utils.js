@@ -32,6 +32,67 @@ function utilsController() {
         }
     });
 
+    ipcMain.handle('print-and-open', async (event, { content, printerName }) => {
+        console.log("Solicitud de impresión y apertura para:", printerName);
+
+        // 1. Abrir Cajón
+        if (printerName) {
+            const openCommand = `powershell -Command "[char]27 + [char]112 + [char]0 + [char]25 + [char]250 | Out-Printer -Name '${printerName}'"`;
+            exec(openCommand, (error) => {
+                if (error) console.error("Error al abrir cajón en print-and-open:", error);
+            });
+        }
+
+        // 2. Imprimir (Reutilizando lógica)
+        try {
+            let printWindow = new BrowserWindow({
+                show: false,
+                width: 300,
+                height: 600,
+                webPreferences: {
+                    nodeIntegration: true,
+                    contextIsolation: false
+                }
+            });
+
+            await printWindow.loadURL('about:blank');
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { margin: 0; padding: 0; background-color: white; font-family: monospace; }
+                    </style>
+                </head>
+                <body>
+                    ${content}
+                </body>
+                </html>
+            `;
+
+            await printWindow.webContents.executeJavaScript(`document.write(\`${htmlContent}\`); document.close();`);
+
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    printWindow.webContents.print({
+                        silent: true,
+                        deviceName: printerName,
+                        printBackground: true,
+                        margins: { marginType: 'none' }
+                    }, (success, errorType) => {
+                        if (!success) reject(errorType);
+                        else resolve(true);
+                        printWindow.close();
+                    });
+                }, 1000);
+            });
+        } catch (e) {
+            console.error("ERROR EN PRINT-AND-OPEN:", e);
+            throw e;
+        }
+    });
+
     ipcMain.handle('print-ticket', async (event, { content, printerName }) => {
         console.log("1. Recibida solicitud de impresión para:", printerName);
 

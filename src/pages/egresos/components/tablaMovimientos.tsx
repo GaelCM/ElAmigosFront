@@ -91,12 +91,39 @@ export default function TablaMovimientos({ turnoId }: { turnoId: number | null }
                 const res = await crearMovimiento(payload);
                 if (res.success) {
                     toast.success("Movimiento creado exitosamente");
+
+                    // --- INICIO LÓGICA DE IMPRESIÓN Y APERTURA ---
+                    try {
+                        const printerName = localStorage.getItem("printer_device");
+                        if (printerName) {
+                            const { generateMovementTicketHTML } = await import("@/utils/ticketGenerator");
+
+                            const ticketHtml = generateMovementTicketHTML({
+                                sucursal: "Sucursal " + user.id_sucursal,
+                                usuario: user.usuario,
+                                fecha: new Date(),
+                                monto: payload.monto,
+                                concepto: payload.concepto,
+                                tipo: payload.tipo_movimiento === 1 ? "DEPÓSITO" : "RETIRO"
+                            });
+
+                            // @ts-ignore
+                            window["electron-api"]?.printAndOpen({
+                                content: ticketHtml,
+                                printerName
+                            });
+                        }
+                    } catch (printError) {
+                        console.error("Error al imprimir comprobante de movimiento:", printError);
+                        toast.error("Error al imprimir comprobante de movimiento");
+                    }
+                    // --- FIN LÓGICA DE IMPRESIÓN ---
+
                     fetchMovimientos();
                     handleCloseModal();
                 } else {
                     toast.error("Error al crear movimiento");
                 }
-
             }
         } catch (error) {
             console.error("Error saving movimiento", error);

@@ -19,11 +19,11 @@ import DialiogErrorProducto from "./Dialogs/noEncontrado";
 import { useOutletContext } from "react-router";
 import CarritoTabs from "@/components/carritoTabs";
 import { Switch } from "@/components/ui/switch";
+import { useCurrentUser } from "@/contexts/currentUser";
 
 export default function Home() {
-
+    const { user } = useCurrentUser();
     const [idProducto, setidProducto] = useState<string>();
-    const idSucursal = 1;
     const [metodoPago, setMetodoPago] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const [isOpen, setIsOpen] = useState(false);
@@ -139,7 +139,7 @@ export default function Home() {
     const buscarProducto = async (e: { preventDefault: () => void; }) => {
         e.preventDefault()
         if (idProducto) {
-            const res = await getProductoVenta(idProducto, idSucursal)
+            const res = await getProductoVenta(idProducto, user.id_sucursal)
             if (res.success) {
                 console.log(res.data);
                 addProduct(res.data[0]);
