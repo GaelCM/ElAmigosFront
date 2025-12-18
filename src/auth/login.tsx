@@ -10,7 +10,6 @@ import { iniciarSesionApi } from "@/api/authApi/authApi";
 import { useNavigate } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
 
-import logito from "../assets/logo-legit.png";
 import { toast } from "sonner";
 
 const formSchema = z.object({

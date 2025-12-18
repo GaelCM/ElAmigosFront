@@ -22,7 +22,6 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
   //const [turnoData, setTurnoData] = useState(JSON.parse(localStorage.getItem("openCaja") || "{}"));
 
   useHotkeys('alt+F11', () => {
-    console.log("Atajo Alt+F11 presionado desde react-hotkeys-hook");
     setOpenP(true)
   }, {
     enableOnFormTags: true
@@ -46,7 +45,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
               </Button>
               <div className="min-w-0 flex">
                 <h1 className="text-primary font-bold">
-                  {user.sucursal}
+                  Sucursal : {user.sucursal}
                 </h1>
                 <h1 className="font-bold text-primary">
                   {/* {turnoData.id_turno ? "Turno Actual : " + turnoData.id_turno : "Turno Actual : " + "No hay turno abierto"} */}

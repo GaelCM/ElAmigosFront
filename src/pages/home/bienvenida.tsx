@@ -47,7 +47,7 @@ export default function Bienvenida({ onCajaOpened }: BienvenidaProps) {
                             <span>Hola</span>
                         </div>
                         <h2 className="text-4xl font-extrabold leading-tight mb-4 tracking-tight">
-                            ¡Deposito <br /><span className="text-yellow-300">El Amigo!</span>
+                            ¡Sistema <br /><span className="text-yellow-300">{user.sucursal}!</span>
                         </h2>
                         <p className="text-blue-100 text-lg font-medium leading-relaxed opacity-90">
                             Bienvenido, <span className="text-slate-900 font-bold">{user?.usuario}</span>

@@ -5,8 +5,8 @@
 
 import type { ProductoItem, ProductoVenta } from "@/types/Producto";
 import type { Cliente } from "@/types/Cliente";
-import {create} from "zustand"
-import {createJSONStorage, persist} from "zustand/middleware"
+import { create } from "zustand"
+import { createJSONStorage, persist } from "zustand/middleware"
 
 export type Carrito = {
     id: string;
@@ -20,14 +20,14 @@ type ListaProductosModel = {
     // CARRITOS
     carritos: Carrito[];
     carritoActivo: string | null;
-    
+
     // ACCIONES DE CARRITOS
     crearCarrito: (nombre?: string) => string; // Retorna el ID del nuevo carrito
     cambiarCarritoActivo: (id: string) => void;
     eliminarCarrito: (id: string) => void;
     renombrarCarrito: (id: string, nuevoNombre: string) => void;
     asignarClienteCarrito: (id: string, cliente: Cliente) => void;
-    
+
     // ACCIONES DEL CARRITO ACTIVO
     addProduct: (product: ProductoVenta) => void;
     removeProduct: (id_producto: number) => void;
@@ -36,7 +36,7 @@ type ListaProductosModel = {
     incrementQuantity: (id_producto: number) => void;
     clearCart: () => void;
     togglePrecioMayoreo: (id_producto: number) => void;
-    
+
     // SELECTORES
     getTotalItems: () => number;
     getTotalPrice: () => number;
@@ -52,7 +52,7 @@ export const useListaProductos = create(
             carritoActivo: null,
 
             // --- ACCIONES DE CARRITOS ---
-            
+
             /**
              * Crea un nuevo carrito y lo asigna como activo
              */
@@ -64,13 +64,13 @@ export const useListaProductos = create(
                     productos: [],
                     fechaCreacion: new Date(),
                 };
-                
+
                 const currentCarritos = get().carritos;
                 set({
                     carritos: [...currentCarritos, nuevoCarrito],
                     carritoActivo: id,
                 });
-                
+
                 console.log("Nuevo carrito creado:", id);
                 return id;
             },
@@ -94,20 +94,20 @@ export const useListaProductos = create(
             eliminarCarrito: (id: string) => {
                 const currentCarritos = get().carritos;
                 const carritoActual = get().carritoActivo;
-                
+
                 const updatedCarritos = currentCarritos.filter(c => c.id !== id);
                 let nuevoCarritoActivo = carritoActual;
-                
+
                 // Si eliminamos el carrito activo, cambiar a otro
                 if (carritoActual === id) {
                     nuevoCarritoActivo = updatedCarritos.length > 0 ? updatedCarritos[0].id : null;
                 }
-                
+
                 set({
                     carritos: updatedCarritos,
                     carritoActivo: nuevoCarritoActivo,
                 });
-                
+
                 console.log("Carrito eliminado:", id);
             },
 
@@ -150,33 +150,33 @@ export const useListaProductos = create(
                 const currentCarritos = get().carritos;
                 const updated = currentCarritos.map(carrito => {
                     if (carrito.id === carritoActivo) {
-                    const existingItemIndex = carrito.productos.findIndex(
-                        (item) => item.product.id_unidad_venta === product.id_unidad_venta
-                    );
-
-                    if (existingItemIndex > -1) {
-                        // Ya existe → solo incrementar cantidad
-                        const updatedProductos = carrito.productos.map((item, index) =>
-                        index === existingItemIndex
-                            ? { ...item, quantity: item.quantity + 1 }
-                            : item
+                        const existingItemIndex = carrito.productos.findIndex(
+                            (item) => item.product.id_unidad_venta === product.id_unidad_venta
                         );
-                        return { ...carrito, productos: updatedProductos };
-                    } else {
-                        // NUEVO PRODUCTO → añadir con usarPrecioMayoreo por defecto
-                        return {
-                        ...carrito,
-                        productos: [
-                            ...carrito.productos,
-                            { product, quantity: 1, usarPrecioMayoreo: false }
-                        ],
-                        };
-                    }
+
+                        if (existingItemIndex > -1) {
+                            // Ya existe → solo incrementar cantidad
+                            const updatedProductos = carrito.productos.map((item, index) =>
+                                index === existingItemIndex
+                                    ? { ...item, quantity: item.quantity + 1 }
+                                    : item
+                            );
+                            return { ...carrito, productos: updatedProductos };
+                        } else {
+                            // NUEVO PRODUCTO → añadir con usarPrecioMayoreo por defecto
+                            return {
+                                ...carrito,
+                                productos: [
+                                    ...carrito.productos,
+                                    { product, quantity: 1, usarPrecioMayoreo: false }
+                                ],
+                            };
+                        }
                     }
                     return carrito;
                 });
                 set({ carritos: updated });
-                console.log("Producto agregado:", product.nombre_producto);
+                //console.log("Producto agregado:", product.nombre_producto);
             },
 
             /**
@@ -200,7 +200,7 @@ export const useListaProductos = create(
                 });
 
                 set({ carritos: updated });
-                console.log("Producto eliminado del carrito:", id_producto);
+                //console.log("Producto eliminado del carrito:", id_producto);
             },
 
             /**
@@ -360,16 +360,16 @@ export const useListaProductos = create(
 
                 const updated = currentCarritos.map(carrito => {
                     if (carrito.id === carritoActivo) {
-                    const nuevosProductos = carrito.productos.map(item =>
-                        item.product.id_unidad_venta === id_producto
-                        ? { 
-                            ...item, 
-                            usarPrecioMayoreo: !item.usarPrecioMayoreo 
-                            }
-                        : item
-                    );
+                        const nuevosProductos = carrito.productos.map(item =>
+                            item.product.id_unidad_venta === id_producto
+                                ? {
+                                    ...item,
+                                    usarPrecioMayoreo: !item.usarPrecioMayoreo
+                                }
+                                : item
+                        );
 
-                    return { ...carrito, productos: nuevosProductos };
+                        return { ...carrito, productos: nuevosProductos };
                     }
                     return carrito;
                 });

@@ -20,6 +20,9 @@ import { useOutletContext } from "react-router";
 import CarritoTabs from "@/components/carritoTabs";
 import { Switch } from "@/components/ui/switch";
 import { useCurrentUser } from "@/contexts/currentUser";
+import { useOnlineStatus } from "@/hooks/isOnline";
+import { getProductos } from "@/api/productosApi/productosApi";
+import { toast } from "sonner";
 
 export default function Home() {
     const { user } = useCurrentUser();
@@ -29,6 +32,7 @@ export default function Home() {
     const [isOpen, setIsOpen] = useState(false);
     const [openCliente, setOpenCliente] = useState(false);
     const [error, setError] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0);
 
     const { clearCart, removeProduct, decrementQuantity, incrementQuantity, getTotalPrice, addProduct, getCarritoActivo, crearCarrito, carritoActivo, togglePrecioMayoreo } = useListaProductos();
     const { cliente } = useCliente();
@@ -45,28 +49,27 @@ export default function Home() {
 
 
     useHotkeys('alt+m', () => {
-        console.log("Atajo Alt+B presionado desde react-hotkeys-hook");
         setOpenCliente(true);
     }, {
         enableOnFormTags: true
     }, [setOpenCliente]); // El array de dependencias es opcional pero recomendado
 
     useHotkeys('alt+0', () => {
-        console.log("Atajo Alt+B presionado desde react-hotkeys-hook");
+
         setMetodoPago(0);
     }, {
         enableOnFormTags: true
     }, [setMetodoPago]); // El array de dependencias es opcional pero recomendado
 
     useHotkeys('alt+1', () => {
-        console.log("Atajo Alt+B presionado desde react-hotkeys-hook");
+
         setMetodoPago(1);
     }, {
         enableOnFormTags: true
     }, [setMetodoPago]); // El array de dependencias es opcional pero recomendado
 
     useHotkeys('alt+p', () => {
-        console.log("Atajo Alt+B presionado desde react-hotkeys-hook");
+
         setIsOpen(true);
     }, {
         enableOnFormTags: true
@@ -136,23 +139,105 @@ export default function Home() {
         }, 100);
     };
 
+    const isOnline = useOnlineStatus();
+
     const buscarProducto = async (e: { preventDefault: () => void; }) => {
         e.preventDefault()
-        if (idProducto) {
-            const res = await getProductoVenta(idProducto, user.id_sucursal)
-            if (res.success) {
-                console.log(res.data);
-                addProduct(res.data[0]);
+        if (!idProducto) return;
+
+        try {
+            // Intentar búsqueda local PRIMERO (es más rápido y funciona offline)
+            // @ts-ignore
+            const localRes = await window["electron-api"]?.buscarProductoLocal(idProducto);
+
+            if (localRes?.success && localRes.data.length > 0) {
+                console.log("Producto encontrado localmente:", localRes.data[0]);
+                addProduct(localRes.data[0]);
                 setidProducto('');
                 inputRef.current?.focus();
+                return;
+            }
+
+            // Si no está local y hay internet, buscar en API
+            if (isOnline) {
+                const res = await getProductoVenta(idProducto, user.id_sucursal)
+                if (res.success) {
+                    addProduct(res.data[0]);
+                    setidProducto('');
+                    inputRef.current?.focus();
+                } else {
+                    setError(true);
+                    setidProducto('');
+                    inputRef.current?.focus();
+                }
             } else {
+                // Si no hay internet and no se encontró localmente
                 setError(true);
                 setidProducto('');
                 inputRef.current?.focus();
             }
+        } catch (err) {
+            console.error("Error en búsqueda de producto:", err);
+            setError(true);
         }
-
     }
+
+    // Sincronizar catálogo al entrar si hay internet
+    useEffect(() => {
+        const syncProducts = async () => {
+            if (isOnline && user.id_sucursal) {
+                try {
+                    const res = await getProductos(user.id_sucursal);
+                    if (res.success) {
+                        // @ts-ignore
+                        const syncRes = await window["electron-api"]?.sincronizarProductos(res.data);
+                        if (syncRes?.success) {
+                            console.log(`Catálogo sincronizado: ${syncRes.count} productos.`);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error sincronizando catálogo:", err);
+                }
+            }
+        };
+        syncProducts();
+    }, [isOnline, user.id_sucursal]);
+
+    // Motor de sincronización de ventas automáticas
+    useEffect(() => {
+        const updatePendingCount = async () => {
+            // @ts-ignore
+            const pending = await window["electron-api"]?.obtenerVentasPendientes();
+            setPendingCount(pending?.length || 0);
+        };
+
+        if (isOnline) {
+            const syncPendingSales = async () => {
+                // @ts-ignore
+                const pendingSales = await window["electron-api"]?.obtenerVentasPendientes();
+                if (pendingSales && pendingSales.length > 0) {
+                    toast.info(`Sincronizando ${pendingSales.length} ventas pendientes...`);
+                    const { nuevaVentaApi } = await import("@/api/ventasApi/ventasApi");
+
+                    for (const s of pendingSales) {
+                        try {
+                            const res = await nuevaVentaApi(s.venta);
+                            if (res?.success) {
+                                // @ts-ignore
+                                await window["electron-api"]?.eliminarVentaSincronizada(s.id);
+                            }
+                        } catch (err) {
+                            console.error("Error sincronizando venta individual:", err);
+                        }
+                    }
+                    updatePendingCount();
+                }
+            };
+            syncPendingSales();
+        } else {
+            updatePendingCount();
+        }
+    }, [isOnline]);
 
     // LE PASAS EL CALLBACK AL LAYOUT
     useEffect(() => {
@@ -174,9 +259,29 @@ export default function Home() {
                 {/* Scanner de Código de Barras */}
                 <Card className="shrink-0">
                     <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Scan className="w-5 h-5 text-primary" />
-                            Scanner de Productos
+                        <CardTitle className="flex items-center justify-between text-lg">
+                            <div className="flex items-center gap-2">
+                                <Scan className="w-5 h-5 text-primary" />
+                                Scanner de Productos
+                            </div>
+                            <div className="flex items-center gap-4">
+                                {pendingCount > 0 && (
+                                    <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full animate-pulse font-bold">
+                                        {pendingCount} Ventas pendientes
+                                    </span>
+                                )}
+                                {!isOnline ? (
+                                    <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                        <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                        OFFLINE
+                                    </span>
+                                ) : (
+                                    <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                        <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></div>
+                                        ONLINE
+                                    </span>
+                                )}
+                            </div>
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from 'path';
 import { utilsController } from './controllers/utils.js';
+import { offlineController } from "./controllers/offline.js";
 
 
 function createWindow() {
@@ -18,20 +19,21 @@ function createWindow() {
 
     const isDev = process.env.NODE_ENV !== 'production';
 
-    if (isDev) {
+    /*if (isDev) {
         // En desarrollo, carga desde el servidor local de Vite/React
         mainWindow.loadURL('http://localhost:5173'); // Cambia el puerto si usas otro
     } else {
         // En producción, carga el archivo generado
         mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
-    }
+    }*/
 
-    //mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
+    mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
 }
 
 app.whenReady().then(() => {
     // Inicializamos el controlador de utilidades
     utilsController();
+    offlineController();
 
     createWindow();
 

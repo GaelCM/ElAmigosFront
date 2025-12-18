@@ -1,11 +1,11 @@
 
-import { Activity, BarChart3, Box, Home, Lock, LogOut, Package, Pill, Plus, ShoppingCart, UserPlus, Users, X } from "lucide-react";
+import { BarChart3, Box, Home, Lock, LogOut, Package, Pill, Plus, ShoppingCart, UserPlus, Users, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router"
 import { Button } from "./ui/button";
 import AddCliente from "./dialogAddCliente";
 import { useCurrentUser } from "@/contexts/currentUser";
-
+import logo from "../assets/logo.jpg";
 
 type sideBarProps = {
     sidebarOpen: boolean,
@@ -67,10 +67,7 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                 <div className="p-4 lg:p-6">
                     <div className="flex items-center justify-between mb-6 lg:mb-8">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                                <Activity className="w-5 h-5 text-primary-foreground" />
-                            </div>
-                            <h1 className="text-lg lg:text-xl font-bold text-sidebar-foreground">Depósito EL AMIGO</h1>
+                            <img src={logo} alt="" className="w-52 h-42" />
                         </div>
                         <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
                             <X className="w-4 h-4" />

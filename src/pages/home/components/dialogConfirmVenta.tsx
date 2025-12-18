@@ -10,6 +10,8 @@ import { Check, Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { useOnlineStatus } from "@/hooks/isOnline";
+
 
 type dialogProps = {
     isOpen: boolean,
@@ -29,6 +31,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
     const turnoDataString = localStorage.getItem("openCaja") || "{}";
     const turnoData = JSON.parse(turnoDataString);
+    const isOnline = useOnlineStatus();
 
     const reloadVenta = async () => {
         setCambioEfectivo(0);
@@ -72,6 +75,52 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 id_turno: turnoData.id_turno
             };
             console.log("Venta final a enviar:", ventaFinal);
+
+            if (!isOnline) {
+                // LÓGICA OFFLINE
+                // @ts-ignore
+                const offlineRes = await window["electron-api"]?.guardarVentaOffline(ventaFinal);
+                if (offlineRes?.success) {
+                    toast.success('Venta guardada localmente (Modo Offline)', {
+                        description: `La venta se sincronizará automáticamente al detectar internet.`,
+                    });
+
+                    // Lógica de impresión (también funciona offline si la impresora es física)
+                    try {
+                        const printerName = localStorage.getItem("printer_device");
+                        if (printerName) {
+                            const { generateTicketHTML } = await import("@/utils/ticketGenerator");
+                            const ticketHtml = generateTicketHTML({
+                                sucursal: "Sucursal " + user.id_sucursal,
+                                usuario: user.usuario,
+                                cliente: cliente.nombreCliente || "Público General",
+                                folio: "OFL-" + offlineRes.id,
+                                fecha: new Date(),
+                                productos: carritoActual?.productos?.map(p => ({
+                                    cantidad: p.quantity,
+                                    nombre: p.product.nombre_producto,
+                                    precio_unitario: p.product.precio_venta,
+                                    importe: p.product.precio_venta * p.quantity
+                                })) || [],
+                                total: getTotalPrice(),
+                                pago_con: cambioEfectivo,
+                                cambio: Math.max(0, cambioEfectivo - getTotalPrice())
+                            });
+                            // @ts-ignore
+                            window["electron-api"]?.printTicket({ content: ticketHtml, printerName });
+                        }
+                    } catch (e) {
+                        console.error("Error al imprimir ticket offline:", e);
+                    }
+
+                    setEstado("Listo");
+                    return;
+                } else {
+                    throw new Error("No se pudo guardar la venta localmente");
+                }
+            }
+
+            // LÓGICA ONLINE (Normal)
             const res = await nuevaVentaApi(ventaFinal);
             if (res?.success) {
                 toast.success('Venta generada correctamente', {
@@ -101,9 +150,6 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                             pago_con: cambioEfectivo,
                             cambio: Math.max(0, cambioEfectivo - getTotalPrice())
                         });
-
-                        // @ts-ignore
-                        //window["electron-api"]?.openCashDrawer(printerName);
 
                         // @ts-ignore
                         window["electron-api"]?.printTicket({
