@@ -148,7 +148,7 @@ export default function EditarProductoCompuestoForm() {
             isEspecial: 1,
             sku_pieza: data.sku_pieza,
             nombre_producto: data.nombre_producto,
-            descripcion: data.descripcion,
+            descripcion: data.descripcion ?? "",
             id_categoria: String(data.id_categoria),
             precio_venta: data.precio_venta,
             precio_mayoreo: data.precio_mayoreo,

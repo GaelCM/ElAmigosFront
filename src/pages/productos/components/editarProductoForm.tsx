@@ -111,7 +111,8 @@ export default function EditarProductoForm() {
         if (payload.sucursales_inventario && payload.sucursales_inventario.length > 0 && typeof payload.sucursales_inventario[0] === 'number') {
           payload.sucursales_inventario = payload.sucursales_inventario.map((id: number) => ({ id_sucursal: id, cantidad_actual: 0, cantidad_minima: 0 }));
         }
-
+        payload.descripcion = payload.descripcion ?? '';
+        payload.sku_pieza = payload.sku_pieza ?? '';
         form.reset(payload);
         setLoading(false);
       } catch (error) {
@@ -151,7 +152,6 @@ export default function EditarProductoForm() {
     if (currentStep === 1) {
       valid = await form.trigger([
         "nombre_producto",
-        "descripcion",
         "id_categoria",
         "precio_costo",
       ]);
@@ -255,7 +255,7 @@ export default function EditarProductoForm() {
           <FormItem>
             <FormLabel>Descripción</FormLabel>
             <FormControl>
-              <Textarea {...field} rows={3} />
+              <Textarea {...field} rows={3} value={field.value || ''} />
             </FormControl>
             <FormMessage />
           </FormItem>

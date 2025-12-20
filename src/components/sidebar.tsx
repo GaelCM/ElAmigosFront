@@ -1,5 +1,6 @@
 
-import { BarChart3, Box, Home, Lock, LogOut, Package, Pill, Plus, ShoppingCart, UserPlus, Users, X } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+import { Plus, UserPlus, X, Lock, LogOut } from "lucide-react"; // Import some specific ones needed locally in JSX
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router"
 import { Button } from "./ui/button";
@@ -25,22 +26,51 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
 
 
 
-    // Mapear iconos string a componentes
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const iconMap: Record<string, any> = {
-        Home,
-        Pill,
-        Box,
-        ShoppingCart,
-        Package,
-        Users,
-        BarChart3,
+    // Mapa de respaldo por si el backend no envía el icono o la DB tiene datos genéricos
+    const fallbackIconMap: Record<string, string> = {
+        "Dashboard": "Home",
+        "Transferencias": "ArrowRightLeft",
+        "Sucursales": "Store",
+        "Categorias": "Layers",
+        "Egresos": "DollarSign",
+        "Mis Ventas": "FileText",
+        "Proveedores": "Truck",
+        "Productos": "Package",
+        "Usuarios": "Users",
+        "Configuracion": "Settings"
     };
 
     // Los permisos ahora son objetos menuItem
     const sidebarItemsFiltrados = (user?.permisos || []).map((permiso) => {
-        // Buscar el icono por nombre, si no existe, usar Home por defecto
-        const Icon = iconMap[permiso.icono] || Home;
+        // 1. Intentar obtener el nombre del icono desde el permiso (Backend)
+        let iconName = (permiso.icon || "").trim();
+
+        // 2. Si no viene del backend o está vacío, usar el mapa de respaldo basado en el nombre del menú
+        if (!iconName) {
+            iconName = fallbackIconMap[permiso.nombre_menu] || "Home";
+        }
+
+        // Dynamic lookup from all Lucide icons
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const allIcons = LucideIcons as any;
+
+
+        // Try exact match or case-insensitive match
+        let Icon = allIcons[iconName];
+
+        if (!Icon) {
+            // Case-insensitive fallback
+            const lowerName = iconName.toLowerCase();
+            const matchingKey = Object.keys(allIcons).find(key => key.toLowerCase() === lowerName);
+            if (matchingKey) {
+                Icon = allIcons[matchingKey];
+            }
+        }
+
+        if (!Icon) {
+            Icon = LucideIcons.Home;
+        }
+
         return {
             id: permiso.id_menu,
             label: permiso.nombre_menu,

@@ -3,7 +3,7 @@ import type { ReporteVentaDetallado, ReporteVentasMensualesResponse } from "@/ty
 
 
 export const obtenerReporteMisVentas = async (fechaDesde: string, fechaHasta: string, idUsuario?: number, idTurno?: number, idSucursal?: number) => {
-    const res = await fetch(`http://localhost:3000/api/reportes/mis-ventas`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/mis-ventas`, {
         method: "post",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
@@ -40,7 +40,7 @@ export const obtenerReporteVentasPorMes = async (fechaDesde: string, fechaHasta:
 }
 
 export const obtenerReporteBajoStockApi = async (idSucursal?: number) => {
-    const res = await fetch(`http://localhost:3000/api/reportes/bajo-stock`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/bajo-stock`, {
         method: "post",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,

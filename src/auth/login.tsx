@@ -9,9 +9,12 @@ import "../App.css";
 import { iniciarSesionApi } from "@/api/authApi/authApi";
 import { useNavigate } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
+import logo from "../assets/logo.jpg"
+
 
 import { toast } from "sonner";
 
+const appVersion = import.meta.env.VITE_APP_VERSION;
 const formSchema = z.object({
   usuario: z.string().min(2, {
     message: "El usuario debe tener al menos 2 caracteres.",
@@ -54,9 +57,9 @@ export default function LoginPage() {
     <div className="login-bg min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-md p-8 shadow-2xl bg-white/90 backdrop-blur-md border-none">
         <CardHeader className="mb-6 text-center">
-
-          <h1 className="text-6xl font-bold text-primary mb-1">EL AMIGO</h1>
-
+          <div className="flex justify-center">
+            <img src={logo} className="w-54 h-44 mb-2"></img>
+          </div>
           <CardTitle className="text-3xl font-bold text-primary mb-1">Bienvenido</CardTitle>
           <CardDescription className="text-base text-muted-foreground">Sistema POS de Abarrotes y Bebidas</CardDescription>
         </CardHeader>
@@ -89,6 +92,8 @@ export default function LoginPage() {
             {isSubmitting ? "Ingresando..." : "Ingresar"}
           </Button>
         </form>
+
+        <p className="text-xs text-center text-muted-foreground">version 0.0.1</p>
       </Card>
     </div>
   );

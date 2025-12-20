@@ -16,6 +16,9 @@ import EditarSucursalForm from "./pages/sucursales/components/editarSucursalForm
 import CategoriasPage from "./pages/categorias/categoriasPage"
 import NuevaCategoriaForm from "./pages/categorias/components/NuevaCategoriaForm"
 import EditarCategoriaForm from "./pages/categorias/components/EditarCategoriaForm"
+import ProveedoresPage from "./pages/proveedores/proveedoresPage"
+import NuevaProveedorForm from "./pages/proveedores/components/NuevaProveedorForm"
+import EditarProveedorForm from "./pages/proveedores/components/EditarProveedorForm"
 import EgresosPage from "./pages/egresos/egresos"
 import CerrarCajaPage from "./pages/caja/CerrarCajaPage"
 import DashboardPage from "./pages/dashboard/dashboard"
@@ -90,6 +93,18 @@ export const rutas = createHashRouter([
                     {
                         path: "/categorias/editar/:id",
                         element: <EditarCategoriaForm />
+                    },
+                    {
+                        path: "/proveedores",
+                        element: <ProveedoresPage />
+                    },
+                    {
+                        path: "/proveedores/nueva",
+                        element: <NuevaProveedorForm />
+                    },
+                    {
+                        path: "/proveedores/editar/:id",
+                        element: <EditarProveedorForm />
                     },
                     {
                         path: "/egresos",

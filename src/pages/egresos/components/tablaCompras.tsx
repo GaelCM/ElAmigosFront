@@ -28,6 +28,8 @@ import { format } from "date-fns";
 import { actualizarCompra, crearCompra, obtenerCompras } from "@/api/egresosApi/compras";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { toast } from "sonner";
+import type { Proveedor } from "@/types/Proveedor";
+import { obtenerProveedoresApi } from "@/api/proveedoresApi/proveedoresApi";
 
 
 
@@ -49,12 +51,20 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Compra | null>(null);
     const [formData, setFormData] = useState<Partial<Compra>>({});
+    const [proveedores, setProveedores] = useState<Proveedor[]>([]);
 
     const handleOpenModal = (item?: Compra) => {
         setEditingItem(item || null);
         if (item) {
             setFormData({ ...item });
         } else {
+            obtenerProveedoresApi().then((res) => {
+                if (res.success) {
+                    setProveedores(res.data);
+                } else {
+                    setProveedores([]);
+                }
+            })
             setFormData({ monto: 0, metodo_pago: 1, id_proveedor: 0, folio: "", descripcion: "" });
         }
         setIsModalOpen(true);
@@ -109,6 +119,8 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
     if (!turnoId) {
         return <div>No se hay un turno abierto</div>;
     }
+
+
     const fetchCompras = async () => {
         setLoading(true);
         try {
@@ -206,7 +218,7 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
                                             <TableCell>{item.id_sucursal}</TableCell>
                                             <TableCell>{item.id_turno || 'S/T'}</TableCell>
                                             <TableCell>{item.id_usuario}</TableCell>
-                                            <TableCell>Prov #{item.id_proveedor}</TableCell>
+                                            <TableCell>{item.id_proveedor}</TableCell>
                                             <TableCell className="font-medium">${Number(item.monto).toFixed(2)}</TableCell>
                                             <TableCell>{item.folio || '-'}</TableCell>
                                             <TableCell>{item.metodo_pago === 1 ? "Efectivo" : "Tarjeta"}</TableCell>
@@ -244,14 +256,22 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="proveedor" className="text-right">ID Prov.</Label>
-                            <Input
-                                id="proveedor"
-                                type="number"
-                                value={formData.id_proveedor || ''}
-                                onChange={(e) => setFormData({ ...formData, id_proveedor: Number(e.target.value) })}
-                                className="col-span-3"
-                            />
+                            <Label htmlFor="proveedor" className="text-right">Proveedor</Label>
+                            <Select
+                                value={formData.id_proveedor ? String(formData.id_proveedor) : ""}
+                                onValueChange={(val) => setFormData({ ...formData, id_proveedor: Number(val) })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccione un proveedor" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {proveedores.map((proveedor) => (
+                                        <SelectItem key={proveedor.id_proveedor} value={proveedor.id_proveedor.toString()}>
+                                            {proveedor.nombre_proveedor}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="metodo" className="text-right">Metodo</Label>

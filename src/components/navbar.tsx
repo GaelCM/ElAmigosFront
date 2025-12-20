@@ -89,7 +89,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                           Por Mes
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2" onClick={() => { navigate("/reportes?idReporte=2") }}>
+                      <DropdownMenuItem className="gap-2" >
                         <Package className="w-4 h-4" />
                         Por Productos
                       </DropdownMenuItem>

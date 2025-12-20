@@ -4,7 +4,7 @@ import type { MovimientoEfectivo, MovimientoEfectivoUpdateInput, MovimientoPaylo
 
 
 export const crearMovimiento = async (data: MovimientoPayload) => {
-    const res = await fetch(`http://localhost:3000/api/egresos/nuevoMovimiento`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/nuevoMovimiento`, {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
@@ -23,7 +23,7 @@ export const crearMovimiento = async (data: MovimientoPayload) => {
 
 export const obtenerMovimientos = async (data: { id_rol: number, id_sucursal: number, id_turno?: number, fecha_desde?: string, fecha_hasta?: string }) => {
 
-    const res = await fetch(`http://localhost:3000/api/egresos/movimientos`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/movimientos`, {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
@@ -42,7 +42,7 @@ export const obtenerMovimientos = async (data: { id_rol: number, id_sucursal: nu
 }
 
 export const actualizarMovimiento = async (data: MovimientoEfectivoUpdateInput) => {
-    const res = await fetch(`http://localhost:3000/api/egresos/actualizarMovimiento`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/actualizarMovimiento`, {
         method: "PUT",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,

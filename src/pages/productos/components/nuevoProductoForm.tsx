@@ -228,7 +228,7 @@ export default function NuevoProductoForm() {
           <FormItem>
             <FormLabel>Descripción</FormLabel>
             <FormControl>
-              <Textarea {...field} rows={3} />
+              <Textarea {...field} rows={3} value={field.value || ''} />
             </FormControl>
             <FormMessage />
           </FormItem>

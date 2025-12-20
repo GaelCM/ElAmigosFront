@@ -2,7 +2,7 @@
 import type { Gasto, GastoPayload, GastoUpdateInput } from "@/types/Egresos";
 
 export const crearGasto = async (data: GastoPayload) => {
-    const res = await fetch(`http://localhost:3000/api/egresos/nuevoGasto`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/nuevoGasto`, {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
@@ -21,7 +21,7 @@ export const crearGasto = async (data: GastoPayload) => {
 
 export const obtenerGastos = async (data: { id_rol: number, id_sucursal: number, id_turno?: number, fecha_desde?: string, fecha_hasta?: string }) => {
 
-    const res = await fetch(`http://localhost:3000/api/egresos/gastos`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/gastos`, {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
@@ -40,7 +40,7 @@ export const obtenerGastos = async (data: { id_rol: number, id_sucursal: number,
 }
 
 export const actualizarGasto = async (data: GastoUpdateInput) => {
-    const res = await fetch(`http://localhost:3000/api/egresos/actualizarGasto`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/actualizarGasto`, {
         method: "PUT",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
