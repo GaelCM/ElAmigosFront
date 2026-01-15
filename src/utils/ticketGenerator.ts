@@ -48,9 +48,9 @@ export const generateTicketHTML = (data: TicketData): string => {
       
       <!-- ENCABEZADO -->
       <div style="text-align: center; margin-bottom: 10px;">
-        <h2 style="margin: 0; font-size: 16px; font-weight: bold;">EL AMIGO</h2>
+        <h2 style="margin: 0; font-size: 16px; font-weight: bold;">${data.sucursal}</h2>
         <p style="margin: 2px 0; font-size: 10px;">Refrescos y Abarrotes</p>
-        <p style="margin: 2px 0;">${data.sucursal}</p>
+        <p style="margin: 2px 0;">${data.direccion}</p>
         <p style="margin: 5px 0;">================================</p>
       </div>
 
@@ -152,7 +152,7 @@ export const generateMovementTicketHTML = (data: MovementTicketData): string => 
   return `
     <div style="font-family: 'Courier New', Courier, monospace; font-size: 12px; width: 100%; max-width: 280px; text-transform: uppercase;">
       <div style="text-align: center; margin-bottom: 10px;">
-        <h2 style="margin: 0; font-size: 16px; font-weight: bold;">EL AMIGO</h2>
+        <h2 style="margin: 0; font-size: 16px; font-weight: bold;">${data.sucursal}</h2>
         <p style="margin: 2px 0;">COMPROBANTE DE MOVIMIENTO</p>
         <p style="margin: 5px 0;">================================</p>
       </div>

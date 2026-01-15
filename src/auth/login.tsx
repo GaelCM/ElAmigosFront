@@ -14,7 +14,6 @@ import logo from "../assets/logo.jpg"
 
 import { toast } from "sonner";
 
-const appVersion = import.meta.env.VITE_APP_VERSION;
 const formSchema = z.object({
   usuario: z.string().min(2, {
     message: "El usuario debe tener al menos 2 caracteres.",
@@ -54,14 +53,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-bg min-h-screen flex items-center justify-center">
-      <Card className="w-full max-w-md p-8 shadow-2xl bg-white/90 backdrop-blur-md border-none">
+    <div className="bg-gray-100 min-h-screen flex items-center justify-center">
+      <Card className="w-full max-w-lg p-8 shadow-2xl">
         <CardHeader className="mb-6 text-center">
           <div className="flex justify-center">
             <img src={logo} className="w-54 h-44 mb-2"></img>
           </div>
-          <CardTitle className="text-3xl font-bold text-primary mb-1">Bienvenido</CardTitle>
-          <CardDescription className="text-base text-muted-foreground">Sistema POS de Abarrotes y Bebidas</CardDescription>
+          <CardDescription className="text-base text-muted-foreground">por G-Labs</CardDescription>
+          <CardTitle className="text-3xl font-bold text-primary mb-1">Iniciar Sesión</CardTitle>
+
         </CardHeader>
         <form onSubmit={handleSubmit(login)} className="flex flex-col gap-5">
           <div>
@@ -93,7 +93,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-xs text-center text-muted-foreground">version 0.0.1</p>
+        <p className="text-xs text-center text-muted-foreground">version 1.0.0</p>
       </Card>
     </div>
   );

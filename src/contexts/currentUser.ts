@@ -24,7 +24,7 @@ export const useCurrentUser = create(
                 permisos: []
             },
             addUser: (newUser: authCredentials) => {
-                console.log("Usuario actualizado:", newUser);
+                console.log("Usuario actualizado:");
                 set({ user: newUser }); // <-- reemplaza el objeto
             },
             clearUser: () => {

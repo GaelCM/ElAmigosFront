@@ -1,6 +1,6 @@
 import type { Proveedor, ProveedorInput, ProveedorResponse } from "@/types/Proveedor";
 
-const URL = "http://localhost:3000/api/proveedores";
+const URL = "https://elamigos-elamigosapi.xj7zln.easypanel.host/api/proveedores";
 
 export const obtenerProveedoresApi = async (): Promise<ProveedorResponse> => {
     try {

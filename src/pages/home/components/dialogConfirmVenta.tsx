@@ -129,10 +129,10 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
                 // --- INICIO LÓGICA DE IMPRESIÓN ---
                 try {
-                    const printerName = localStorage.getItem("printer_device");
+                    const printerName = localStorage.getItem("printer_device");//buscamos la impresora guardada
                     if (printerName) {
                         // Importamos dinámicamente o usamos la función importada arriba
-                        const { generateTicketHTML } = await import("@/utils/ticketGenerator");
+                        const { generateTicketHTML } = await import("@/utils/ticketGenerator"); //creamo el ticket en html
 
                         const ticketHtml = generateTicketHTML({
                             sucursal: "Sucursal " + user.id_sucursal, // Podrías tener el nombre real en user o config

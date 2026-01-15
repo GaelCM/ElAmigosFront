@@ -47,7 +47,7 @@ function utilsController() {
         try {
             let printWindow = new BrowserWindow({
                 show: false,
-                width: 300,
+                width: 360,
                 height: 600,
                 webPreferences: {
                     nodeIntegration: true,
@@ -62,7 +62,17 @@ function utilsController() {
                 <head>
                     <meta charset="UTF-8">
                     <style>
-                        body { margin: 0; padding: 0; background-color: white; font-family: monospace; }
+                        @page {
+                            margin: 0;
+                            size: 80mm auto;
+                        }
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            background-color: white; 
+                            font-family: monospace; 
+                            width: 100%;
+                        }
                     </style>
                 </head>
                 <body>
@@ -79,13 +89,14 @@ function utilsController() {
                         silent: true,
                         deviceName: printerName,
                         printBackground: true,
-                        margins: { marginType: 'none' }
+                        margins: { marginType: 'custom', top: 0, bottom: 0, left: 0, right: 0 },
+                        pageSize: { width: 80000, height: 200000 }
                     }, (success, errorType) => {
                         if (!success) reject(errorType);
                         else resolve(true);
                         printWindow.close();
                     });
-                }, 1000);
+                }, 500);
             });
         } catch (e) {
             console.error("ERROR EN PRINT-AND-OPEN:", e);
@@ -99,16 +110,15 @@ function utilsController() {
         try {
             let printWindow = new BrowserWindow({
                 show: false,
-                width: 300,
+                width: 360,
                 height: 600,
                 webPreferences: {
                     nodeIntegration: true,
-                    contextIsolation: false // Simplificar para debug
+                    contextIsolation: false
                 }
             });
             console.log("2. Ventana creada");
 
-            // Método alternativo de carga más robusto
             await printWindow.loadURL('about:blank');
             console.log("3. about:blank cargado");
 
@@ -118,7 +128,17 @@ function utilsController() {
                 <head>
                     <meta charset="UTF-8">
                     <style>
-                        body { margin: 0; padding: 0; background-color: white; font-family: monospace; }
+                        @page {
+                            margin: 0;
+                            size: 80mm auto;
+                        }
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            background-color: white; 
+                            font-family: monospace; 
+                            width: 100%;
+                        }
                     </style>
                 </head>
                 <body>
@@ -127,19 +147,18 @@ function utilsController() {
                 </html>
             `;
 
-            // Inyectar contenido vía script
             await printWindow.webContents.executeJavaScript(`document.write(\`${htmlContent}\`); document.close();`);
             console.log("4. Contenido inyectado");
 
             return new Promise((resolve, reject) => {
-                // Pequeño delay para asegurar renderizado
                 setTimeout(() => {
                     console.log("5. Ejecutando print()...");
                     printWindow.webContents.print({
                         silent: true,
                         deviceName: printerName,
                         printBackground: true,
-                        margins: { marginType: 'none' }
+                        margins: { marginType: 'custom', top: 0, bottom: 0, left: 0, right: 0 },
+                        pageSize: { width: 80000, height: 200000 }
                     }, (success, errorType) => {
                         console.log("6. Callback de print. Success:", success, "Error:", errorType);
                         if (!success) {
@@ -149,7 +168,7 @@ function utilsController() {
                         }
                         printWindow.close();
                     });
-                }, 1000);
+                }, 500);
             });
 
         } catch (e) {

@@ -26,6 +26,9 @@ import MisVentasReport from "./pages/reportes/ventas/misVentas"
 import VentasPorMes from "./pages/reportes/ventas/ventasPorMes"
 import BajoStockPage from "./pages/reportes/stock/bajoStockPage"
 import { ListPrints } from "./components/ListPrints"
+import UsuariosPage from "./pages/usuarios/usuariosPage"
+import NuevoUsuarioForm from "./pages/usuarios/components/NuevoUsuarioForm"
+import EditarUsuarioForm from "./pages/usuarios/components/EditarUsuarioForm"
 
 
 
@@ -109,6 +112,18 @@ export const rutas = createHashRouter([
                     {
                         path: "/egresos",
                         element: <EgresosPage />
+                    },
+                    {
+                        path: "/usuarios",
+                        element: <UsuariosPage />
+                    },
+                    {
+                        path: "/usuarios/nuevo",
+                        element: <NuevoUsuarioForm />
+                    },
+                    {
+                        path: "/usuarios/editar/:id",
+                        element: <EditarUsuarioForm />
                     },
                     {
                         path: "/cerrar-caja",

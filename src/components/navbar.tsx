@@ -2,7 +2,7 @@ import { Calendar, ChevronDown, FileText, Menu, Package, Search, Settings, Trend
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
-import { Link, Outlet, useNavigate } from "react-router";
+import { Link, Outlet } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useState } from "react";
@@ -16,7 +16,6 @@ type navBarProps = {
 export default function NavBar({ setSidebarOpen }: navBarProps) {
   ;
   const { user } = useCurrentUser();
-  const navigate = useNavigate();
   const [openP, setOpenP] = useState(false);
   const [focusScanner, setFocusScanner] = useState<() => void>(() => { });
   //const [turnoData, setTurnoData] = useState(JSON.parse(localStorage.getItem("openCaja") || "{}"));
@@ -106,18 +105,15 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
 
                     </DropdownMenuContent>
                   </DropdownMenu>
-
-                  {/* Dropdown de Período */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Link to={"/configuraciones"} className="gap-2 bg-transparent">
-                        <Settings className="w-4 h-4" />
-                      </Link>
-                    </DropdownMenuTrigger>
-                  </DropdownMenu>
                 </div>
               )}
-
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Link to={"/configuraciones"} className="gap-2 bg-transparent">
+                    <Settings className="w-4 h-4" />
+                  </Link>
+                </DropdownMenuTrigger>
+              </DropdownMenu>
             </div>
           </div>
 

@@ -23,6 +23,8 @@ import { useCurrentUser } from "@/contexts/currentUser";
 import { useOnlineStatus } from "@/hooks/isOnline";
 import { getProductos } from "@/api/productosApi/productosApi";
 import { toast } from "sonner";
+import DialogNuevoProductoTemp from "./components/dialogNuevoProductoTemp";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
     const { user } = useCurrentUser();
@@ -33,7 +35,7 @@ export default function Home() {
     const [openCliente, setOpenCliente] = useState(false);
     const [error, setError] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
-
+    const [openNuevoProducto, setOpenNuevoProducto] = useState(false);
     const { clearCart, removeProduct, decrementQuantity, incrementQuantity, getTotalPrice, addProduct, getCarritoActivo, crearCarrito, carritoActivo, togglePrecioMayoreo } = useListaProductos();
     const { cliente } = useCliente();
     const { setFocusScanner } = useOutletContext<{ setFocusScanner: (fn: () => void) => void }>();
@@ -53,6 +55,12 @@ export default function Home() {
     }, {
         enableOnFormTags: true
     }, [setOpenCliente]); // El array de dependencias es opcional pero recomendado
+
+    useHotkeys('alt+n', () => {
+        setOpenNuevoProducto(true);
+    }, {
+        enableOnFormTags: true
+    }, [setOpenNuevoProducto]); // El array de dependencias es opcional pero recomendado
 
     useHotkeys('alt+0', () => {
 
@@ -360,6 +368,9 @@ export default function Home() {
                                             <div className="text-right min-w-0">
                                                 <p className="font-bold text-primary">${((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}</p>
                                             </div>
+                                            <div>
+                                                <Badge className={producto.product.stock_disponible_presentacion == 0 ? 'bg-red-500' : producto.product.stock_disponible_presentacion <= 5 ? 'bg-yellow-500' : 'bg-green-500'}>stock:{producto.product.stock_disponible_presentacion}</Badge>
+                                            </div>
                                         </div>
 
                                         {/* Fila de controles */}
@@ -499,6 +510,15 @@ export default function Home() {
                     >
                         Cancelar Venta (ESC)
                     </Button>
+
+                    <Button
+                        variant="outline"
+                        className="w-full h-12"
+                        onClick={() => setOpenNuevoProducto(true)}
+                        tabIndex={6}
+                    >
+                        Nuevo producto Temporal(alt+n)
+                    </Button>
                 </div>
 
                 {/* Información del Cliente */}
@@ -536,6 +556,7 @@ export default function Home() {
             <DialogConfirmVenta isOpen={isOpen} onClose={setIsOpen} metodoPago={metodoPago} inputRef={inputRef}></DialogConfirmVenta>
             <DialiogErrorProducto isOpen={error} setIsOpen={setError} inputRef={inputRef} ></DialiogErrorProducto>
             <AddCliente isOpen={openCliente} setIsOpen={setOpenCliente} inputRef={inputRef} ></AddCliente>
+            <DialogNuevoProductoTemp isOpen={openNuevoProducto} setIsOpen={setOpenNuevoProducto} inputRef={inputRef} ></DialogNuevoProductoTemp>
 
         </div>
     )

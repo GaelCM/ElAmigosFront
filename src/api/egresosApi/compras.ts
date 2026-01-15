@@ -4,7 +4,7 @@ import type { Compra, CompraPayload, CompraUpdateInput } from "@/types/Egresos";
 
 
 export const crearCompra = async (data: CompraPayload) => {
-    const res = await fetch(`http://localhost:3000/api/egresos/nuevaCompra`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/egresos/nuevaCompra`, {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,

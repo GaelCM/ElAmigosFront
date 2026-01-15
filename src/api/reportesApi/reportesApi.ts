@@ -23,7 +23,7 @@ export const obtenerReporteMisVentas = async (fechaDesde: string, fechaHasta: st
 
 
 export const obtenerReporteVentasPorMes = async (fechaDesde: string, fechaHasta: string, idSucursal?: number) => {
-    const res = await fetch(`http://localhost:3000/api/reportes/ventas-mensuales`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/ventas-mensuales`, {
         method: "post",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
