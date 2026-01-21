@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 // Definimos la interfaz para lo que nos devuelve Electron
 interface ElectronPrinter {
@@ -31,6 +32,7 @@ export function ListPrints() {
     const [printers, setPrinters] = useState<ElectronPrinter[]>([]);
     const [selectedPrinter, setSelectedPrinter] = useState<string>("");
     const [loading, setLoading] = useState(false);
+    const [cortarPapel, setCortarPapel] = useState(true);
 
     const fetchPrinters = async () => {
         setLoading(true);
@@ -46,6 +48,11 @@ export function ListPrints() {
                 // Lógica de selección inicial:
                 // 1. Buscamos si ya guardamos una en localStorage
                 const savedPrinter = localStorage.getItem("printer_device");
+                const savedCut = localStorage.getItem("printer_cut");
+
+                if (savedCut !== null) {
+                    setCortarPapel(savedCut === "true");
+                }
 
                 // 2. Verificamos que la guardada aún exista
                 const printerExists = list.find((p: any) => p.name === savedPrinter);
@@ -80,6 +87,11 @@ export function ListPrints() {
         localStorage.setItem("printer_device", value);
     };
 
+    const handleCutChange = (checked: boolean) => {
+        setCortarPapel(checked);
+        localStorage.setItem("printer_cut", String(checked));
+    };
+
     const handleTestPrint = async () => {
         if (!selectedPrinter) return;
 
@@ -106,6 +118,17 @@ export function ListPrints() {
         }
     };
 
+    const handleTestPrintEscPos = async () => {
+        if (!selectedPrinter) return;
+
+        try {
+            // @ts-ignore
+            await window["electron-api"]?.printTestEscPos(selectedPrinter);
+        } catch (error) {
+            console.error("Error imprimiendo modo RAW:", error);
+        }
+    };
+
     return (
         <Card className="w-full max-w-md mx-auto shadow-md">
             <CardHeader className="bg-muted/50 pb-4">
@@ -118,46 +141,62 @@ export function ListPrints() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="printer-select">Impresora disponible</Label>
-                    <div className="flex gap-2">
-                        <Select
-                            value={selectedPrinter}
-                            onValueChange={handlePrinterChange}
-                            disabled={loading}
-                        >
-                            <SelectTrigger id="printer-select" className="w-full">
-                                <SelectValue placeholder="Seleccionar impresora..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {printers.length === 0 ? (
-                                    <div className="p-2 text-sm text-muted-foreground text-center">
-                                        No se encontraron impresoras
-                                    </div>
-                                ) : (
-                                    printers.map((printer) => (
-                                        <SelectItem key={printer.name} value={printer.name}>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium">{printer.displayName || printer.name}</span>
-                                                {printer.description && (
-                                                    <span className="text-xs text-muted-foreground">{printer.description}</span>
-                                                )}
-                                            </div>
-                                        </SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="printer-select">Impresora disponible</Label>
+                        <div className="flex gap-2">
+                            <Select
+                                value={selectedPrinter}
+                                onValueChange={handlePrinterChange}
+                                disabled={loading}
+                            >
+                                <SelectTrigger id="printer-select" className="w-full">
+                                    <SelectValue placeholder="Seleccionar impresora..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {printers.length === 0 ? (
+                                        <div className="p-2 text-sm text-muted-foreground text-center">
+                                            No se encontraron impresoras
+                                        </div>
+                                    ) : (
+                                        printers.map((printer) => (
+                                            <SelectItem key={printer.name} value={printer.name}>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{printer.displayName || printer.name}</span>
+                                                    {printer.description && (
+                                                        <span className="text-xs text-muted-foreground">{printer.description}</span>
+                                                    )}
+                                                </div>
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
 
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={fetchPrinters}
-                            disabled={loading}
-                            title="Recargar lista"
-                        >
-                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        </Button>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={fetchPrinters}
+                                disabled={loading}
+                                title="Recargar lista"
+                            >
+                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between space-x-2 border p-3 rounded-md">
+                        <Label htmlFor="cut-mode" className="flex flex-col space-y-1">
+                            <span>Cortar papel al finalizar</span>
+                            <span className="font-normal text-xs text-muted-foreground">
+                                Habilita el corte automático tras cada ticket
+                            </span>
+                        </Label>
+                        <Switch
+                            id="cut-mode"
+                            checked={cortarPapel}
+                            onCheckedChange={handleCutChange}
+                        />
                     </div>
                 </div>
 
@@ -173,18 +212,32 @@ export function ListPrints() {
                         </p>
                     </div>
 
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        className="w-full mt-2"
-                        onClick={handleTestPrint}
-                        disabled={!selectedPrinter || loading}
-                    >
-                        <Printer className="mr-2 h-4 w-4" />
-                        Imprimir Ticket de Prueba
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full"
+                            onClick={handleTestPrint}
+                            disabled={!selectedPrinter || loading}
+                        >
+                            <Printer className="mr-2 h-4 w-4" />
+                            Prueba HTML
+                        </Button>
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className="w-full"
+                            onClick={handleTestPrintEscPos}
+                            disabled={!selectedPrinter || loading}
+                        >
+                            <Printer className="mr-2 h-4 w-4" />
+                            Prueba ESC/POS
+                        </Button>
+                    </div>
+
                 </div>
             </CardContent>
         </Card>
     );
+
 }

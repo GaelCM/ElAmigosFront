@@ -50,7 +50,6 @@ export const generateTicketHTML = (data: TicketData): string => {
       <div style="text-align: center; margin-bottom: 10px;">
         <h2 style="margin: 0; font-size: 16px; font-weight: bold;">${data.sucursal}</h2>
         <p style="margin: 2px 0; font-size: 10px;">Refrescos y Abarrotes</p>
-        <p style="margin: 2px 0;">${data.direccion}</p>
         <p style="margin: 5px 0;">================================</p>
       </div>
 

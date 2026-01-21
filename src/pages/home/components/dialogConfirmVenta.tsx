@@ -85,29 +85,30 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                         description: `La venta se sincronizará automáticamente al detectar internet.`,
                     });
 
-                    // Lógica de impresión (también funciona offline si la impresora es física)
+                    // Lógica de impresión (ESC/POS Offline)
                     try {
                         const printerName = localStorage.getItem("printer_device");
                         if (printerName) {
-                            const { generateTicketHTML } = await import("@/utils/ticketGenerator");
-                            const ticketHtml = generateTicketHTML({
-                                sucursal: "Sucursal " + user.id_sucursal,
+                            const ticketData = {
+                                printerName,
+                                sucursal: "Sucursal " + user.sucursal,
                                 usuario: user.usuario,
                                 cliente: cliente.nombreCliente || "Público General",
                                 folio: "OFL-" + offlineRes.id,
                                 fecha: new Date(),
-                                productos: carritoActual?.productos?.map(p => ({
+                                productos: carritoActual?.productos?.map((p: any) => ({
                                     cantidad: p.quantity,
                                     nombre: p.product.nombre_producto,
-                                    precio_unitario: p.product.precio_venta,
                                     importe: p.product.precio_venta * p.quantity
                                 })) || [],
                                 total: getTotalPrice(),
-                                pago_con: cambioEfectivo,
-                                cambio: Math.max(0, cambioEfectivo - getTotalPrice())
-                            });
+                                pagoCon: cambioEfectivo,
+                                cambio: Math.max(0, cambioEfectivo - getTotalPrice()),
+                                cortar: localStorage.getItem("printer_cut") !== "false"
+                            };
+
                             // @ts-ignore
-                            window["electron-api"]?.printTicket({ content: ticketHtml, printerName });
+                            await window["electron-api"]?.printTicketVentaEscPos(ticketData);
                         }
                     } catch (e) {
                         console.error("Error al imprimir ticket offline:", e);
@@ -127,38 +128,34 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                     description: `La venta se ha generado correctamente, FOLIO ${res.data}`,
                 });
 
-                // --- INICIO LÓGICA DE IMPRESIÓN ---
+                // --- INICIO LÓGICA DE IMPRESIÓN (ESC/POS) ---
                 try {
-                    const printerName = localStorage.getItem("printer_device");//buscamos la impresora guardada
+                    const printerName = localStorage.getItem("printer_device");
                     if (printerName) {
-                        // Importamos dinámicamente o usamos la función importada arriba
-                        const { generateTicketHTML } = await import("@/utils/ticketGenerator"); //creamo el ticket en html
-
-                        const ticketHtml = generateTicketHTML({
-                            sucursal: "Sucursal " + user.id_sucursal, // Podrías tener el nombre real en user o config
+                        const ticketData = {
+                            printerName,
+                            sucursal: "Sucursal " + user.sucursal,
                             usuario: user.usuario,
                             cliente: cliente.nombreCliente || "Público General",
                             folio: res.data || "S/N",
                             fecha: new Date(),
-                            productos: carritoActual?.productos?.map(p => ({
+                            productos: carritoActual?.productos?.map((p: any) => ({
                                 cantidad: p.quantity,
                                 nombre: p.product.nombre_producto,
-                                precio_unitario: p.product.precio_venta,
                                 importe: p.product.precio_venta * p.quantity
                             })) || [],
                             total: getTotalPrice(),
-                            pago_con: cambioEfectivo,
-                            cambio: Math.max(0, cambioEfectivo - getTotalPrice())
-                        });
+                            pagoCon: cambioEfectivo,
+                            cambio: Math.max(0, cambioEfectivo - getTotalPrice()),
+                            cortar: localStorage.getItem("printer_cut") !== "false"
+                        };
 
                         // @ts-ignore
-                        window["electron-api"]?.printTicket({
-                            content: ticketHtml,
-                            printerName
-                        });
+                        await window["electron-api"]?.printTicketVentaEscPos(ticketData);
+                        toast.success("Ticket enviado a imprimir");
                     }
                 } catch (printError) {
-                    console.error("Error al intentar imprimir ticket automático:", printError);
+                    console.error("Error al imprimir ticket ESC/POS:", printError);
                     toast.error("No se pudo imprimir el ticket", { duration: 2000 });
                 }
                 // --- FIN LÓGICA DE IMPRESIÓN ---
