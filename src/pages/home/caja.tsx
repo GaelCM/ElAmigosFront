@@ -56,7 +56,7 @@ export default function Home() {
         enableOnFormTags: true
     }, [setOpenCliente]); // El array de dependencias es opcional pero recomendado
 
-    useHotkeys('alt+n', () => {
+    useHotkeys('ctrl+p', () => {
         setOpenNuevoProducto(true);
     }, {
         enableOnFormTags: true
@@ -76,7 +76,7 @@ export default function Home() {
         enableOnFormTags: true
     }, [setMetodoPago]); // El array de dependencias es opcional pero recomendado
 
-    useHotkeys('alt+p', () => {
+    useHotkeys('f12', () => {
 
         setIsOpen(true);
     }, {
@@ -133,10 +133,23 @@ export default function Home() {
         if (prod) decrementQuantity(prod.product.id_unidad_venta);
     }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
 
-    useHotkeys('delete', () => {
+    /*useHotkeys(['Delete', 'Backspace'], (e) => {
+        // Evitar conflicto con Backspace al escribir en el input
+        if (e.key === 'Backspace' && inputRef.current === document.activeElement && inputRef.current?.value !== '') {
+            return;
+        }
+
+        e.preventDefault();
         if (!carritoActual?.productos?.length) return;
         const prod = carritoActual.productos[selectedIndex];
         if (prod) removeProduct(prod.product.id_unidad_venta);
+    }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
+*/
+    useHotkeys('f11', (e) => {
+        e.preventDefault();
+        if (!carritoActual?.productos?.length) return;
+        const prod = carritoActual.productos[selectedIndex];
+        if (prod) togglePrecioMayoreo(prod.product.id_unidad_venta);
     }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
     // ------------------------------------------------
 
@@ -404,7 +417,7 @@ export default function Home() {
                                             {/* Toggle Precio Mayoreo */}
                                             <div className="flex items-center gap-2">
                                                 <label className="text-xs font-medium text-muted-foreground">
-                                                    Precio Mayoreo
+                                                    Precio Mayoreo (F11)
                                                 </label>
                                                 <Switch
                                                     checked={producto.usarPrecioMayoreo || false}
@@ -498,7 +511,7 @@ export default function Home() {
                         onClick={() => setIsOpen(true)}
                         tabIndex={1}>
                         <CreditCard className="w-5 h-5 mr-2" />
-                        Procesar Pago (alt+p)
+                        Procesar Pago (F12)
                     </Button>
 
                     <Button
@@ -517,7 +530,7 @@ export default function Home() {
                         onClick={() => setOpenNuevoProducto(true)}
                         tabIndex={6}
                     >
-                        Nuevo producto Temporal(alt+n)
+                        Nuevo producto Temporal(ctrl+p)
                     </Button>
                 </div>
 

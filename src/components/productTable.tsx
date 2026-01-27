@@ -179,7 +179,7 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
                 >
                   <td className="px-3 py-3 align-middle text-sm text-muted-foreground">{p.sku_presentacion}</td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="font-medium text-sm">{p.nombre_producto}</div>
+                    <div className="font-medium text-sm">{p.nombre_producto + " " + p.nombre_presentacion + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
                   </td>
 
                   <td className="px-3 py-3 align-middle text-sm ">

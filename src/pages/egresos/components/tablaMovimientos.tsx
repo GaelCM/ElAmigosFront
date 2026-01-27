@@ -92,25 +92,20 @@ export default function TablaMovimientos({ turnoId }: { turnoId: number | null }
                 if (res.success) {
                     toast.success("Movimiento creado exitosamente");
 
-                    // --- INICIO LÓGICA DE IMPRESIÓN Y APERTURA ---
+                    // --- INICIO LÓGICA DE IMPRESIÓN ESC/POS ---
                     try {
                         const printerName = localStorage.getItem("printer_device");
                         if (printerName) {
-                            const { generateMovementTicketHTML } = await import("@/utils/ticketGenerator");
-
-                            const ticketHtml = generateMovementTicketHTML({
-                                sucursal: "Sucursal " + user.id_sucursal,
+                            // @ts-ignore
+                            window["electron-api"]?.printTicketMovimientoEscPos({
+                                printerName,
+                                sucursal: "Sucursal " + user.sucursal,
                                 usuario: user.usuario,
                                 fecha: new Date(),
                                 monto: payload.monto,
                                 concepto: payload.concepto,
-                                tipo: payload.tipo_movimiento === 1 ? "DEPÓSITO" : "RETIRO"
-                            });
-
-                            // @ts-ignore
-                            window["electron-api"]?.printAndOpen({
-                                content: ticketHtml,
-                                printerName
+                                tipo: payload.tipo_movimiento === 1 ? "DEPÓSITO" : "RETIRO",
+                                abrirCajon: true
                             });
                         }
                     } catch (printError) {

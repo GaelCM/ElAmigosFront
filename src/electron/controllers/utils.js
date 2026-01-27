@@ -408,80 +408,175 @@ function utilsController() {
         }
     });
 
-    ipcMain.handle('print-and-open', async (event, { content, printerName }) => {
-        console.log("Solicitud de impresión y apertura para:", printerName);
+    ipcMain.handle('print-ticket-movimiento-escpos', async (event, data) => {
+        const { printerName, sucursal, usuario, fecha, monto, concepto, tipo, cortar = true, abrirCajon = true } = data;
+        console.log("Generando TICKET MOVIMIENTO ESC/POS para:", printerName);
 
-        // 1. Abrir Cajón
-        if (printerName) {
+        // 1. Abrir Cajón si se solicita
+        if (abrirCajon && printerName) {
             const openCommand = `powershell -Command "[char]27 + [char]112 + [char]0 + [char]25 + [char]250 | Out-Printer -Name '${printerName}'"`;
             exec(openCommand, (error) => {
-                if (error) console.error("Error al abrir cajón en print-and-open:", error);
+                if (error) console.error("Error al abrir cajón en movimiento:", error);
             });
         }
 
-        // 2. Imprimir (Reutilizando lógica)
+        const fs = await import('fs');
+        const path = await import('path');
+        const os = await import('os');
+
         try {
-            let printWindow = new BrowserWindow({
-                show: false,
-                width: 360,
-                height: 600,
-                webPreferences: {
-                    nodeIntegration: true,
-                    contextIsolation: false
-                }
+            const { ThermalPrinter, PrinterTypes } = await import('node-thermal-printer');
+
+            let printer = new ThermalPrinter({
+                type: PrinterTypes.EPSON,
+                interface: 'tcp://127.0.0.1',
+                width: 48,
+                characterSet: 'SLOVENIA',
+                removeSpecialCharacters: false,
+                lineCharacter: "=",
             });
 
-            await printWindow.loadURL('about:blank');
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        @page {
-                            margin: 0;
-                            size: 80mm auto;
+            // --- HEADER ---
+            printer.alignCenter();
+            printer.bold(true);
+            printer.println(sucursal);
+            printer.bold(false);
+            printer.println("COMPROBANTE DE MOVIMIENTO");
+            printer.drawLine();
+            printer.newLine();
+
+            printer.alignLeft();
+            printer.println(`TIPO:      ${tipo}`);
+            printer.println(`FECHA:     ${new Date(fecha).toLocaleString()}`);
+            printer.println(`USUARIO:   ${usuario}`);
+            printer.println(`SUCURSAL:  ${sucursal}`);
+            printer.newLine();
+
+            printer.drawLine();
+            printer.alignCenter();
+            printer.setTextDoubleHeight();
+            printer.setTextDoubleWidth();
+            printer.bold(true);
+            printer.println(`MONTO: $${Number(monto).toFixed(2)}`);
+            printer.bold(false);
+            printer.setTextNormal();
+            printer.drawLine();
+            printer.newLine();
+
+            printer.alignLeft();
+            printer.println("CONCEPTO:");
+            printer.italic(true);
+            printer.println(concepto || "SIN CONCEPTO");
+            printer.italic(false);
+            printer.newLine();
+            printer.newLine();
+
+            printer.alignCenter();
+            printer.println("__________________________");
+            printer.println("FIRMA");
+            printer.newLine();
+            printer.newLine();
+
+            if (cortar) {
+                printer.cut();
+            }
+            printer.beep();
+
+            const buffer = printer.getBuffer();
+
+            // --- INYECCIÓN RAW FILE ---
+            const tempDir = os.tmpdir();
+            const tempFilePath = path.join(tempDir, `movimiento_${Date.now()}.bin`);
+            await fs.promises.writeFile(tempFilePath, buffer);
+
+            const psScript = `
+                $printerName = "${printerName}"
+                $file = "${tempFilePath}"
+                $code = @"
+                using System;
+                using System.Runtime.InteropServices;
+                using System.IO;
+                public class RawPrinterHelper {
+                    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
+                    public class DOCINFOA {
+                        [MarshalAs(UnmanagedType.LPStr)] public string pDocName;
+                        [MarshalAs(UnmanagedType.LPStr)] public string pOutputFile;
+                        [MarshalAs(UnmanagedType.LPStr)] public string pDataType;
+                    }
+                    [DllImport("winspool.Drv", EntryPoint="OpenPrinterA", SetLastError=true, CharSet=CharSet.Ansi, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+                    public static extern bool OpenPrinter([MarshalAs(UnmanagedType.LPStr)] string szPrinter, out IntPtr hPrinter, IntPtr pd);
+                    [DllImport("winspool.Drv", EntryPoint="ClosePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+                    public static extern bool ClosePrinter(IntPtr hPrinter);
+                    [DllImport("winspool.Drv", EntryPoint="StartDocPrinterA", SetLastError=true, CharSet=CharSet.Ansi, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+                    public static extern bool StartDocPrinter(IntPtr hPrinter, Int32 level, [In, MarshalAs(UnmanagedType.LPStruct)] DOCINFOA di);
+                    [DllImport("winspool.Drv", EntryPoint="EndDocPrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+                    public static extern bool EndDocPrinter(IntPtr hPrinter);
+                    [DllImport("winspool.Drv", EntryPoint="StartPagePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+                    public static extern bool StartPagePrinter(IntPtr hPrinter);
+                    [DllImport("winspool.Drv", EntryPoint="EndPagePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+                    public static extern bool EndPagePrinter(IntPtr hPrinter);
+                    [DllImport("winspool.Drv", EntryPoint="WritePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+                    public static extern bool WritePrinter(IntPtr hPrinter, IntPtr pBytes, Int32 dwCount, out Int32 dwWritten);
+                    public static bool SendFileToPrinter(string szPrinterName, string szFileName) {
+                        FileStream fs = new FileStream(szFileName, FileMode.Open);
+                        BinaryReader br = new BinaryReader(fs);
+                        Byte[] bytes = new Byte[fs.Length];
+                        bool bSuccess = false;
+                        IntPtr pUnmanagedBytes = new IntPtr(0);
+                        int nLength = Convert.ToInt32(fs.Length);
+                        bytes = br.ReadBytes(nLength);
+                        pUnmanagedBytes = Marshal.AllocCoTaskMem(nLength);
+                        Marshal.Copy(bytes, 0, pUnmanagedBytes, nLength);
+                        bSuccess = SendBytesToPrinter(szPrinterName, pUnmanagedBytes, nLength);
+                        Marshal.FreeCoTaskMem(pUnmanagedBytes);
+                        fs.Close();
+                        return bSuccess;
+                    }
+                    public static bool SendBytesToPrinter(string szPrinterName, IntPtr pBytes, Int32 dwCount) {
+                        Int32 dwWritten = 0;
+                        IntPtr hPrinter = new IntPtr(0);
+                        DOCINFOA di = new DOCINFOA();
+                        bool bSuccess = false;
+                        di.pDocName = "Ticket Movimiento Electron";
+                        di.pDataType = "RAW";
+                        if (OpenPrinter(szPrinterName.Normalize(), out hPrinter, IntPtr.Zero)) {
+                            if (StartDocPrinter(hPrinter, 1, di)) {
+                                if (StartPagePrinter(hPrinter)) {
+                                    bSuccess = WritePrinter(hPrinter, pBytes, dwCount, out dwWritten);
+                                    EndPagePrinter(hPrinter);
+                                }
+                                EndDocPrinter(hPrinter);
+                            }
+                            ClosePrinter(hPrinter);
                         }
-                        body { 
-                            margin: 0; 
-                            padding: 0; 
-                            background-color: white; 
-                            font-family: monospace; 
-                            width: 100%;
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${content}
-                </body>
-                </html>
+                        return bSuccess;
+                    }
+                }
+"@
+                Add-Type -TypeDefinition $code
+                [RawPrinterHelper]::SendFileToPrinter($printerName, $file)
             `;
 
-            await printWindow.webContents.executeJavaScript(`document.write(\`${htmlContent}\`); document.close();`);
-
-            // Esperar un poco más para asegurar que el renderizado esté completo
             return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    printWindow.webContents.print({
-                        silent: true,
-                        deviceName: printerName,
-                        printBackground: true,
-                        margins: { marginType: 'custom', top: 0, bottom: 0, left: 0, right: 0 }
-                        // Eliminamos pageSize para dejar que el driver maneje el largo continuo
-                    }, (success, errorType) => {
-                        if (!success) reject(errorType);
-                        else resolve(true);
-
-                        // Cerrar la ventana con un pequeño delay
-                        setTimeout(() => printWindow.close(), 500);
-                    });
-                }, 1500);
+                const psProcess = exec('powershell -Command -', (error, stdout, stderr) => {
+                    fs.unlink(tempFilePath, (err) => { if (err) console.error("Error borrando temp:", err); });
+                    if (error) {
+                        console.error("Error PowerShell:", error);
+                        reject(error);
+                    } else {
+                        resolve(true);
+                    }
+                });
+                psProcess.stdin.write(psScript);
+                psProcess.stdin.end();
             });
-        } catch (e) {
-            console.error("ERROR EN PRINT-AND-OPEN:", e);
-            throw e;
+
+        } catch (error) {
+            console.error("Error generando ticket Movimiento ESC/POS:", error);
+            throw error;
         }
     });
+
 
     ipcMain.handle('print-ticket', async (event, { content, printerName }) => {
         console.log("1. Recibida solicitud de impresión para:", printerName);

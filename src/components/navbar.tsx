@@ -20,7 +20,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
   const [focusScanner, setFocusScanner] = useState<() => void>(() => { });
   //const [turnoData, setTurnoData] = useState(JSON.parse(localStorage.getItem("openCaja") || "{}"));
 
-  useHotkeys('alt+F11', () => {
+  useHotkeys('F10', () => {
     setOpenP(true)
   }, {
     enableOnFormTags: true
@@ -57,7 +57,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
             <div className="flex items-center gap-2 lg:gap-4">
               <div className="relative hidden sm:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
-                <Button variant={"default"} className="px-10 cursor-pointer" onClick={openDialog}>Buscar Producto (alt+f11)</Button>
+                <Button variant={"default"} className="px-10 cursor-pointer" onClick={openDialog}>Buscar Producto (F10)</Button>
               </div>
 
               <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
           <div className="mt-3 sm:hidden">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
-              <Button variant={"default"} className="px-10 cursor-pointer">Buscar Producto (alt+f11)</Button>
+              <Button variant={"default"} className="px-10 cursor-pointer">Buscar   Producto (F10)</Button>
             </div>
           </div>
         </header>
