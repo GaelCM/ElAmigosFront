@@ -29,7 +29,7 @@ type ListaProductosModel = {
     asignarClienteCarrito: (id: string, cliente: Cliente) => void;
 
     // ACCIONES DEL CARRITO ACTIVO
-    addProduct: (product: ProductoVenta) => void;
+    addProduct: (product: ProductoVenta, quantity?: number) => void;
     removeProduct: (id_producto: number) => void;
     updateQuantity: (id_producto: number, newQuantity: number) => void;
     decrementQuantity: (id_producto: number) => void;
@@ -140,7 +140,7 @@ export const useListaProductos = create(
             /**
              * Añade un Producto al carrito activo
              */
-            addProduct: (product: ProductoVenta) => {
+            addProduct: (product: ProductoVenta, quantity: number = 1) => {
                 const carritoActivo = get().carritoActivo;
                 if (!carritoActivo) {
                     console.warn("No hay carrito activo");
@@ -158,7 +158,7 @@ export const useListaProductos = create(
                             // Ya existe → solo incrementar cantidad
                             const updatedProductos = carrito.productos.map((item, index) =>
                                 index === existingItemIndex
-                                    ? { ...item, quantity: item.quantity + 1 }
+                                    ? { ...item, quantity: item.quantity + quantity }
                                     : item
                             );
                             return { ...carrito, productos: updatedProductos };
@@ -168,7 +168,7 @@ export const useListaProductos = create(
                                 ...carrito,
                                 productos: [
                                     ...carrito.productos,
-                                    { product, quantity: 1, usarPrecioMayoreo: false }
+                                    { product, quantity: quantity, usarPrecioMayoreo: false }
                                 ],
                             };
                         }

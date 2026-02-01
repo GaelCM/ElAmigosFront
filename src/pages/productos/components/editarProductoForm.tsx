@@ -2,7 +2,7 @@
 import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
 import { actualizarProductoApi, obtenerProductoGeneral } from "@/api/productosApi/productosApi";
 import { obtenerSucursalesApi } from "@/api/sucursalApi/sucursalApi";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,6 +29,7 @@ const formSchema = z.object({
   id_categoria: z.string().min(1, 'La categoría es requerida'),
   precio_costo: z.coerce.number().positive({ message: 'El precio de costo debe ser mayor a 0' }),
   sku_pieza: z.string().optional(),
+  es_granel: z.boolean().default(false),
   sucursales_inventario: z.array(z.object({
     id_sucursal: z.number(),
     cantidad_actual: z.coerce.number().min(0, { message: 'La cantidad debe ser un número válido' }),
@@ -75,6 +76,7 @@ export default function EditarProductoForm() {
       id_categoria: '',
       precio_costo: 0,
       sku_pieza: '',
+      es_granel: false,
       sucursales_inventario: [],
       variantes: []
     }
@@ -113,6 +115,7 @@ export default function EditarProductoForm() {
         }
         payload.descripcion = payload.descripcion ?? '';
         payload.sku_pieza = payload.sku_pieza ?? '';
+        payload.es_granel = payload.es_granel ?? false;
         form.reset(payload);
         setLoading(false);
       } catch (error) {
@@ -326,6 +329,28 @@ export default function EditarProductoForm() {
           </FormItem>
         )}
       />
+      <FormField
+        control={form.control}
+        name="es_granel"
+        render={({ field }) => (
+          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+            <FormControl>
+              <Checkbox
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel>
+                ¿Este producto se vende a Granel?
+              </FormLabel>
+              <CardDescription>
+                Este producto se vende por peso/medida (kg, litros, etc.)
+              </CardDescription>
+            </div>
+          </FormItem>
+        )}
+      />
     </div>
   );
 
@@ -333,6 +358,7 @@ export default function EditarProductoForm() {
   const renderStep2 = () => (
     <div className="space-y-4">
       <Alert>
+        <AlertTitle className="text-lg text-left">Este producto se vende en</AlertTitle>
         <AlertDescription>
           Selecciona las sucursales donde se guardará inventario y define cantidades.
         </AlertDescription>
@@ -404,8 +430,10 @@ export default function EditarProductoForm() {
   const renderStep3 = () => (
     <div className="space-y-4">
       <Alert>
+        <AlertTitle className="text-lg text-left">Este producto se vende por</AlertTitle>
         <AlertDescription>
-          Administra las variantes del producto.
+          Administra las variantes del producto <br />
+          Nota: por defecto se crea una variante "Pieza" con el nombre del producto.
         </AlertDescription>
       </Alert>
 
@@ -485,6 +513,7 @@ export default function EditarProductoForm() {
   const renderStep4 = () => (
     <div className="space-y-6">
       <Alert>
+        <AlertTitle className="text-lg text-left">Asigne precios por sucursal</AlertTitle>
         <AlertDescription>
           Seleccione en qué sucursal y a qué precio se venderán los productos.
         </AlertDescription>

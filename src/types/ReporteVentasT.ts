@@ -52,3 +52,35 @@ export interface ReporteVentasMensualesResponse {
     message: string;
     data: VentaMensual[];
 }
+
+export interface DetalleVentaItem {
+    id_detalle_venta: number;
+    id_venta: number;
+    nombre_producto: string;
+    cantidad: number;
+    precio_unitario: number;
+    precio_mayoreo: boolean;
+    tipo_precio: string;
+    subtotal: number;
+    id_unidad_venta: number;
+    nombre_unidad: string;
+    id_producto: number;
+    nombre_categoria: string;
+    fecha_venta: string;
+    total_venta: number;
+    monto_recibido: number;
+    cambio: number;
+    metodo_pago: number;
+    estado_venta: number;
+    nombre_usuario: string;
+    nombre_sucursal: string;
+    id_cliente: number | string | null;
+    metodo_pago_descripcion: string;
+}
+
+
+export interface DetalleVentaResponse {
+    success: boolean;
+    message: string;
+    data: DetalleVentaItem[];
+}

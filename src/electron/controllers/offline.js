@@ -13,21 +13,24 @@ function offlineController() {
                     nombre_presentacion, factor_conversion_cantidad, 
                     sku_presentacion, id_precio, precio_venta, 
                     precio_mayoreo, id_sucursal, stock_piezas, 
-                    stock_disponible_presentacion
+                    stock_disponible_presentacion, es_granel
                 ) VALUES (
                     @id_unidad_venta, @id_producto, @sku_pieza, @nombre_producto, 
                     @descripcion, @precio_costo, @es_producto_compuesto, 
                     @nombre_presentacion, @factor_conversion_cantidad, 
                     @sku_presentacion, @id_precio, @precio_venta, 
                     @precio_mayoreo, @id_sucursal, @stock_piezas, 
-                    @stock_disponible_presentacion
+                    @stock_disponible_presentacion, @es_granel
                 )
             `);
 
             const sync = db.transaction((prods) => {
                 deleteStmt.run();
                 for (const p of prods) {
-                    insertStmt.run(p);
+                    insertStmt.run({
+                        ...p,
+                        es_granel: p.es_granel ? 1 : 0
+                    });
                 }
             });
 
@@ -50,6 +53,18 @@ function offlineController() {
             return { success: res.length > 0, data: res };
         } catch (error) {
             console.error("Error al buscar producto local:", error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Obtener todos los productos locales
+    ipcMain.handle('obtener-productos-local', (event) => {
+        try {
+            const stmt = db.prepare('SELECT * FROM offline_productos');
+            const res = stmt.all();
+            return { success: true, data: res };
+        } catch (error) {
+            console.error("Error al obtener productos locales:", error);
             return { success: false, error: error.message };
         }
     });

@@ -29,6 +29,7 @@ import { ListPrints } from "./components/ListPrints"
 import UsuariosPage from "./pages/usuarios/usuariosPage"
 import NuevoUsuarioForm from "./pages/usuarios/components/NuevoUsuarioForm"
 import EditarUsuarioForm from "./pages/usuarios/components/EditarUsuarioForm"
+import DetalleVentaPage from "./pages/reportes/ventas/detalleVenta"
 
 
 
@@ -137,6 +138,11 @@ export const rutas = createHashRouter([
                         path: "/reportes/misVentas",
                         element: <MisVentasReport />
                     },
+                    {
+                        path: "/reportes/detalleVenta",
+                        element: <DetalleVentaPage />
+                    },
+
                     {
                         path: "/reportes/ventasPorMes",
                         element: <VentasPorMes />

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
 import { useListaProductos } from "@/contexts/listaProductos";
-import { CreditCard, Minus, Pill, Plus, Scan, ShoppingCart, Trash2, Users } from "lucide-react";
+import { CreditCard, Minus, Pill, Plus, RefreshCw, Scan, ShoppingCart, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Reloj } from "./components/reloj";
@@ -25,6 +25,9 @@ import { getProductos } from "@/api/productosApi/productosApi";
 import { toast } from "sonner";
 import DialogNuevoProductoTemp from "./components/dialogNuevoProductoTemp";
 import { Badge } from "@/components/ui/badge";
+import DialogSetGranel from "./components/dialogSetGranel";
+import type { ProductoVenta } from "@/types/Producto";
+
 
 export default function Home() {
     const { user } = useCurrentUser();
@@ -36,6 +39,11 @@ export default function Home() {
     const [error, setError] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
     const [openNuevoProducto, setOpenNuevoProducto] = useState(false);
+
+    // Estados para Granel
+    const [openGranel, setOpenGranel] = useState(false);
+    const [productoGranelPendiente, setProductoGranelPendiente] = useState<ProductoVenta | null>(null);
+
     const { clearCart, removeProduct, decrementQuantity, incrementQuantity, getTotalPrice, addProduct, getCarritoActivo, crearCarrito, carritoActivo, togglePrecioMayoreo } = useListaProductos();
     const { cliente } = useCliente();
     const { setFocusScanner } = useOutletContext<{ setFocusScanner: (fn: () => void) => void }>();
@@ -173,9 +181,9 @@ export default function Home() {
 
             if (localRes?.success && localRes.data.length > 0) {
                 console.log("Producto encontrado localmente:", localRes.data[0]);
-                addProduct(localRes.data[0]);
+                procesarProductoEncontrado(localRes.data[0]);
                 setidProducto('');
-                inputRef.current?.focus();
+                // inputRef.current?.focus(); // El foco lo manejamos según si abre modal o no
                 return;
             }
 
@@ -183,9 +191,8 @@ export default function Home() {
             if (isOnline) {
                 const res = await getProductoVenta(idProducto, user.id_sucursal)
                 if (res.success) {
-                    addProduct(res.data[0]);
+                    procesarProductoEncontrado(res.data[0]);
                     setidProducto('');
-                    inputRef.current?.focus();
                 } else {
                     setError(true);
                     setidProducto('');
@@ -203,24 +210,27 @@ export default function Home() {
         }
     }
 
+    const syncProducts = async () => {
+        if (isOnline && user.id_sucursal) {
+            try {
+                const res = await getProductos(user.id_sucursal);
+                if (res.success) {
+                    // @ts-ignore
+                    const syncRes = await window["electron-api"]?.sincronizarProductos(res.data);
+                    if (syncRes?.success) {
+                        console.log(`Catálogo sincronizado: ${syncRes.count} productos.`);
+                        toast.success(`Catálogo sincronizado: ${syncRes.count} productos.`);
+                    }
+                }
+            } catch (err) {
+                console.error("Error sincronizando catálogo:", err);
+                toast.error("Error sincronizando catálogo.");
+            }
+        }
+    };
+
     // Sincronizar catálogo al entrar si hay internet
     useEffect(() => {
-        const syncProducts = async () => {
-            if (isOnline && user.id_sucursal) {
-                try {
-                    const res = await getProductos(user.id_sucursal);
-                    if (res.success) {
-                        // @ts-ignore
-                        const syncRes = await window["electron-api"]?.sincronizarProductos(res.data);
-                        if (syncRes?.success) {
-                            console.log(`Catálogo sincronizado: ${syncRes.count} productos.`);
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error sincronizando catálogo:", err);
-                }
-            }
-        };
         syncProducts();
     }, [isOnline, user.id_sucursal]);
 
@@ -265,6 +275,27 @@ export default function Home() {
         setFocusScanner(() => focusInput);
     }, [setFocusScanner]);
 
+    // Función auxiliar para manejar la lógica de granel vs normal
+    const procesarProductoEncontrado = (producto: ProductoVenta) => {
+
+        if (Boolean(producto.es_granel)) {
+            setProductoGranelPendiente(producto);
+            setOpenGranel(true);
+            // NO agregamos todavía, y NO ponemos foco al input principal
+            // El foco se irá al input del dialog
+        } else {
+            addProduct(producto);
+            inputRef.current?.focus();
+        }
+    };
+
+    const handleConfirmGranel = (cantidad: number) => {
+        if (productoGranelPendiente) {
+            // Para no romper nada:
+            addProduct(productoGranelPendiente, cantidad);
+        }
+    };
+
 
 
 
@@ -302,6 +333,15 @@ export default function Home() {
                                         ONLINE
                                     </span>
                                 )}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => syncProducts()}
+                                    title="Actualizar productos (API)"
+                                >
+                                    actualizar
+                                    <RefreshCw className={`h-4 w-4`} />
+                                </Button>
                             </div>
                         </CardTitle>
                     </CardHeader>
@@ -570,6 +610,14 @@ export default function Home() {
             <DialiogErrorProducto isOpen={error} setIsOpen={setError} inputRef={inputRef} ></DialiogErrorProducto>
             <AddCliente isOpen={openCliente} setIsOpen={setOpenCliente} inputRef={inputRef} ></AddCliente>
             <DialogNuevoProductoTemp isOpen={openNuevoProducto} setIsOpen={setOpenNuevoProducto} inputRef={inputRef} ></DialogNuevoProductoTemp>
+
+            <DialogSetGranel
+                isOpen={openGranel}
+                setIsOpen={setOpenGranel}
+                producto={productoGranelPendiente}
+                onConfirm={handleConfirmGranel}
+                inputRefMain={inputRef}
+            />
 
         </div>
     )

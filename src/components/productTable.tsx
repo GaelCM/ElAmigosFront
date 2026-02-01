@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useState, useRef } from "react"
+import { useEffect, useMemo, useState, useRef, useCallback } from "react"
 import { Card, CardHeader } from "./ui/card"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import type { ProductoVenta } from "@/types/Producto"
 import { useListaProductos } from "@/contexts/listaProductos"
 import { getProductos } from "@/api/productosApi/productosApi"
-import { ShoppingCart, Search, SquarePen } from "lucide-react"
+import { ShoppingCart, Search, SquarePen, RefreshCw } from "lucide-react"
 import { Input } from "./ui/input"
 import { toast } from "sonner"
 import { Link } from "react-router"
 import { useCurrentUser } from "@/contexts/currentUser"
+import DialogSetGranel from "@/pages/home/components/dialogSetGranel"
 
 
 
@@ -17,9 +18,10 @@ import { useCurrentUser } from "@/contexts/currentUser"
 type Props = {
   idSucursal: number
   inputRef?: React.RefObject<{ focus: () => void } | null>;
+  searchLocal?: boolean
 }
 
-export function ProductTable({ idSucursal, inputRef }: Props) {
+export function ProductTable({ idSucursal, inputRef, searchLocal = false }: Props) {
   const [productos, setProductos] = useState<ProductoVenta[]>([])
   const { user } = useCurrentUser();
   const [filteredProductos, setFilteredProductos] = useState<ProductoVenta[]>([])
@@ -27,21 +29,77 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const tableRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const { addProduct } = useListaProductos();
 
-  useEffect(() => {
+  // Estados para Granel
+  const [openGranel, setOpenGranel] = useState(false);
+  const [productoGranelPendiente, setProductoGranelPendiente] = useState<ProductoVenta | null>(null);
+
+  const handleTryAddProduct = useCallback((p: ProductoVenta) => {
+    if (searchLocal && Boolean(p.es_granel)) {
+      setProductoGranelPendiente(p);
+      setOpenGranel(true);
+    } else {
+      addProduct(p);
+      toast.success("Producto agregado correctamente");
+      setTimeout(() => {
+        inputRef?.current?.focus();
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchLocal, addProduct, inputRef]);
+
+  const handleConfirmGranel = useCallback((cantidad: number) => {
+    if (productoGranelPendiente) {
+      addProduct(productoGranelPendiente, cantidad);
+      toast.success("Producto agregado correctamente");
+      setTimeout(() => {
+        inputRef?.current?.focus();
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [productoGranelPendiente, addProduct, inputRef]);
+
+  const loadProducts = async (forceApi = false) => {
     setLoading(true)
-    getProductos(idSucursal).then(res => {
+    try {
+      if (searchLocal && !forceApi) {
+        // @ts-ignore
+        const localRes = await window["electron-api"]?.obtenerProductosLocal();
+        if (localRes?.success && localRes.data.length > 0) {
+          setProductos(localRes.data);
+          setFilteredProductos(localRes.data);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Si no es local, o falló lo local, o es forzado (update), ir a API
+      const res = await getProductos(idSucursal);
       if (res.success) {
         setProductos(res.data);
-        setFilteredProductos(res.data)
+        setFilteredProductos(res.data);
+        // Si es local, sincronizar el cache después de obtener de API
+        if (searchLocal) {
+          // @ts-ignore
+          await window["electron-api"]?.sincronizarProductos(res.data);
+        }
       } else {
         setProductos([]);
         setFilteredProductos([]);
       }
+    } catch (error) {
+      console.error("Error loading products:", error);
+      toast.error("Error al cargar productos");
+    } finally {
+      setLoading(false);
     }
-    ).finally(() => { setLoading(false) })
-  }, [idSucursal])
+  }
+
+  useEffect(() => {
+    loadProducts();
+  }, [idSucursal, searchLocal])
 
   useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
@@ -74,7 +132,7 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
 
   // Manejo de teclado para navegación
   useEffect(() => {
-    if (pageItems.length === 0) return;
+    if (pageItems.length === 0 || openGranel) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
@@ -92,11 +150,7 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
           e.preventDefault();
           const selectedProduct = pageItems[selectedIndex];
           if (selectedProduct && selectedProduct.stock_disponible_presentacion > 0) {
-            addProduct(selectedProduct);
-            toast.success("Producto agregado correctamente");
-            setTimeout(() => {
-              inputRef?.current?.focus();
-            }, 100);
+            handleTryAddProduct(selectedProduct);
           }
           break;
         }
@@ -105,7 +159,7 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [pageItems, selectedIndex, addProduct, inputRef]);
+  }, [pageItems, selectedIndex, handleTryAddProduct, openGranel]);
 
   // Scroll automático al elemento seleccionado
   useEffect(() => {
@@ -134,16 +188,31 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
   return (
     <Card className="p-2 border-0 flex flex-col h-full">
       <CardHeader>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar productos por nombre o sku..."
-            className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
-            value={searchTerm}
-            autoFocus
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Buscar productos por nombre o sku..."
+              className="w-1/2 rounded-lg bg-background pl-8"
+              value={searchTerm}
+              autoFocus
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {searchLocal && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => loadProducts(true)}
+              title="Actualizar productos (API)"
+              disabled={loading}
+            >
+              actualizar
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <div className="flex-1 overflow-y-auto w-full" ref={tableRef}>
@@ -179,11 +248,11 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
                 >
                   <td className="px-3 py-3 align-middle text-sm text-muted-foreground">{p.sku_presentacion}</td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="font-medium text-sm">{p.nombre_producto + " " + p.nombre_presentacion + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
+                    <div className="font-medium text-sm">{p.nombre_producto + " " + (p.es_granel ? "Granel" : p.nombre_presentacion) + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
                   </td>
 
                   <td className="px-3 py-3 align-middle text-sm ">
-                    <Badge className={`${p.nombre_presentacion === "Pieza" ? 'bg-blue-600' : 'bg-orange-600'}`}>{p.nombre_presentacion}</Badge>
+                    <Badge className={`${p.es_granel ? 'bg-green-600' : p.nombre_presentacion === "Pieza" ? 'bg-blue-600' : 'bg-orange-600'}`}>{p.es_granel ? "Granel" : p.nombre_presentacion}</Badge>
                   </td>
 
                   <td className="px-3 py-3 align-middle">
@@ -217,11 +286,7 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
                       variant={isSelected ? "default" : "outline"}
                       onClick={(e) => {
                         e.stopPropagation();
-                        addProduct(p)
-                        toast.success("Producto agregado correctamente")
-                        setTimeout(() => {
-                          inputRef?.current?.focus();
-                        }, 100);
+                        handleTryAddProduct(p)
                       }}
                       disabled={outStock}
                       aria-label={`Agregar ${p.nombre_producto} al carrito`}
@@ -315,6 +380,13 @@ export function ProductTable({ idSucursal, inputRef }: Props) {
           </div>
         </div>
       </div>
+      <DialogSetGranel
+        isOpen={openGranel}
+        setIsOpen={setOpenGranel}
+        producto={productoGranelPendiente}
+        onConfirm={handleConfirmGranel}
+        inputRefMain={searchInputRef}
+      />
     </Card>
   )
 }

@@ -1,21 +1,21 @@
 import ProductTable from "./productTable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
-type props={
-    isOpen:boolean,
-    setIsOpen:(isOpen:boolean)=>void,
-    idSucursal:number,
+type props = {
+    isOpen: boolean,
+    setIsOpen: (isOpen: boolean) => void,
+    idSucursal: number,
     inputRef?: React.RefObject<{ focus: () => void } | null>;
 }
 
-export default function DialogProducto({isOpen,setIsOpen,idSucursal,inputRef}:props){
-    
-     return (
+export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef }: props) {
+
+    return (
         <Dialog open={isOpen} onOpenChange={() => {
             setIsOpen(false);
             setTimeout(() => {
                 inputRef?.current?.focus();
-        }, 100);
+            }, 100);
         }}>
             <DialogContent
                 className="
@@ -48,7 +48,7 @@ export default function DialogProducto({isOpen,setIsOpen,idSucursal,inputRef}:pr
                         pb-4
                     "
                 >
-                    <ProductTable idSucursal={idSucursal} />
+                    <ProductTable idSucursal={idSucursal} searchLocal={true} />
                 </div>
             </DialogContent>
         </Dialog>

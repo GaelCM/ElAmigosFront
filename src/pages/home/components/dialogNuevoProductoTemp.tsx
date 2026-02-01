@@ -81,6 +81,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
             id_sucursal: user?.id_sucursal,
             stock_piezas: 9999,
             stock_disponible_presentacion: 9999,
+            es_granel: false,
         }
 
         addProduct(newProduct)

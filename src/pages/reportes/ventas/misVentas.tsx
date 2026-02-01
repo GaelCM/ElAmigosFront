@@ -133,7 +133,7 @@ export default function MisVentasReport() {
             )}
 
             {/* Tabla de Ventas */}
-            <TablaVentas ventas={ventas} loading={loading} />
+            <TablaVentas ventas={ventas} loading={loading} onVentaCancelada={obtenerMisVentas} />
         </div>
     )
 }

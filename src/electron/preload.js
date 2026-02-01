@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("electron-api", {
     // Offline API
     sincronizarProductos: (productos) => ipcRenderer.invoke('sincronizar-productos', productos),
     buscarProductoLocal: (sku) => ipcRenderer.invoke('buscar-producto-local', sku),
+    obtenerProductosLocal: () => ipcRenderer.invoke('obtener-productos-local'),
     guardarVentaOffline: (venta) => ipcRenderer.invoke('guardar-venta-offline', venta),
     obtenerVentasPendientes: () => ipcRenderer.invoke('obtener-ventas-pendientes'),
     eliminarVentaSincronizada: (id) => ipcRenderer.invoke('eliminar-venta-sincronizada', id),

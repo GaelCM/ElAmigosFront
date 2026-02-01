@@ -16,27 +16,38 @@ import {
     DollarSign,
     ArrowUpDown,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Settings,
+    Trash,
+    Eye
 } from "lucide-react";
 import { useState } from "react";
+import DialogCancelarVenta from "./DialogCancelarVenta";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useCurrentUser } from "@/contexts/currentUser";
+import { useNavigate } from "react-router";
 
 interface TablaVentasProps {
     ventas: ReporteVentaDetallado[];
     loading?: boolean;
+    onVentaCancelada?: () => void;
 }
 
 type SortField = 'fecha_venta' | 'total_venta' | 'id_venta' | 'cantidad_productos';
 type SortDirection = 'asc' | 'desc';
 
-export default function TablaVentas({ ventas, loading = false }: TablaVentasProps) {
+export default function TablaVentas({ ventas, loading = false, onVentaCancelada }: TablaVentasProps) {
     const [sortField, setSortField] = useState<SortField>('fecha_venta');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const [expandedVenta, setExpandedVenta] = useState<number | null>(null);
+    const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+    const [ventaToCancel, setVentaToCancel] = useState<number | null>(null);
+    const { user } = useCurrentUser();
+    const navigate = useNavigate();
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -54,6 +65,9 @@ export default function TablaVentas({ ventas, loading = false }: TablaVentasProp
         if (sortField === 'fecha_venta') {
             aValue = new Date(a.fecha_venta).getTime();
             bValue = new Date(b.fecha_venta).getTime();
+        } else if (typeof aValue === 'string' || typeof bValue === 'string') {
+            aValue = Number(aValue);
+            bValue = Number(bValue);
         }
 
         if (sortDirection === 'asc') {
@@ -86,7 +100,7 @@ export default function TablaVentas({ ventas, loading = false }: TablaVentasProp
                 variant: 'default' as const,
                 className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
             },
-            2: {
+            0: {
                 label: 'Cancelada',
                 icon: XCircle,
                 variant: 'destructive' as const,
@@ -102,8 +116,13 @@ export default function TablaVentas({ ventas, loading = false }: TablaVentasProp
         return estados[estado as keyof typeof estados] || estados[3];
     };
 
-    const totalVentas = ventas.reduce((sum, venta) => sum + venta.total_venta, 0);
-    const totalProductos = ventas.reduce((sum, venta) => sum + venta.cantidad_productos, 0);
+    const cancelarVenta = (id_venta: number) => {
+        setVentaToCancel(id_venta);
+        setIsCancelDialogOpen(true);
+    };
+
+    const totalVentas = ventas.reduce((sum, venta) => sum + Number(venta.total_venta), 0);
+    const totalProductos = ventas.reduce((sum, venta) => sum + Number(venta.cantidad_productos), 0);
 
     if (loading) {
         return (
@@ -291,6 +310,14 @@ export default function TablaVentas({ ventas, loading = false }: TablaVentasProp
                                             <span className="font-semibold">Sucursal</span>
                                         </div>
                                     </TableHead>
+                                    {user?.id_rol === 1 && (
+                                        <TableHead>
+                                            <div className="flex items-center gap-2">
+                                                <Settings className="h-4 w-4" />
+                                                <span className="font-semibold">Acciones</span>
+                                            </div>
+                                        </TableHead>
+                                    )}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -371,6 +398,20 @@ export default function TablaVentas({ ventas, loading = false }: TablaVentasProp
                                                     <div className="flex items-center gap-2">
                                                         <Building2 className="h-4 w-4 text-muted-foreground" />
                                                         <span className="text-sm">{venta.nombre_sucursal}</span>
+                                                    </div>
+                                                </TableCell>
+                                                {user?.id_rol === 1 && (
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2" onClick={() => cancelarVenta(venta.id_venta)}>
+                                                            <Trash className="h-4 w-4 text-red-600" />
+                                                            <span className="text-sm">Cancelar Venta</span>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2" onClick={() => navigate(`/reportes/detalleVenta?id=${venta.id_venta}`)}>
+                                                        <Eye className="h-4 w-4 text-blue-600" />
+                                                        <span className="text-sm">Ver</span>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -484,6 +525,16 @@ export default function TablaVentas({ ventas, loading = false }: TablaVentasProp
                     </div>
                 </CardContent>
             </Card>
+
+
+            <DialogCancelarVenta
+                isOpen={isCancelDialogOpen}
+                setIsOpen={setIsCancelDialogOpen}
+                idVenta={ventaToCancel}
+                onSuccess={() => {
+                    onVentaCancelada?.();
+                }}
+            />
         </div>
     );
 }

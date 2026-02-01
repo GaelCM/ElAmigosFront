@@ -24,7 +24,8 @@ db.exec(`
         precio_mayoreo REAL,
         id_sucursal INTEGER,
         stock_piezas REAL,
-        stock_disponible_presentacion REAL
+        stock_disponible_presentacion REAL,
+        es_granel INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS offline_ventas (

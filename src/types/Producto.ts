@@ -3,7 +3,7 @@ export type Producto = {
     sku_pieza: string;
     nombre_producto: string;
     descripcion: string | null;
-    precio_costo: number ;
+    precio_costo: number;
     es_producto_compuesto: number;
     id_unidad_venta: number;
     nombre_presentacion: string;
@@ -23,11 +23,11 @@ export interface ProductoItem {
     usarPrecioMayoreo: boolean;
 }
 
-export interface ProductoVenta{
+export interface ProductoVenta {
     id_producto: number;
     sku_pieza: string;
     nombre_producto: string;
-    descripcion: string ;
+    descripcion: string;
     precio_costo: number;
     es_producto_compuesto: number;
     id_unidad_venta: number;
@@ -40,21 +40,23 @@ export interface ProductoVenta{
     id_sucursal: number;
     stock_piezas: number;
     stock_disponible_presentacion: number;
+    es_granel: boolean;
 }
 
-export type ProductoVentaResponse={
+export type ProductoVentaResponse = {
     success: boolean;
     message: string;
     data: ProductoVenta[];
 }
 
 
-export interface ProductoFormFinal{
+export interface ProductoFormFinal {
     nombre_producto: string;
     descripcion?: string | undefined;
     id_categoria: string;
     precio_costo: number;
     sku_pieza?: string | undefined;
+    es_granel: boolean;
     cantidad_actual: number;
     cantidad_minima: number;
     sucursales_inventario: {
@@ -74,7 +76,7 @@ export interface ProductoFormFinal{
     }[];
 }
 
-export type ProductoGeneralResponse={
+export type ProductoGeneralResponse = {
     success: boolean;
     message: string;
     data: ProductoFormFinal;
@@ -82,25 +84,25 @@ export type ProductoGeneralResponse={
 
 
 type ComponenteProductoEspecial = {
-  id_unidad_venta: number;
-  nombre_producto: string;
-  nombre_presentacion: string;
-  cantidad: number;
-  precio_unitario: number;
+    id_unidad_venta: number;
+    nombre_producto: string;
+    nombre_presentacion: string;
+    cantidad: number;
+    precio_unitario: number;
 };
 
 export type ProductoEspecialInput = {
-  sku_pieza: string;
-  nombre_producto: string;
-  descripcion?: string|undefined;
-  id_categoria: string | number;  // Puede venir como string del form
-  precio_venta: number;
-  precio_mayoreo: number;
-  isEspecial: number;  // 1 para especial, 0 para normal
-  componentes: ComponenteProductoEspecial[];
+    sku_pieza: string;
+    nombre_producto: string;
+    descripcion?: string | undefined;
+    id_categoria: string | number;  // Puede venir como string del form
+    precio_venta: number;
+    precio_mayoreo: number;
+    isEspecial: number;  // 1 para especial, 0 para normal
+    componentes: ComponenteProductoEspecial[];
 };
 
-export type ProductoGeneralEspResponse={
+export type ProductoGeneralEspResponse = {
     success: boolean;
     message: string;
     data: ProductoEspecialInput;
