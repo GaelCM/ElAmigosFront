@@ -82,10 +82,15 @@ export default function CarritoTabs() {
                   <span
                     onClick={() => cambiarCarritoActivo(carrito.id)}
                     onDoubleClick={() => handleRename(carrito.id, carrito.nombre)}
-                    className="flex-1"
+                    className="flex-1 flex flex-col"
                   >
-                    {carrito.nombre}
-                    <span className="text-xs ml-1 opacity-70">({carrito.productos.length})</span>
+                    <span className="font-medium">{carrito.cliente ? carrito.cliente.nombre_cliente : carrito.nombre}</span>
+                    {carrito.cliente && (
+                      <span className="text-[10px] opacity-80 leading-tight truncate max-w-[100px]">
+                        👤 {carrito.cliente.nombre_cliente}
+                      </span>
+                    )}
+                    <span className="text-xs opacity-70">({carrito.productos.length} items)</span>
                   </span>
                   {/* Botón de eliminar (si hay más de 1 carrito o simplemente permitir borrar siempre y que quede vacío) */}
                   <Button

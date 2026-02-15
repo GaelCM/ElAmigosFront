@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { obtenerReporteDetalleVenta } from "@/api/reportesApi/reportesApi";
+import { cancelarProductoVentaApi } from "@/api/ventasApi/ventasApi";
+import { useCurrentUser } from "@/contexts/currentUser";
 import type { DetalleVentaItem } from "@/types/ReporteVentasT";
 import {
     Package,
@@ -12,13 +14,25 @@ import {
     FileText,
     Layers,
     DollarSign,
-    Printer
+    Printer,
+    Trash2,
+    AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { redondearPrecio } from "@/lib/utils";
 
 
 export default function DetalleVentaPage() {
@@ -27,6 +41,25 @@ export default function DetalleVentaPage() {
     const idVenta = searchParams.get("id");
     const [loading, setLoading] = useState(true);
     const [items, setItems] = useState<DetalleVentaItem[]>([]);
+    const { user } = useCurrentUser();
+
+    const fetchDetalle = async () => {
+        if (!idVenta) return;
+        try {
+            setLoading(true);
+            const response = await obtenerReporteDetalleVenta(Number(idVenta));
+            if (response.success) {
+                setItems(response.data);
+            } else {
+                toast.error(response.message || "Error al obtener el detalle de la venta");
+            }
+        } catch (error) {
+            console.error("Error fetching sale detail:", error);
+            toast.error("Error de conexión al servidor");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (!idVenta) {
@@ -35,25 +68,35 @@ export default function DetalleVentaPage() {
             return;
         }
 
-        const fetchDetalle = async () => {
-            try {
-                setLoading(true);
-                const response = await obtenerReporteDetalleVenta(Number(idVenta));
-                if (response.success) {
-                    setItems(response.data);
-                } else {
-                    toast.error(response.message || "Error al obtener el detalle de la venta");
-                }
-            } catch (error) {
-                console.error("Error fetching sale detail:", error);
-                toast.error("Error de conexión al servidor");
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchDetalle();
     }, [idVenta, navigate]);
+
+    const [dialogOpen, setDialogOpen] = useState<number | null>(null);
+    const [cantidadACancelar, setCantidadACancelar] = useState<number>(1);
+
+    const handleCancelarProducto = async (id_detalle: number, nombre: string) => {
+        try {
+            const res = await cancelarProductoVentaApi(id_detalle, user.id_usuario, cantidadACancelar);
+            if (res.success) {
+                toast.success(`Producto "${nombre}" ajustado exitosamente`);
+                setDialogOpen(null);
+                setCantidadACancelar(1); // Reset
+                // Volver a cargar los datos para ver los totales actualizados
+                await fetchDetalle();
+            } else {
+                toast.error(res.message || "Error al cancelar el producto");
+            }
+        } catch (error) {
+            console.error("Error al cancelar producto:", error);
+            toast.error("Error al procesar el ajuste");
+        }
+    }
+
+    const totalVenta = redondearPrecio(items.reduce((acc, item) => acc + Number(item.subtotal), 0));
+    const totalProductos = items.reduce((acc, item) => acc + Number(item.cantidad), 0);
+
+    // Common sale data from the first item
+    const saleInfo = items.length > 0 ? items[0] : null;
 
     const reimprimirTicket = async () => {
         if (!saleInfo) {
@@ -93,12 +136,6 @@ export default function DetalleVentaPage() {
             toast.error("Error al conectar con la impresora");
         }
     }
-
-    const totalVenta = items.reduce((acc, item) => acc + Number(item.subtotal), 0);
-    const totalProductos = items.reduce((acc, item) => acc + Number(item.cantidad), 0);
-
-    // Common sale data from the first item
-    const saleInfo = items.length > 0 ? items[0] : null;
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-MX', {
@@ -156,7 +193,7 @@ export default function DetalleVentaPage() {
                                 Registro de transacción #{idVenta}
                             </p>
                         </div>
-                        <div>
+                        <div className="flex gap-2">
                             <Button className=" text-black bg-yellow-500 hover:bg-yellow-600 hover:text-black cursor-pointer" onClick={reimprimirTicket} >
                                 <Printer className="w-5 h-5 mr-2" />
                                 Imprimir Ticket
@@ -237,14 +274,14 @@ export default function DetalleVentaPage() {
                     />
                     <CardKpi
                         title="Recibido"
-                        value={formatCurrency(saleInfo?.monto_recibido || 0)}
+                        value={formatCurrency(redondearPrecio(saleInfo?.monto_recibido || 0))}
                         icon={<Tag className="w-6 h-6 text-amber-500" />}
                         description="Monto entregado por cliente"
                         variant="amber"
                     />
                     <CardKpi
                         title="Cambio"
-                        value={formatCurrency(saleInfo?.cambio || 0)}
+                        value={formatCurrency(redondearPrecio(saleInfo?.cambio || 0))}
                         icon={<Layers className="w-6 h-6 text-purple-500" />}
                         description="Monto devuelto al cliente"
                         variant="purple"
@@ -271,12 +308,13 @@ export default function DetalleVentaPage() {
                                     <th className="px-6 py-4 font-semibold text-sm text-right">Precio Unit.</th>
                                     <th className="px-6 py-4 font-semibold text-sm text-center">Tipo</th>
                                     <th className="px-6 py-4 font-semibold text-sm text-right">Subtotal</th>
+                                    {saleInfo?.estado_venta !== 0 && <th className="px-6 py-4 font-semibold text-sm text-center">Ajuste</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                                 {items.map((item) => (
                                     <tr
-                                        key={item.id_unidad_venta}
+                                        key={item.id_detalle_venta}
                                         className="group hover:bg-slate-50/80 dark:hover:bg-indigo-500/5 transition-colors duration-200"
                                     >
                                         <td className="px-6 py-4">
@@ -298,7 +336,7 @@ export default function DetalleVentaPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="text-slate-600 dark:text-slate-400">{formatCurrency(item.precio_unitario)}</span>
+                                            <span className="text-slate-600 dark:text-slate-400">{formatCurrency(redondearPrecio(item.precio_unitario))}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {item.precio_mayoreo ? (
@@ -308,8 +346,93 @@ export default function DetalleVentaPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.subtotal)}</span>
+                                            <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(redondearPrecio(item.subtotal))}</span>
                                         </td>
+                                        {saleInfo?.estado_venta !== 0 && (
+                                            <td className="px-6 py-4 text-center">
+                                                <Dialog
+                                                    open={dialogOpen === item.id_detalle_venta}
+                                                    onOpenChange={(open) => {
+                                                        if (open) {
+                                                            setDialogOpen(item.id_detalle_venta);
+                                                            setCantidadACancelar(1); // Default to 1 to remove
+                                                        } else {
+                                                            setDialogOpen(null);
+                                                        }
+                                                    }}
+                                                >
+                                                    <DialogTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full transition-all duration-200"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="rounded-3xl border-slate-200 dark:border-slate-800">
+                                                        <DialogHeader>
+                                                            <div className="flex items-center gap-3 text-red-600 mb-2">
+                                                                <AlertCircle className="h-6 w-6" />
+                                                                <DialogTitle className="text-xl">¿Ajustar Venta?</DialogTitle>
+                                                            </div>
+                                                            <DialogDescription className="text-slate-600 dark:text-slate-400 text-base">
+                                                                Estás por devolver/cancelar el producto <span className="font-bold text-slate-900 dark:text-white">"{item.nombre_producto}"</span>.
+                                                                <br />
+                                                            </DialogDescription>
+                                                        </DialogHeader>
+
+                                                        <div className="py-4 space-y-4">
+                                                            {Number(item.cantidad) > 1 ? (
+                                                                <div className="flex flex-col gap-2">
+                                                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                                        Cantidad a devolver (Max: {item.cantidad})
+                                                                    </label>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => setCantidadACancelar(Math.max(1, cantidadACancelar - 1))}
+                                                                            disabled={cantidadACancelar <= 1}
+                                                                        >
+                                                                            -
+                                                                        </Button>
+                                                                        <span className="text-xl font-bold w-12 text-center">{cantidadACancelar}</span>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => setCantidadACancelar(Math.min(Number(item.cantidad), cantidadACancelar + 1))}
+                                                                            disabled={cantidadACancelar >= Number(item.cantidad)}
+                                                                        >
+                                                                            +
+                                                                        </Button>
+                                                                    </div>
+                                                                    <p className="text-xs text-slate-500">
+                                                                        Se restarán <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                                                                            {formatCurrency(redondearPrecio(Number(item.precio_unitario) * cantidadACancelar))}
+                                                                        </span> del total.
+                                                                    </p>
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-slate-600 dark:text-slate-400">
+                                                                    Se regresará el stock y se restará <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatCurrency(redondearPrecio(item.subtotal))}</span> del total.
+                                                                </p>
+                                                            )}
+                                                        </div>
+
+                                                        <DialogFooter className="gap-2">
+                                                            <Button variant="outline" onClick={() => setDialogOpen(null)} className="rounded-xl border-slate-200 dark:border-slate-800">Cancelar</Button>
+                                                            <Button
+                                                                onClick={() => handleCancelarProducto(item.id_detalle_venta, item.nombre_producto)}
+                                                                className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                                                            >
+                                                                Confirmar Devolución
+                                                            </Button>
+                                                        </DialogFooter>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -348,8 +471,8 @@ export default function DetalleVentaPage() {
                                     <span>Cambio</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(saleInfo?.monto_recibido || 0)}</span>
-                                    <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(saleInfo?.cambio || 0)}</span>
+                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(redondearPrecio(saleInfo?.monto_recibido || 0))}</span>
+                                    <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(redondearPrecio(saleInfo?.cambio || 0))}</span>
                                 </div>
                             </div>
                         </div>

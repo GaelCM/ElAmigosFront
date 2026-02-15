@@ -197,7 +197,7 @@ function utilsController() {
     });
 
     ipcMain.handle('print-ticket-venta-escpos', async (event, data) => {
-        const { printerName, sucursal, usuario, cliente, folio, fecha, productos, total, pagoCon, cambio, cortar = true } = data;
+        const { printerName, sucursal, id_sucursal, usuario, cliente, folio, fecha, productos, total, pagoCon, cambio, cortar = true } = data;
         console.log("Generando TICKET VENTA ESC/POS para:", printerName);
 
         try {
@@ -231,15 +231,47 @@ function utilsController() {
 
             // --- PRODUCTOS ---
             printer.alignLeft();
-            printer.setTypeFontB();
+            printer.setTypeFontA();
             printer.println("CANT  DESCRIPCION           IMPORTE");
             printer.drawLine();
 
             productos.forEach((p) => {
+                const maxDescLen = 20;
                 let cant = p.cantidad.toString().padEnd(5);
-                let nombre = p.nombre.substring(0, 20).padEnd(21);
                 let importe = "$" + p.importe.toFixed(2);
-                printer.println(`${cant} ${nombre} ${importe}`);
+
+                // Dividir el nombre en varias líneas si es necesario
+                const nombreFull = p.nombre || "";
+                let words = nombreFull.split(' ');
+                let lines = [];
+                let currentLine = '';
+
+                words.forEach(word => {
+                    if ((currentLine + (currentLine ? ' ' : '') + word).length <= maxDescLen) {
+                        currentLine += (currentLine ? ' ' : '') + word;
+                    } else {
+                        if (currentLine) lines.push(currentLine);
+                        currentLine = word;
+                        // Si una palabra es más larga que el límite, la forzamos a cortarse
+                        while (currentLine.length > maxDescLen) {
+                            lines.push(currentLine.substring(0, maxDescLen));
+                            currentLine = currentLine.substring(maxDescLen);
+                        }
+                    }
+                });
+                if (currentLine) lines.push(currentLine);
+
+                // Si no hay líneas (nombre vacío), al menos ponemos una vacía
+                if (lines.length === 0) lines.push("");
+
+                // Imprimir la primera línea con cantidad e importe
+                printer.println(`${cant} ${lines[0].padEnd(maxDescLen + 1)} ${importe}`);
+
+                // Imprimir líneas adicionales (solo la descripción, indentada)
+                for (let i = 1; i < lines.length; i++) {
+                    // Indentamos 6 espacios (5 de cantidad + 1 espacio)
+                    printer.println(`${"".padEnd(6)}${lines[i]}`);
+                }
             });
 
             printer.setTypeFontA();
@@ -248,16 +280,24 @@ function utilsController() {
 
             // --- TOTALES ---
             printer.alignRight();
+            printer.setTextDoubleHeight();
+            printer.setTextDoubleWidth();
             printer.bold(true);
             printer.println(`TOTAL: $${Number(total).toFixed(2)}`);
-            printer.bold(false);
             printer.println(`Pago con: $${Number(pagoCon).toFixed(2)}`);
             printer.println(`Cambio: $${Number(cambio).toFixed(2)}`);
+            printer.setTextNormal();
+            printer.bold(false);
             printer.newLine();
 
             // --- FOOTER ---
             printer.alignCenter();
-            printer.println("¡Gracias por su compra!");
+            if (id_sucursal == 2) {
+                printer.println("Pedidos al 951 115 4965");
+                printer.println("¡Gracias por su compra!");
+            } else {
+                printer.println("¡Gracias por su compra!");
+            }
             printer.println("Vuelva pronto");
             printer.newLine();
             printer.newLine();

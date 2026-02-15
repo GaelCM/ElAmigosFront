@@ -61,6 +61,13 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
                 })
                 onOpenChange(false)
                 onCajaOpened()
+
+                // Abrir cajón de dinero al iniciar turno nuevo
+                const printerName = localStorage.getItem("printer_device");
+                if (printerName) {
+                    // @ts-ignore
+                    window["electron-api"]?.openCashDrawer(printerName);
+                }
             } else {
                 toast("Error al abrir el turno.", {
                     description: res.message,

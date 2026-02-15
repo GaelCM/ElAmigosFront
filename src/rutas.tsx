@@ -34,6 +34,7 @@ import NuevaCompraForm from "./pages/egresos/components/nuevaCompraForm"
 import MisEgresos from "./pages/reportes/egresos/misEgresos"
 import DetalleCompra from "./pages/egresos/components/detalleCompra"
 import MovimientosPage from "./pages/movimientos/movimientos"
+import VentasGeneralPage from "./pages/reportes/ventas/ventasGeneral"
 
 
 
@@ -153,6 +154,10 @@ export const rutas = createHashRouter([
                     {
                         path: "/reportes/detalleVenta",
                         element: <DetalleVentaPage />
+                    },
+                    {
+                        path: "/reportes/ventasGeneral",
+                        element: <VentasGeneralPage />
                     },
 
                     {

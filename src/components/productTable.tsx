@@ -21,9 +21,10 @@ type Props = {
   searchLocal?: boolean;
   onAddProduct?: (product: ProductoVenta, quantity?: number) => void;
   allowOutOfStock?: boolean;
+  setIsOpen?: (isOpen: boolean) => void;
 }
 
-export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddProduct, allowOutOfStock = false }: Props) {
+export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddProduct, allowOutOfStock = false, setIsOpen }: Props) {
   const [productos, setProductos] = useState<ProductoVenta[]>([])
   const { user } = useCurrentUser();
   const [filteredProductos, setFilteredProductos] = useState<ProductoVenta[]>([])
@@ -51,6 +52,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
         inputRef?.current?.focus();
         searchInputRef.current?.focus();
       }, 100);
+      setIsOpen?.(false);
     }
   }, [searchLocal, addProductFn, inputRef]);
 
@@ -62,6 +64,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
         inputRef?.current?.focus();
         searchInputRef.current?.focus();
       }, 100);
+      setIsOpen?.(false);
     }
   }, [productoGranelPendiente, addProductFn, inputRef]);
 

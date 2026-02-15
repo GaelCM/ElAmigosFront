@@ -3,10 +3,13 @@ import * as LucideIcons from "lucide-react";
 import { Plus, X, Lock, LogOut } from "lucide-react"; // Import some specific ones needed locally in JSX
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router"
+import { useHotkeys } from "react-hotkeys-hook";
 import { Button } from "./ui/button";
 import AddCliente from "./dialogAddCliente";
 import { useCurrentUser } from "@/contexts/currentUser";
 import logo from "../assets/logo.jpg";
+
+import { useListaProductos } from "@/contexts/listaProductos";
 
 type sideBarProps = {
     sidebarOpen: boolean,
@@ -18,11 +21,17 @@ type sideBarProps = {
 export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
 
     const { user } = useCurrentUser();
+    const { carritoActivo, asignarClienteCarrito } = useListaProductos();
 
     const navigate = useNavigate();
     const location = useLocation();
     const [isOpen, setOpen] = useState(false);
     const rutaActual = location.pathname;
+
+    useHotkeys('f1', (e) => {
+        e.preventDefault();
+        navigate("/");
+    }, { enableOnFormTags: true });
 
 
 
@@ -92,9 +101,11 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
                 lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 
                 w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 ease-in-out
+                flex flex-col h-full
             `}
             >
-                <div className="p-4 lg:p-6">
+                {/* Scrollable Content Area */}
+                <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar p-4 lg:p-6">
                     <div className="flex items-center justify-between mb-6 lg:mb-8">
                         <div className="flex items-center gap-2">
                             <img src={logo} alt="" className="w-52 h-42" />
@@ -105,11 +116,10 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                     </div>
 
                     <div className="space-y-2 mb-4 lg:mb-6">
-
                         <Button className="w-full justify-start gap-2 text-sm lg:text-base" size="sm">
                             <Link to={"/"} className="flex w-full justify-start items-center gap-2 text-sm lg:text-base">
                                 <Plus className="w-4 h-4" />
-                                <span className="hidden sm:inline">Nueva Venta</span>
+                                <span className="hidden sm:inline">Nueva Venta (F1)</span>
                                 <span className="sm:hidden">Venta</span>
                             </Link>
                         </Button>
@@ -120,7 +130,7 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                             onClick={() => { setOpen(true) }}
                         >
                             <UserPlus className="w-4 h-4" />
-                            <span className="hidden sm:inline">Buscar Cliente (alt+m)</span>
+                            <span className="hidden sm:inline">Nuevo Cliente</span>
                             <span className="sm:hidden">Cliente</span>
                         </Button>*/}
                     </div>
@@ -146,24 +156,22 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                             );
                         })}
                     </nav>
-
-                    {/* Fin contenido sidebar */}
                 </div>
-                {/* Perfil de usuario al fondo, fuera del contenido principal */}
-                <div className="absolute bottom-0 left-0 w-full p-4 border-t border-sidebar-border bg-sidebar/80 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-lg font-bold text-primary">
+
+                {/* Perfil de usuario al fondo */}
+                <div className="p-4 border-t border-sidebar-border bg-sidebar shrink-0 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-lg font-bold text-primary shrink-0">
                         {user?.usuario?.[0]?.toUpperCase() || "U"}
                     </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-sidebar-foreground truncate">{user?.usuario}</span>
-                        <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
-                        <span className="text-xs text-sidebar-foreground/70 truncate">{user?.rol}</span>
+                    <div className="flex flex-col min-w-0 flex-1">
+                        <span className="font-semibold text-sidebar-foreground truncate text-sm">{user?.usuario}</span>
+                        <span className="text-[10px] text-sidebar-foreground/70 truncate">{user?.rol}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => navigate("/cerrar-caja")} title="Cerrar Caja">
+                    <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/cerrar-caja")} title="Cerrar Caja">
                             <Lock className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => {
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
                             localStorage.removeItem("tkn");
                             localStorage.removeItem("currentUser");
                             localStorage.removeItem("openCaja");
@@ -174,7 +182,15 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                     </div>
                 </div>
             </div>
-            <AddCliente isOpen={isOpen} setIsOpen={setOpen} />
+            <AddCliente
+                isOpen={isOpen}
+                setIsOpen={setOpen}
+                onSelect={(selectedCliente) => {
+                    if (carritoActivo) {
+                        asignarClienteCarrito(carritoActivo, selectedCliente);
+                    }
+                }}
+            />
         </>
     )
 }

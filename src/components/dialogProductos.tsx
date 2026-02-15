@@ -48,7 +48,7 @@ export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef
                         pb-4
                     "
                 >
-                    <ProductTable idSucursal={idSucursal} searchLocal={true} />
+                    <ProductTable idSucursal={idSucursal} searchLocal={true} setIsOpen={setIsOpen} />
                 </div>
             </DialogContent>
         </Dialog>

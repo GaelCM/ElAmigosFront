@@ -54,7 +54,7 @@ export default function TablaGastos({ turnoId }: { turnoId: number | null }) {
         if (item) {
             setFormData({ ...item });
         } else {
-            setFormData({ monto: 0, metodo_pago: 1, folio: "", descripcion: "" });
+            setFormData({ monto: 0, metodo_pago: 0, folio: "", descripcion: "" });
         }
         setIsModalOpen(true);
     };
@@ -82,6 +82,8 @@ export default function TablaGastos({ turnoId }: { turnoId: number | null }) {
             fecha_gasto: editingItem ? editingItem.fecha_gasto : fechaFormateda
         };
 
+
+
         try {
             if (editingItem) {
                 const res = await actualizarGasto({
@@ -95,6 +97,7 @@ export default function TablaGastos({ turnoId }: { turnoId: number | null }) {
                 }
             } else {
                 const res = await crearGasto(payload)
+
                 if (res.success) {
                     fetchGastos();
                     toast.success("Gasto creado exitosamente", {
@@ -192,7 +195,7 @@ export default function TablaGastos({ turnoId }: { turnoId: number | null }) {
                                         <TableCell>{item.fecha_gasto ? new Date(item.fecha_gasto).toLocaleDateString() : '-'}</TableCell>
                                         <TableCell className="font-medium">${Number(item.monto).toFixed(2)}</TableCell>
                                         <TableCell>{item.folio || '-'}</TableCell>
-                                        <TableCell>{item.metodo_pago === 1 ? "Efectivo" : "Tarjeta"}</TableCell>
+                                        <TableCell>{item.metodo_pago === 0 ? "Efectivo" : "Tarjeta"}</TableCell>
                                         <TableCell>{item.descripcion}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
@@ -230,16 +233,16 @@ export default function TablaGastos({ turnoId }: { turnoId: number | null }) {
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="metodo" className="text-right">Metodo</Label>
                             <Select
-                                value={formData.metodo_pago ? String(formData.metodo_pago) : "1"}
+                                value={formData.metodo_pago ? String(formData.metodo_pago) : "0"}
                                 onValueChange={(val) => setFormData({ ...formData, metodo_pago: parseInt(val) })}
                             >
                                 <SelectTrigger className="w-[180px] col-span-3">
                                     <SelectValue placeholder="Seleccione metodo" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="1">Efectivo</SelectItem>
-                                    <SelectItem value="2">Tarjeta</SelectItem>
-                                    <SelectItem value="3">Transferencia</SelectItem>
+                                    <SelectItem value="0">Efectivo</SelectItem>
+                                    <SelectItem value="1">Tarjeta</SelectItem>
+                                    <SelectItem value="2">Transferencia</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

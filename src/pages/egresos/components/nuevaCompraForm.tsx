@@ -25,6 +25,7 @@ export default function NuevaCompraForm() {
         removeProduct,
         incrementQuantity,
         decrementQuantity,
+        updateQuantity,
         updatePrice,
         getTotalCost,
         crearCarrito, clearCart
@@ -36,6 +37,7 @@ export default function NuevaCompraForm() {
     const [descripcion, setDescripcion] = useState("");
     const [metodoPago, setMetodoPago] = useState("0");
     const [montoTotalManual, setMontoTotalManual] = useState<string>("0");
+    const [tempValues, setTempValues] = useState<Record<string, string>>({});
 
     const carrito = getCarritoActivo();
     const userRef = localStorage.getItem("openCaja");
@@ -168,14 +170,36 @@ export default function NuevaCompraForm() {
                                                 <span className="text-[8px] font-medium text-slate-400 mt-0.5">{item.product.sku_presentacion}</span>
                                             </div>
 
-                                            {/* Cantidad: Control más esbelto */}
+                                            {/* Cantidad: Control más esbelto con input manual */}
                                             <div className="flex justify-center">
-                                                <div className="flex items-center bg-white border border-slate-200 rounded-md p-0.5 h-6">
-                                                    <Button variant="ghost" size="icon" className="h-5 w-4 rounded-sm hover:bg-slate-100" onClick={() => decrementQuantity(item.product.id_unidad_venta)}>
+                                                <div className="flex items-center bg-white border border-slate-200 rounded-md p-0.5 h-6 w-[85px]">
+                                                    <Button variant="ghost" size="icon" className="h-5 w-4 shrink-0 rounded-sm hover:bg-slate-100" onClick={() => decrementQuantity(item.product.id_unidad_venta)}>
                                                         <Minus className="w-2.5 h-2.5" />
                                                     </Button>
-                                                    <span className="w-4 text-center font-bold text-[10px]">{item.quantity}</span>
-                                                    <Button variant="ghost" size="icon" className="h-5 w-4 rounded-sm hover:bg-slate-100" onClick={() => incrementQuantity(item.product.id_unidad_venta)}>
+                                                    <input
+                                                        type="number"
+                                                        className="w-full text-center font-bold text-[10px] bg-transparent border-none focus:ring-0 p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                        value={tempValues[`qty-${item.product.id_unidad_venta}`] ?? (item.quantity === 0 ? "" : item.quantity)}
+                                                        onFocus={(e) => {
+                                                            e.target.select();
+                                                            setTempValues(prev => ({ ...prev, [`qty-${item.product.id_unidad_venta}`]: item.quantity.toString() }));
+                                                        }}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            setTempValues(prev => ({ ...prev, [`qty-${item.product.id_unidad_venta}`]: val }));
+                                                            const num = parseFloat(val);
+                                                            if (!isNaN(num)) updateQuantity(item.product.id_unidad_venta, num);
+                                                            else if (val === "") updateQuantity(item.product.id_unidad_venta, 0);
+                                                        }}
+                                                        onBlur={() => {
+                                                            setTempValues(prev => {
+                                                                const n = { ...prev };
+                                                                delete n[`qty-${item.product.id_unidad_venta}`];
+                                                                return n;
+                                                            });
+                                                        }}
+                                                    />
+                                                    <Button variant="ghost" size="icon" className="h-5 w-4 shrink-0 rounded-sm hover:bg-slate-100" onClick={() => incrementQuantity(item.product.id_unidad_venta)}>
                                                         <Plus className="w-2.5 h-2.5" />
                                                     </Button>
                                                 </div>
@@ -187,8 +211,25 @@ export default function NuevaCompraForm() {
                                                     <span className="text-[8px] text-blue-400 font-bold mr-0.5">$</span>
                                                     <input
                                                         type="number"
-                                                        value={item.precio_compra ?? item.product.precio_costo}
-                                                        onChange={(e) => updatePrice(item.product.id_unidad_venta, parseFloat(e.target.value) || 0)}
+                                                        value={tempValues[`prc-${item.product.id_unidad_venta}`] ?? ((item.precio_compra ?? item.product.precio_costo) || "")}
+                                                        onFocus={(e) => {
+                                                            e.target.select();
+                                                            setTempValues(prev => ({ ...prev, [`prc-${item.product.id_unidad_venta}`]: (item.precio_compra ?? item.product.precio_costo).toString() }));
+                                                        }}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            setTempValues(prev => ({ ...prev, [`prc-${item.product.id_unidad_venta}`]: val }));
+                                                            const num = parseFloat(val);
+                                                            if (!isNaN(num)) updatePrice(item.product.id_unidad_venta, num);
+                                                            else if (val === "") updatePrice(item.product.id_unidad_venta, 0);
+                                                        }}
+                                                        onBlur={() => {
+                                                            setTempValues(prev => {
+                                                                const n = { ...prev };
+                                                                delete n[`prc-${item.product.id_unidad_venta}`];
+                                                                return n;
+                                                            });
+                                                        }}
                                                         className="h-4 w-full p-0 font-black text-[11px] text-blue-600 bg-transparent border-none text-right focus:ring-0"
                                                     />
                                                 </div>
@@ -258,6 +299,7 @@ export default function NuevaCompraForm() {
                                         <SelectContent>
                                             <SelectItem value="0" className="text-xs">Efectivo</SelectItem>
                                             <SelectItem value="1" className="text-xs">Tarjeta</SelectItem>
+                                            <SelectItem value="2" className="text-xs">Transferencia</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -272,8 +314,9 @@ export default function NuevaCompraForm() {
                                 <input
                                     type="number"
                                     className="bg-transparent border-none text-4xl lg:text-5xl font-black text-white w-full focus:ring-0 p-0 outline-none tabular-nums"
-                                    value={montoTotalManual}
-                                    onChange={(e) => setMontoTotalManual(e.target.value)}
+                                    value={montoTotalManual === "0" ? "" : montoTotalManual}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setMontoTotalManual(e.target.value === "" ? "0" : e.target.value)}
                                     step="0.01"
                                 />
                             </div>

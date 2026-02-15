@@ -31,6 +31,7 @@ ChartJS.register(
 );
 
 export default function DashboardUser({ idTurno }: { idTurno: number }) {
+
     const [dashboard, setDashboard] = useState<DashboardTurno | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/dashboard/${idTurno}`, {
+                const response = await fetch(`http://localhost:3000/api/dashboard/${idTurno}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -269,15 +270,19 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                     <div className="info-rows">
                         <div className="info-row">
                             <span>Compras:</span>
-                            <strong>{formatCurrency(dashboard.egresos.total_compras)}</strong>
+                            <strong>{formatCurrency(dashboard.egresos.total_compras)} <small className="text-gray-500">({formatCurrency(dashboard.egresos.compras_efectivo)} efec.)</small></strong>
                         </div>
                         <div className="info-row">
                             <span>Gastos:</span>
-                            <strong>{formatCurrency(dashboard.egresos.total_gastos)}</strong>
+                            <strong>{formatCurrency(dashboard.egresos.total_gastos)} <small className="text-gray-500">({formatCurrency(dashboard.egresos.gastos_efectivo)} efec.)</small></strong>
                         </div>
                         <div className="info-row highlight">
-                            <span>Total Egresos:</span>
-                            <strong className="negative">{formatCurrency(dashboard.egresos.total_egresos)}</strong>
+                            <span>Total Egresos (Efectivo):</span>
+                            <strong className="negative">{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</strong>
+                        </div>
+                        <div className="info-row">
+                            <span>Total General:</span>
+                            <span className="font-semibold">{formatCurrency(dashboard.egresos.total_egresos)}</span>
                         </div>
                     </div>
                 </div>

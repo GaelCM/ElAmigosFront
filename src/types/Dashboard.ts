@@ -36,8 +36,11 @@ export interface ControlEfectivo {
  */
 export interface Egresos {
     total_compras: number;
+    compras_efectivo: number;
     total_gastos: number;
+    gastos_efectivo: number;
     total_egresos: number;
+    total_egresos_efectivo: number;
 }
 
 /**

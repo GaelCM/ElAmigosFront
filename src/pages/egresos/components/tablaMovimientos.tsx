@@ -104,7 +104,7 @@ export default function TablaMovimientos({ turnoId }: { turnoId: number | null }
                                 fecha: new Date(),
                                 monto: payload.monto,
                                 concepto: payload.concepto,
-                                tipo: payload.tipo_movimiento === 1 ? "DEPÓSITO" : "RETIRO",
+                                tipo: payload.tipo_movimiento === 0 ? "DEPÓSITO" : "RETIRO",
                                 abrirCajon: true
                             });
                         }

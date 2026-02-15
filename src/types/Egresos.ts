@@ -49,7 +49,7 @@ export type Gasto = {
     id_turno: number | null;     // INTEGER (puede ser null)
     id_usuario: number;          // INTEGER NOT NULL
     monto: number;               // NUMERIC(10,2) NOT NULL
-    metodo_pago: number;         // INTEGER NOT NULL (1=efectivo, 2=tarjeta)
+    metodo_pago: number;         // INTEGER NOT NULL (0=efectivo, 1=tarjeta)
     folio: string | null;        // VARCHAR(50)
     descripcion: string | null;  // TEXT
     fecha_gasto: string;         // VARCHAR(50) DEFAULT CURRENT_TIMESTAMP

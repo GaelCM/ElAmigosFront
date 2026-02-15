@@ -7,6 +7,7 @@ import type { ProductoItem, ProductoVenta } from "@/types/Producto";
 import type { Cliente } from "@/types/Cliente";
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
+import { redondearPrecio } from "@/lib/utils";
 
 export type Carrito = {
     id: string;
@@ -27,6 +28,7 @@ type ListaProductosModel = {
     eliminarCarrito: (id: string) => void;
     renombrarCarrito: (id: string, nuevoNombre: string) => void;
     asignarClienteCarrito: (id: string, cliente: Cliente) => void;
+    desasignarClienteCarrito: (id: string) => void;
 
     // ACCIONES DEL CARRITO ACTIVO
     addProduct: (product: ProductoVenta, quantity?: number) => void;
@@ -133,6 +135,18 @@ export const useListaProductos = create(
                 );
                 set({ carritos: updated });
                 console.log("Cliente asignado al carrito:", id);
+            },
+
+            /**
+             * Quita el cliente de un carrito específico
+             */
+            desasignarClienteCarrito: (id: string) => {
+                const currentCarritos = get().carritos;
+                const updated = currentCarritos.map(c =>
+                    c.id === id ? { ...c, cliente: undefined } : c
+                );
+                set({ carritos: updated });
+                console.log("Cliente quitado del carrito:", id);
             },
 
             // --- ACCIONES DEL CARRITO ACTIVO ---
@@ -342,8 +356,9 @@ export const useListaProductos = create(
                 if (!carritoActivo) return 0;
                 return carritoActivo.productos.reduce(
                     (total, item) => {
-                        const precio = item.usarPrecioMayoreo ? item.product.precio_mayoreo : item.product.precio_venta;
-                        return total + (precio * item.quantity);
+                        const precioArr = item.usarPrecioMayoreo ? item.product.precio_mayoreo : item.product.precio_venta;
+                        const subtotalRedondeado = redondearPrecio(precioArr * item.quantity);
+                        return total + subtotalRedondeado;
                     },
                     0
                 );

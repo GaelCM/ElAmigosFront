@@ -1,6 +1,6 @@
-export type Cliente={
-    idCliente:string,
-    nombreCliente:string,
-    fechaCreacion:string,
-    isActive:number
+export type Cliente = {
+    id_cliente: number,
+    nombre_cliente: string,
+    direccion: string,
+    telefono: string
 }

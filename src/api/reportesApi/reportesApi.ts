@@ -4,7 +4,7 @@ import type { DetalleVentaResponse, ReporteVentaDetallado, ReporteVentasMensuale
 
 
 export const obtenerReporteMisVentas = async (fechaDesde: string, fechaHasta: string, idUsuario?: number, idTurno?: number, idSucursal?: number) => {
-    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/mis-ventas`, {
+    const res = await fetch(`http://localhost:3000/api/reportes/mis-ventas`, {
         method: "post",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
@@ -24,7 +24,7 @@ export const obtenerReporteMisVentas = async (fechaDesde: string, fechaHasta: st
 
 
 export const obtenerReporteDetalleVenta = async (idVenta: number) => {
-    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/reportes/detalle-venta`, {
+    const res = await fetch(`http://localhost:3000/api/reportes/detalle-venta`, {
         method: "post",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,

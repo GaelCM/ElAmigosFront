@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/contexts/currentUser";
-import { useCliente } from "@/contexts/globalClient";
 import { useListaProductos } from "@/contexts/listaProductos";
 import type { EstadoVenta } from "@/types/Venta";
 import { Check, Loader2, AlertCircle } from "lucide-react";
@@ -12,6 +11,10 @@ import { toast } from "sonner";
 
 import { useOnlineStatus } from "@/hooks/isOnline";
 import { useHotkeys } from "react-hotkeys-hook";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Zap } from "lucide-react";
+import { redondearPrecio } from "@/lib/utils";
 
 
 type dialogProps = {
@@ -26,20 +29,20 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
     const [estado, setEstado] = useState<EstadoVenta>("Inicio");
     const { getCarritoActivo, getTotalPrice, carritoActivo, eliminarCarrito } = useListaProductos();
-    const { cliente } = useCliente();
     const { user } = useCurrentUser()
     const carritoActual = getCarritoActivo();
     const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
     const turnoDataString = localStorage.getItem("openCaja") || "{}";
     const turnoData = JSON.parse(turnoDataString);
     const isOnline = useOnlineStatus();
+    const [modoTurbo, setModoTurbo] = useState(() => localStorage.getItem("modo_turbo") === "true");
 
     useHotkeys("f1", () => {
         nuevaVenta(true);
-    }, { enableOnFormTags: true });
+    }, { enableOnFormTags: true, enabled: isOpen });
     useHotkeys("f2", () => {
         nuevaVenta(false);
-    }, { enableOnFormTags: true });
+    }, { enableOnFormTags: true, enabled: isOpen });
 
 
     const reloadVenta = async () => {
@@ -80,13 +83,14 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 monto_recibido: cambioEfectivo,
                 metodo_pago: metodoPago,
                 productos: getCarritoActivo()?.productos || [],
-                id_cliente: cliente.idCliente,
+                id_cliente: carritoActual?.cliente?.id_cliente.toLocaleString() || "",
                 id_turno: turnoData.id_turno
             };
             console.log("Venta final a enviar:", ventaFinal);
 
-            if (!isOnline) {
-                // LÓGICA OFFLINE
+            // SI MODO TURBO ESTA ACTIVO O NO HAY INTERNET, USAR RUTA LOCAL
+            if (!isOnline || modoTurbo) {
+                // LÓGICA OFFLINE / TURBO
                 // @ts-ignore
                 const offlineRes = await window["electron-api"]?.guardarVentaOffline(ventaFinal);
                 if (offlineRes?.success) {
@@ -102,14 +106,15 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 const ticketData = {
                                     printerName,
                                     sucursal: "Sucursal " + user.sucursal,
+                                    id_sucursal: user.id_sucursal,
                                     usuario: user.usuario,
-                                    cliente: cliente.nombreCliente || "Público General",
+                                    cliente: carritoActual?.cliente?.nombre_cliente || "Público General",
                                     folio: "OFL-" + offlineRes.id,
                                     fecha: new Date(),
                                     productos: carritoActual?.productos?.map((p: any) => ({
                                         cantidad: p.quantity,
                                         nombre: p.product.nombre_producto,
-                                        importe: p.product.precio_venta * p.quantity
+                                        importe: redondearPrecio((p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity)
                                     })) || [],
                                     total: getTotalPrice(),
                                     pagoCon: cambioEfectivo,
@@ -154,13 +159,13 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 printerName,
                                 sucursal: "Sucursal " + user.sucursal,
                                 usuario: user.usuario,
-                                cliente: cliente.nombreCliente || "Público General",
+                                cliente: carritoActual?.cliente?.nombre_cliente || "Público General",
                                 folio: res.data || "S/N",
                                 fecha: new Date(),
                                 productos: carritoActual?.productos?.map((p: any) => ({
                                     cantidad: p.quantity,
                                     nombre: p.product.nombre_producto,
-                                    importe: p.product.precio_venta * p.quantity
+                                    importe: redondearPrecio((p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity)
                                 })) || [],
                                 total: getTotalPrice(),
                                 pagoCon: cambioEfectivo,
@@ -197,14 +202,43 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
     return (
         <Dialog open={isOpen} onOpenChange={() => {
-            onClose(false); setTimeout(() => {
-                inputRef?.current?.focus();
-            }, 100);
+            if (estado === "Listo") {
+                reloadVenta();
+            } else {
+                onClose(false);
+                setTimeout(() => {
+                    inputRef?.current?.focus();
+                }, 100);
+            }
         }}>
             <DialogContent className="sm:max-w-4xl p-12">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl">Procesar Venta</DialogTitle>
-                    <DialogDescription>Selecciona el método de pago para completar la venta</DialogDescription>
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <DialogTitle className="text-2xl">Procesar Venta</DialogTitle>
+                            <DialogDescription>Selecciona el método de pago para completar la venta</DialogDescription>
+                        </div>
+                        <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/20 px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-900/50">
+                            <div className="flex flex-col items-end">
+                                <Label htmlFor="modo-turbo" className="text-xs font-bold text-amber-700 dark:text-amber-500 flex items-center gap-1 uppercase">
+                                    <Zap className="h-3 w-3 fill-current" />
+                                    Modo Turbo
+                                </Label>
+                                <span className="text-[10px] text-amber-600/70">Ideal para internet lento</span>
+                            </div>
+                            <Switch
+                                id="modo-turbo"
+                                checked={modoTurbo}
+                                onCheckedChange={(val) => {
+                                    setModoTurbo(val);
+                                    localStorage.setItem("modo_turbo", val.toString());
+                                    if (val) {
+                                        toast.info("Modo Turbo activado: Las ventas se procesarán localmente e instantáneamente.");
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
@@ -229,21 +263,37 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
 
 
-                            <h1 className="text-4xl text-center p-2">PAGÓ CON:</h1>
-                            <div className="flex justify-center p-2">
-                                <input
-                                    type="text"
-                                    className="text-6xl text-center font-bold w-[50%] bg-blue-100 border-2 border-blue-600"
-                                    autoFocus
-                                    onChange={(e) => {
-                                        setCambioEfectivo(Number(e.target.value))
-                                    }}
-                                /*onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        nuevaVenta()
-                                    }
-                                }}*/
-                                />
+                            <div className="flex flex-col items-center gap-6 py-4">
+                                <div className="text-center space-y-2">
+                                    <h1 className="text-2xl font-black text-slate-500 uppercase tracking-widest">Pago en Efectivo</h1>
+                                    <div className="relative">
+                                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-4xl font-black text-slate-400">$</span>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            className="text-7xl text-center font-black w-full max-w-md py-6 px-12 bg-slate-50 border-4 border-slate-200 rounded-3xl focus:border-primary focus:ring-0 transition-all outline-none tabular-nums"
+                                            placeholder="0.00"
+                                            autoFocus
+                                            onChange={(e) => setCambioEfectivo(Number(e.target.value))}
+                                        />
+                                    </div>
+                                </div>
+
+                                {cambioEfectivo > 0 && (
+                                    <div className={`w-full max-w-md p-6 rounded-3xl border-4 transition-all animate-in zoom-in-95 duration-200 ${cambioEfectivo >= getTotalPrice()
+                                        ? 'bg-green-50 border-green-200 text-green-700'
+                                        : 'bg-red-50 border-red-200 text-red-700'
+                                        }`}>
+                                        <div className="flex flex-col items-center text-center gap-1">
+                                            <span className="text-xs font-black uppercase tracking-widest opacity-70">
+                                                {cambioEfectivo >= getTotalPrice() ? 'Su Cambio es de:' : 'Faltan:'}
+                                            </span>
+                                            <span className="text-5xl font-black tabular-nums">
+                                                $ {Math.abs(cambioEfectivo - getTotalPrice()).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Actions */}

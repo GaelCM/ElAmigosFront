@@ -67,7 +67,7 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
                     setProveedores([]);
                 }
             })
-            setFormData({ monto: 0, metodo_pago: 1, id_proveedor: 0, folio: "", descripcion: "" });
+            setFormData({ monto: 0, metodo_pago: 0, id_proveedor: 0, folio: "", descripcion: "" });
         }
         setIsModalOpen(true);
     };
@@ -280,16 +280,16 @@ export default function TablaCompras({ turnoId }: { turnoId: number | null }) {
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="metodo" className="text-right">Metodo</Label>
                             <Select
-                                value={formData.metodo_pago ? String(formData.metodo_pago) : "1"}
+                                value={formData.metodo_pago !== undefined ? String(formData.metodo_pago) : "0"}
                                 onValueChange={(val) => setFormData({ ...formData, metodo_pago: parseInt(val) })}
                             >
                                 <SelectTrigger className="w-[180px] col-span-3">
                                     <SelectValue placeholder="Seleccione metodo" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="1">Efectivo</SelectItem>
-                                    <SelectItem value="2">Tarjeta</SelectItem>
-                                    <SelectItem value="3">Transferencia</SelectItem>
+                                    <SelectItem value="0">Efectivo</SelectItem>
+                                    <SelectItem value="1">Tarjeta</SelectItem>
+                                    <SelectItem value="2">Transferencia</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

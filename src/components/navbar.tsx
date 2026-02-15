@@ -2,7 +2,7 @@ import { Calendar, ChevronDown, DollarSign, FileText, Menu, Package, Search, Set
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
-import { Link, Outlet } from "react-router";
+import { Link, Outlet, useNavigate } from "react-router";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useState } from "react";
@@ -18,7 +18,17 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
   const { user } = useCurrentUser();
   const [openP, setOpenP] = useState(false);
   const [focusScanner, setFocusScanner] = useState<() => void>(() => { });
+  const navigate = useNavigate();
   //const [turnoData, setTurnoData] = useState(JSON.parse(localStorage.getItem("openCaja") || "{}"));
+
+
+  const openDialog = () => {
+    setOpenP(true)
+  }
+  const moverAInventario = () => {
+    navigate("/productos")
+  }
+
 
   useHotkeys('F10', () => {
     setOpenP(true)
@@ -26,17 +36,20 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
     enableOnFormTags: true
   }, [setOpenP]); // El array de dependencias es opcional pero recomendado
 
+  useHotkeys('F2', () => {
+    moverAInventario()
+  }, {
+    enableOnFormTags: true
+  }, [moverAInventario]); // El array de dependencias es opcional pero recomendado
 
-  const openDialog = () => {
-    setOpenP(true)
 
-  }
+
 
   return (
     <>
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="bg-card border-b border-border px-4 lg:px-6 py-3 lg:py-4">
+        <header className="bg-card border-b border-border px-4 lg:px-6 py-2 lg:py-2.5">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
@@ -55,6 +68,16 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
             </div>
 
             <div className="flex items-center gap-2 lg:gap-4">
+
+              {
+                user.id_rol === 1 && (
+                  <div className="relative hidden sm:block">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
+                    <Button variant={"secondary"} className="px-10 cursor-pointer" onClick={moverAInventario}>Inventario (F2)</Button>
+                  </div>
+                )
+              }
+
               <div className="relative hidden sm:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
                 <Button variant={"default"} className="px-10 cursor-pointer" onClick={openDialog}>Buscar Producto (F10)</Button>
@@ -82,6 +105,12 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>Reportes de Ventas</DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem className="gap-2">
+                        <Link to={"reportes/ventasGeneral"} className="flex items-center gap-2 w-full h-full">
+                          <Calendar className="w-4 h-4" />
+                          Ventas Generales
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem className="gap-2">
                         <Link to={"reportes/ventasPorMes"} className="flex items-center gap-2 w-full h-full">
                           <Calendar className="w-4 h-4" />

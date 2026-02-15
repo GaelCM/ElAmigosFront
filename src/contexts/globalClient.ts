@@ -14,25 +14,25 @@ type currentClient = {
 export const useCliente = create(
     persist<currentClient>(
         (set) => ({
-            cliente:{
-                idCliente:"",
-                nombreCliente:"",
-                fechaCreacion:"",
-                isActive:0
+            cliente: {
+                id_cliente: 0,
+                nombre_cliente: "",
+                direccion: "",
+                telefono: "",
             },
             addCliente: (newCliente: Cliente) => {
                 console.log("Cliente actualizado:", newCliente);
                 set({ cliente: newCliente }); // <-- reemplaza el objeto
             },
             clearCliente: () => {
-                 console.log("Limpiando cliente");
+                console.log("Limpiando cliente");
                 set({
-                cliente:{
-                    idCliente:"",
-                    nombreCliente:"",
-                    fechaCreacion:"",
-                    isActive:0
-                }
+                    cliente: {
+                        id_cliente: 0,
+                        nombre_cliente: "",
+                        direccion: "",
+                        telefono: "",
+                    }
                 });
             },
         }),

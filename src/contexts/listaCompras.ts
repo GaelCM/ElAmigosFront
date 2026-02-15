@@ -109,6 +109,9 @@ export const useListaCompras = create(
                             );
                             return { ...carrito, productos: updatedProductos };
                         } else {
+                            // Calcular el precio de compra según la presentación
+                            const precioPorPresentacion = product.precio_costo * (product.factor_conversion_cantidad || 1);
+
                             return {
                                 ...carrito,
                                 productos: [
@@ -117,7 +120,7 @@ export const useListaCompras = create(
                                         product,
                                         quantity: quantity,
                                         usarPrecioMayoreo: false,
-                                        precio_compra: product.precio_costo
+                                        precio_compra: precioPorPresentacion
                                     }
                                 ],
                             };
@@ -155,23 +158,14 @@ export const useListaCompras = create(
                 const currentCarritos = get().carritos;
                 const updated = currentCarritos.map(carrito => {
                     if (carrito.id === activeId) {
-                        if (newQuantity < 1) {
-                            return {
-                                ...carrito,
-                                productos: carrito.productos.filter(
-                                    (item) => item.product.id_unidad_venta !== id_unidad_venta
-                                ),
-                            };
-                        } else {
-                            return {
-                                ...carrito,
-                                productos: carrito.productos.map((item) =>
-                                    item.product.id_unidad_venta === id_unidad_venta
-                                        ? { ...item, quantity: newQuantity }
-                                        : item
-                                ),
-                            };
-                        }
+                        return {
+                            ...carrito,
+                            productos: carrito.productos.map((item) =>
+                                item.product.id_unidad_venta === id_unidad_venta
+                                    ? { ...item, quantity: newQuantity }
+                                    : item
+                            ),
+                        };
                     }
                     return carrito;
                 });
@@ -236,11 +230,7 @@ export const useListaCompras = create(
                 );
 
                 if (itemToDecrement) {
-                    if (itemToDecrement.quantity > 1) {
-                        get().updateQuantity(id_unidad_venta, itemToDecrement.quantity - 1);
-                    } else {
-                        get().removeProduct(id_unidad_venta);
-                    }
+                    get().updateQuantity(id_unidad_venta, itemToDecrement.quantity - 1);
                 }
             },
 

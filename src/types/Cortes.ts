@@ -28,12 +28,16 @@ export interface ResumenCorte {
     };
     egresos: {
         compras: number;
+        compras_efectivo: number;
         gastos: number;
+        gastos_efectivo: number;
         total: number;
+        total_efectivo: number;
     };
     movimientos: {
         retiros: number;
         depositos: number;
+        total_movimientos: number;
     };
     efectivo: {
         inicial: number;

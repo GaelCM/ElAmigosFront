@@ -23,6 +23,13 @@ export default function Bienvenida({ onCajaOpened }: BienvenidaProps) {
             localStorage.setItem("openCaja", JSON.stringify(res.data));
             onCajaOpened();
             toast.success("Caja abierta");
+
+            // Abrir cajón de dinero al iniciar
+            const printerName = localStorage.getItem("printer_device");
+            if (printerName) {
+                // @ts-ignore
+                window["electron-api"]?.openCashDrawer(printerName);
+            }
         } else {
             setIsOpen(true);
         }

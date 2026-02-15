@@ -66,6 +66,7 @@ export interface ProductoFormFinal {
         cantidad_minima: number;
     }[];
     variantes: {
+        id_unidad_venta?: number;
         nombre_presentacion: string;
         factor_conversion_cantidad: number;
         sku_presentacion?: string | undefined;
