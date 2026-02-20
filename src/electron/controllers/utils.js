@@ -197,7 +197,7 @@ function utilsController() {
     });
 
     ipcMain.handle('print-ticket-venta-escpos', async (event, data) => {
-        const { printerName, sucursal, id_sucursal, usuario, cliente, folio, fecha, productos, total, pagoCon, cambio, cortar = true } = data;
+        const { printerName, sucursal, id_sucursal, direccion_sucursal, telefono_sucursal, usuario, cliente, folio, fecha, productos, total, pagoCon, cambio, ahorro = 0, turno = "0", cortar = true } = data;
         console.log("Generando TICKET VENTA ESC/POS para:", printerName);
 
         try {
@@ -212,93 +212,96 @@ function utilsController() {
                 lineCharacter: "=",
             });
 
-            // Abrir cajón si es necesario (generalmente se abre al imprimir el ticket de venta)
+            // Abrir cajón si es necesario
             printer.openCashDrawer();
 
             // --- HEADER ---
             printer.alignCenter();
             printer.bold(true);
-            printer.println(sucursal);
+            printer.println(sucursal.trim().toUpperCase());
             printer.bold(false);
-            printer.println("Abarrotes y Refrescos");
+            printer.println(direccion_sucursal.trim().toUpperCase());
+            if (telefono_sucursal) printer.println(`TEL: ${telefono_sucursal}`);
+
+            const fechaObj = new Date(fecha);
+            const fechaStr = fechaObj.toLocaleDateString('es-MX') + " " + fechaObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            printer.println(fechaStr);
             printer.newLine();
 
-            printer.println(`Folio: ${folio}`);
-            printer.println(`Fecha: ${new Date(fecha).toLocaleString()}`);
-            printer.println(`Atendio: ${usuario}`);
-            printer.println(`Cliente: ${cliente}`);
-            printer.newLine();
+            printer.alignLeft();
+            printer.println(`CAJERO:    ${usuario.toUpperCase()}`);
+            printer.println(`TURNO #    ${turno}`);
+            // En la imagen el folio parece estar a la derecha del turno o abajo
+            printer.alignRight();
+            printer.println(`FOLIO VENTA: ${folio}`);
+
+            printer.alignLeft();
+            printer.println(`CLIENTE:   ${cliente.toUpperCase()}`);
+            printer.println("------------------------------------------------");
+
+            printer.println("CANT. DESCRIPCION      PRECIO  IMPORTE");
+            printer.println("================================================");
 
             // --- PRODUCTOS ---
-            printer.alignLeft();
-            printer.setTypeFontA();
-            printer.println("CANT  DESCRIPCION           IMPORTE");
-            printer.drawLine();
-
             productos.forEach((p) => {
-                const maxDescLen = 20;
-                let cant = p.cantidad.toString().padEnd(5);
-                let importe = "$" + p.importe.toFixed(2);
+                const cant = p.cantidad.toString().padEnd(4);
+                // Si el precio no viene, lo calculamos
+                const precioVal = p.precio || (p.importe / p.cantidad);
+                const precio = "$" + precioVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const importe = "$" + p.importe.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-                // Dividir el nombre en varias líneas si es necesario
+                const descWidth = 19;
+                const priceWidth = 10;
+                const impWidth = 11;
+
                 const nombreFull = p.nombre || "";
                 let words = nombreFull.split(' ');
                 let lines = [];
                 let currentLine = '';
 
                 words.forEach(word => {
-                    if ((currentLine + (currentLine ? ' ' : '') + word).length <= maxDescLen) {
+                    if ((currentLine + (currentLine ? ' ' : '') + word).length <= descWidth) {
                         currentLine += (currentLine ? ' ' : '') + word;
                     } else {
                         if (currentLine) lines.push(currentLine);
                         currentLine = word;
-                        // Si una palabra es más larga que el límite, la forzamos a cortarse
-                        while (currentLine.length > maxDescLen) {
-                            lines.push(currentLine.substring(0, maxDescLen));
-                            currentLine = currentLine.substring(maxDescLen);
-                        }
                     }
                 });
                 if (currentLine) lines.push(currentLine);
-
-                // Si no hay líneas (nombre vacío), al menos ponemos una vacía
                 if (lines.length === 0) lines.push("");
 
-                // Imprimir la primera línea con cantidad e importe
-                printer.println(`${cant} ${lines[0].padEnd(maxDescLen + 1)} ${importe}`);
+                // Primera línea con cantidad, descripción parcial, precio e importe
+                // CANT(4) + gap(1) + DESC(19) + gap(1) + PRECIO(10) + gap(1) + IMPORTE(11) = 47
+                printer.println(`${cant} ${lines[0].padEnd(descWidth)} ${precio.padStart(priceWidth)} ${importe.padStart(impWidth)}`);
 
-                // Imprimir líneas adicionales (solo la descripción, indentada)
+                // Líneas adicionales de descripción (indentadas)
                 for (let i = 1; i < lines.length; i++) {
-                    // Indentamos 6 espacios (5 de cantidad + 1 espacio)
-                    printer.println(`${"".padEnd(6)}${lines[i]}`);
+                    printer.println(`     ${lines[i]}`);
                 }
             });
 
-            printer.setTypeFontA();
-            printer.drawLine();
-            printer.newLine();
+            printer.println("------------------------------------------------");
+
+            // --- TOTAL PIEZAS ---
+            const totalPiezas = productos.reduce((sum, p) => sum + Number(p.cantidad), 0);
+            printer.alignLeft();
+            printer.println(`NO. DE ARTICULOS: ${totalPiezas}`);
 
             // --- TOTALES ---
             printer.alignRight();
-            printer.setTextDoubleHeight();
-            printer.setTextDoubleWidth();
             printer.bold(true);
-            printer.println(`TOTAL: $${Number(total).toFixed(2)}`);
-            printer.println(`Pago con: $${Number(pagoCon).toFixed(2)}`);
-            printer.println(`Cambio: $${Number(cambio).toFixed(2)}`);
-            printer.setTextNormal();
+            printer.println(`TOTAL: $${Number(total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            printer.println(`PAGO CON: $${Number(pagoCon).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            printer.println(`SU CAMBIO: $${Number(cambio).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            printer.println(`USTED AHORRO: $${Number(ahorro).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
             printer.bold(false);
             printer.newLine();
 
             // --- FOOTER ---
             printer.alignCenter();
-            if (id_sucursal == 2) {
-                printer.println("Pedidos al 951 115 4965");
-                printer.println("¡Gracias por su compra!");
-            } else {
-                printer.println("¡Gracias por su compra!");
-            }
-            printer.println("Vuelva pronto");
+            printer.println("GRACIAS POR SU COMPRA");
+            printer.println(`PEDIDOS POR WHATSAPP ${telefono_sucursal || '9512036123'}`);
+            printer.println("TOTAL A PAGAR");
             printer.newLine();
             printer.newLine();
 

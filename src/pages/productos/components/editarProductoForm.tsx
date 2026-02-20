@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrentUser } from "@/contexts/currentUser";
@@ -17,7 +16,7 @@ import type { Categoria } from "@/types/Categoria";
 import type { ProductoFormFinal } from "@/types/Producto";
 import type { Sucursal } from "@/types/Sucursal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, Package, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -63,16 +62,14 @@ type FormValues = z.infer<typeof formSchema>;
 export default function EditarProductoForm() {
   const [searchParams] = useSearchParams();
   const id_producto = searchParams.get("id");
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(4);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const { user } = useCurrentUser();
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [initialQuantities, setInitialQuantities] = useState<Record<number, number>>({});
-  const [adjustments, setAdjustments] = useState<Record<number, { amount: number | undefined, type: 'add' | 'sub' }>>({});
-
-
+  const [adjustments, setAdjustments] = useState<Record<number, Record<number, number | undefined>>>({}); // sucursalId -> variantIndex -> cantidad
 
 
   const form = useForm<FormValues>({
@@ -90,9 +87,8 @@ export default function EditarProductoForm() {
   });
 
   const { watch } = form;
-  const variantes = watch("variantes");
-  const sucursalesInventario = watch("sucursales_inventario") || [];
-  const sucursalesInventarioIds = (sucursalesInventario as any[]).map((s) => s.id_sucursal);
+  const variantes = watch("variantes") || [];
+
 
   // Cargar datos del producto
   useEffect(() => {
@@ -143,7 +139,7 @@ export default function EditarProductoForm() {
     };
 
     cargarProducto();
-  }, [id_producto, form]);
+  }, [id_producto, form.reset]);
 
 
   const onSubmit = async (values: FormValues) => {
@@ -177,14 +173,14 @@ export default function EditarProductoForm() {
       ]);
     }
     else if (currentStep === 2) {
-      valid = await form.trigger(["sucursales_inventario"]);
-    }
-    else if (currentStep === 3) {
       const promises = variantes.flatMap((_, i) => [
         form.trigger(`variantes.${i}.nombre_presentacion`),
         form.trigger(`variantes.${i}.factor_conversion_cantidad`)
       ]);
       valid = (await Promise.all(promises)).every(r => r);
+    }
+    else if (currentStep === 3) {
+      valid = await form.trigger(["sucursales_inventario"]);
     }
 
     if (valid) setCurrentStep(currentStep + 1);
@@ -228,11 +224,27 @@ export default function EditarProductoForm() {
         console.log('Marcar precio para eliminar:', exists.id_precio);
       }
 
-      form.setValue(
-        `variantes.${varIndex}.sucursales_venta`,
-        curr.filter(s => s.id_sucursal !== idSucursal)
-      );
+      const updatedVenta = curr.filter(s => s.id_sucursal !== idSucursal);
+      form.setValue(`variantes.${varIndex}.sucursales_venta`, updatedVenta);
+
+      // Limpieza automática
+      const allVariantes = form.getValues("variantes");
+      const isStillSoldSomewhere = allVariantes.some((v, idx) => {
+        const venta = idx === varIndex ? updatedVenta : v.sucursales_venta;
+        return venta.some(sv => sv.id_sucursal === idSucursal);
+      });
+
+      if (!isStillSoldSomewhere) {
+        const inv = form.getValues("sucursales_inventario") || [];
+        form.setValue("sucursales_inventario", inv.filter((s: any) => s.id_sucursal !== idSucursal));
+      }
     } else {
+      // Al habilitar venta, asegurar que esté en inventario
+      const inv = form.getValues("sucursales_inventario") || [];
+      if (!inv.find((s: any) => s.id_sucursal === idSucursal)) {
+        form.setValue("sucursales_inventario", [...inv, { id_sucursal: idSucursal, cantidad_actual: 0, cantidad_minima: 10 }]);
+      }
+
       form.setValue(
         `variantes.${varIndex}.sucursales_venta`,
         [...curr, { id_sucursal: idSucursal, precio_venta: 0, precio_mayoreo: 0 }]
@@ -259,6 +271,39 @@ export default function EditarProductoForm() {
     } else {
       const newEntry = { id_sucursal: idSucursal, cantidad_actual: 0, cantidad_minima: 0 };
       form.setValue("sucursales_inventario", [...curr, newEntry]);
+    }
+  };
+
+  /* ----------------------- HELPERS UI ----------------------- */
+  const handleVariantAdjustment = (idSucursal: number, variantIndex: number, amount: number | undefined) => {
+    const newAdjustments = {
+      ...adjustments,
+      [idSucursal]: {
+        ...(adjustments[idSucursal] || {}),
+        [variantIndex]: amount
+      }
+    };
+    setAdjustments(newAdjustments);
+
+    // Calcular el total de piezas a sumar/restar basado en todas las variantes de esa sucursal
+    let totalPiezasAAjustar = 0;
+    const branchAdjusts = newAdjustments[idSucursal];
+
+    Object.keys(branchAdjusts).forEach(vIdx => {
+      const vIndex = parseInt(vIdx);
+      const factor = variantes[vIndex]?.factor_conversion_cantidad || 1;
+      const cant = branchAdjusts[vIndex] ?? 0;
+      totalPiezasAAjustar += (cant * factor);
+    });
+
+    const initial = initialQuantities[idSucursal] || 0;
+    const result = initial + totalPiezasAAjustar;
+
+    // Actualizar el form
+    const currentInv = form.getValues("sucursales_inventario") || [];
+    const idx = currentInv.findIndex((si: any) => si.id_sucursal === idSucursal);
+    if (idx !== -1) {
+      form.setValue(`sucursales_inventario.${idx}.cantidad_actual`, Math.max(0, parseFloat(result.toFixed(2))));
     }
   };
 
@@ -344,8 +389,6 @@ export default function EditarProductoForm() {
         />
       </div>
 
-
-
       <FormField
         control={form.control}
         name="sku_pieza"
@@ -384,195 +427,27 @@ export default function EditarProductoForm() {
     </div>
   );
 
-  /* ----------------------- HELPERS UI ----------------------- */
-  const handleAdjustmentChange = (idSucursal: number, amount: number | undefined, type: 'add' | 'sub') => {
-    setAdjustments(prev => ({
-      ...prev,
-      [idSucursal]: { amount, type }
-    }));
-
-    const initial = initialQuantities[idSucursal] || 0;
-    const effectiveAmount = amount ?? 0;
-    const result = type === 'add' ? initial + effectiveAmount : initial - effectiveAmount;
-
-    // Buscar el índice en el form
-    const currentInv = form.getValues("sucursales_inventario") || [];
-    const idx = currentInv.findIndex((si: any) => si.id_sucursal === idSucursal);
-    if (idx !== -1) {
-      form.setValue(`sucursales_inventario.${idx}.cantidad_actual`, Math.max(0, result));
-    }
-  };
-
-  const handleSpaceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === " ") {
-      e.preventDefault();
-      const form = e.currentTarget.closest("form");
-      if (!form) return;
-
-      const inputs = Array.from(form.querySelectorAll("input:not([type='hidden']), textarea, select, button[type='submit']")) as HTMLElement[];
-      const currentIndex = inputs.indexOf(e.currentTarget);
-
-      if (currentIndex !== -1 && currentIndex < inputs.length - 1) {
-        const nextInput = inputs[currentIndex + 1];
-        nextInput.focus();
-        if (nextInput instanceof HTMLInputElement) {
-          nextInput.select();
-        }
-      }
-    }
-  };
-
-  /* ----------------------- STEP 2 --------------------------- */
+  /* ----------------------- STEP 2 (DEFINIR VARIANTES) --------------------------- */
   const renderStep2 = () => (
-    <div className="space-y-6">
-
-      <Alert className="bg-blue-50 border-blue-200">
-        <AlertTitle className="text-lg font-bold text-blue-800 flex items-center gap-2">
-          Este producto se vende en
-        </AlertTitle>
-      </Alert>
-
-      <FormField
-        control={form.control}
-        name="sucursales_inventario"
-        render={({ field }) => (
-          <FormItem>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {sucursales.map(s => {
-                const invIndex = (field.value || []).findIndex((si: any) => si.id_sucursal === s.id_sucursal);
-                const selected = invIndex !== -1;
-
-                return (
-                  <Card key={s.id_sucursal} className={`border-2 transition-all duration-200 overflow-hidden ${selected ? 'border-blue-600 shadow-md bg-white' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-100 hover:border-blue-300'}`}>
-
-                    {/* Header Clickable para activar/desactivar */}
-                    <div
-                      className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${selected ? 'bg-blue-50 border-b border-blue-100' : ''}`}
-                      onClick={() => toggleSucursalInventario(s.id_sucursal)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selected ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-400'}`}>
-                          {selected && <Check className="w-3 h-3 text-white font-bold" />}
-                        </div>
-                        <CardTitle className={`text-sm font-bold ${selected ? 'text-blue-900' : 'text-gray-500'}`}>
-                          {s.nombre}
-                        </CardTitle>
-                      </div>
-
-                      {!selected && <span className="text-[10px] text-muted-foreground mr-1 font-medium">Click habilitar</span>}
-                    </div>
-
-                    {selected && (
-                      <CardContent className="pt-3 pb-3 px-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="space-y-3">
-                          {/* Stock Info Row - Compacted */}
-                          <div className="flex justify-between items-center bg-slate-50 rounded border p-2 px-3">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] text-muted-foreground uppercase font-bold leading-none mb-1">Stock Actual</span>
-                              <span className="text-lg font-bold text-slate-700 leading-none">{initialQuantities[s.id_sucursal] || 0}</span>
-                            </div>
-                            <div className="h-8 w-px bg-gray-300 mx-2"></div>
-                            <div className="flex flex-col text-right">
-                              <span className="text-[10px] text-muted-foreground uppercase font-bold leading-none mb-1">Stock Final</span>
-                              <span className={`text-lg font-black leading-none ${form.watch(`sucursales_inventario.${invIndex}.cantidad_actual`) < (form.watch(`sucursales_inventario.${invIndex}.cantidad_minima`) || 0) ? 'text-red-600' : 'text-blue-600'}`}>
-                                {form.watch(`sucursales_inventario.${invIndex}.cantidad_actual`)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Adjustment Row - Compacted */}
-                          <div className="space-y-1">
-                            <Label className="text-[10px] text-blue-800 font-bold uppercase block">Ajuste (+/-)</Label>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                placeholder="0"
-                                className="text-base font-bold h-9 bg-white border-red-800 focus:border-red-800 flex-1 text-center"
-                                value={adjustments[s.id_sucursal]?.amount ?? ""}
-                                onKeyDown={handleSpaceKeyDown}
-                                onFocus={(e) => e.target.select()}
-                                onChange={(e) => {
-                                  const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
-                                  handleAdjustmentChange(s.id_sucursal, val, adjustments[s.id_sucursal]?.type || 'add');
-                                }}
-                              />
-
-                              <div className="flex-1 flex items-center justify-center gap-1 bg-white border rounded-md h-9 shadow-sm px-1">
-                                <span className={`text-[10px] font-bold ${adjustments[s.id_sucursal]?.type === 'sub' ? 'text-red-600' : 'text-gray-300'}`}>Restar</span>
-                                <Switch
-                                  checked={adjustments[s.id_sucursal]?.type !== 'sub'}
-                                  onCheckedChange={(checked) => handleAdjustmentChange(s.id_sucursal, adjustments[s.id_sucursal]?.amount, checked ? 'add' : 'sub')}
-                                  className="scale-75 data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
-                                />
-                                <span className={`text-[10px] font-bold ${adjustments[s.id_sucursal]?.type !== 'sub' ? 'text-green-600' : 'text-gray-300'}`}>Sumar</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <FormField
-                            control={form.control}
-                            name={`sucursales_inventario.${invIndex}.cantidad_minima`}
-                            render={({ field: f }) => (
-                              <FormItem className="space-y-0">
-                                <FormLabel className="text-[10px] text-muted-foreground uppercase font-bold">Mínimo Requerido</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    className="h-8 text-sm text-center bg-white"
-                                    value={f.value}
-                                    onKeyDown={handleSpaceKeyDown}
-                                    onFocus={(e) => e.target.select()}
-                                    onChange={(e) => f.onChange(e.target.value)}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="w-full text-[10px] h-7 opacity-80 hover:opacity-100"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAdjustmentChange(s.id_sucursal, initialQuantities[s.id_sucursal] || 0, 'sub');
-                            }}
-                          >
-                            MARCAR COMO AGOTADO (0)
-                          </Button>
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
-  );
-
-  /* ----------------------- STEP 3 --------------------------- */
-  const renderStep3 = () => (
     <div className="space-y-4">
-      <Alert>
-        <AlertTitle className="text-lg text-left">Este producto se vende por</AlertTitle>
-        <AlertDescription>
-          Administra las variantes del producto <br />
-          Nota: por defecto se crea una variante "Pieza" con el nombre del producto.
+      <Alert className="bg-orange-50 border-orange-200">
+        <AlertTitle className="text-lg font-bold text-orange-800 flex items-center gap-2">
+          📦 Definición de Paquetes y Piezas
+        </AlertTitle>
+        <AlertDescription className="text-orange-700 font-medium">
+          Define cómo se vende este producto (Cajas, Six-packs, etc.).
+          Esto permitirá que en el siguiente paso ajustes el inventario usando estas unidades físicamente.
         </AlertDescription>
       </Alert>
 
-      {variantes.map((v, index) => (
-        <Card key={index} className={`relative ${v}`}>
+      {variantes.map((_, index) => (
+        <Card key={index} className="relative shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-6 space-y-4">
             {index > 0 && (
               <Button
                 variant="ghost"
-                className="absolute top-2 right-2"
+                className="absolute top-2 right-2 text-red-400 hover:text-red-600 hover:bg-red-50"
+                size="icon"
                 type="button"
                 onClick={() => removeVariante(index)}
               >
@@ -580,15 +455,15 @@ export default function EditarProductoForm() {
               </Button>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name={`variantes.${index}.nombre_presentacion`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre *</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase text-slate-500">Nombre Presentación *</FormLabel>
                     <FormControl>
-                      <Input {...field} disabled={index === 0} />
+                      <Input {...field} disabled={index === 0} placeholder="Ej: Caja 24 pzas" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -600,14 +475,18 @@ export default function EditarProductoForm() {
                 name={`variantes.${index}.factor_conversion_cantidad`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nº de Piezas *</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase text-slate-500">¿Cuántas piezas contiene? *</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        value={field.value}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
-                        disabled={index === 0}
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          className="font-bold"
+                          value={field.value}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
+                          disabled={index === 0}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">piezas</span>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -620,9 +499,9 @@ export default function EditarProductoForm() {
               name={`variantes.${index}.sku_presentacion`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>SKU</FormLabel>
+                  <FormLabel className="text-xs font-bold uppercase text-slate-500">SKU Presentación</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} placeholder="Escanea el código del paquete" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -632,142 +511,264 @@ export default function EditarProductoForm() {
         </Card>
       ))}
 
-      <Button type="button" variant="outline" onClick={addVariante} className="w-full">
-        <Plus className="w-4 h-4 mr-2" /> Agregar Variante
+      <Button type="button" variant="outline" onClick={addVariante} className="w-full border-dashed border-2 py-8 hover:bg-slate-50 text-slate-500 transition-all">
+        <Plus className="w-5 h-5 mr-3" /> Agregar Nueva Presentación (Paquete, Caja, etc.)
       </Button>
+    </div>
+  );
+
+  /* ----------------------- STEP 3 (INVENTARIO POR PRESENTACIÓN) --------------------------- */
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <Alert className="bg-blue-50 border-blue-200">
+        <AlertTitle className="text-lg font-bold text-blue-800 flex items-center gap-2">
+          <Package className="w-5 h-5" /> Ajuste de Stock Inteligente
+        </AlertTitle>
+        <AlertDescription className="text-blue-700 font-medium">
+          Indica cuánto estás agregando (+) o quitando (-) de cada presentación.
+          El sistema calculará automáticamente el total de piezas físicas.
+        </AlertDescription>
+      </Alert>
+
+      <FormField
+        control={form.control}
+        name="sucursales_inventario"
+        render={({ field }) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sucursales.map(s => {
+              const invIndex = (field.value || []).findIndex((si: any) => si.id_sucursal === s.id_sucursal);
+              const selected = invIndex !== -1;
+
+              return (
+                <Card key={s.id_sucursal} className={`border-2 transition-all duration-300 ${selected ? 'border-primary shadow-lg bg-white scale-[1.02]' : 'border-dashed border-gray-200 bg-gray-50/50'}`}>
+                  {/* Header */}
+                  <div
+                    className={`p-3 flex items-center justify-between cursor-pointer ${selected ? 'bg-primary/5 border-b border-primary/10' : ''}`}
+                    onClick={() => toggleSucursalInventario(s.id_sucursal)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selected ? 'bg-primary border-primary' : 'bg-white border-slate-300'}`}>
+                        {selected && <Check className="w-3 h-3 text-white font-bold" />}
+                      </div>
+                      <span className={`font-bold ${selected ? 'text-primary uppercase tracking-tight' : 'text-gray-500'}`}>{s.nombre}</span>
+                    </div>
+                    {!selected && <Plus className="w-4 h-4 text-gray-400" />}
+                  </div>
+
+                  {selected && (
+                    <CardContent className="p-4 space-y-4 animate-in slide-in-from-top-2">
+                      <div className="grid grid-cols-2 gap-2 bg-gray-200 text-slate-500 p-2 rounded-lg text-center">
+                        <div className="border-r border-slate-700">
+                          <p className="text-[9px] uppercase font-bold opacity-60">Stock Actual</p>
+                          <p className="text-lg font-black">{initialQuantities[s.id_sucursal] || 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] uppercase font-bold opacity-60">Stock Final</p>
+                          <p className="text-lg font-black text-green-400">
+                            {form.watch(`sucursales_inventario.${invIndex}.cantidad_actual`)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Surtir / Ajustar</Label>
+                        <div className="space-y-2">
+                          {variantes.map((v, vIdx) => {
+                            // Verificar si está habilitada en esta sucursal en el paso de precios
+                            const isEnabledInBranch = v.sucursales_venta.some(sv => sv.id_sucursal === s.id_sucursal);
+
+                            if (!isEnabledInBranch) return null;
+
+                            return (
+                              <div key={vIdx} className="flex items-center gap-2 group p-2 rounded-md hover:bg-slate-50 transition-colors">
+                                <div className="flex-1">
+                                  <p className="text-md font-bold text-slate-700 leading-none">{v.nombre_presentacion || "Sin nombre"}</p>
+                                  <p className="text-[9px] text-slate-400 font-medium">Contiene {v.factor_conversion_cantidad} pzas</p>
+                                </div>
+                                <div className="flex items-center">
+                                  <Input
+                                    type="number"
+                                    placeholder="+/- 0"
+                                    className="h-8 w-24 text-right font-bold text-sm bg-white border-red-600 focus:border-red-600"
+                                    value={adjustments[s.id_sucursal]?.[vIdx] ?? ""}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => {
+                                      const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
+                                      handleVariantAdjustment(s.id_sucursal, vIdx, val);
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t">
+                        <FormField
+                          control={form.control}
+                          name={`sucursales_inventario.${invIndex}.cantidad_minima`}
+                          render={({ field: f }) => (
+                            <div className="flex items-center justify-between">
+                              <Label className="text-[10px] font-bold text-slate-500 uppercase">Aviso Stock Mínimo</Label>
+                              <Input
+                                type="number"
+                                className="h-7 w-20 text-center text-xs font-bold"
+                                {...f}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => f.onChange(e.target.value)}
+                              />
+                            </div>
+                          )}
+                        />
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-center py-1 mt-2 text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 font-bold uppercase tracking-tighter"
+                        onClick={() => {
+                          // Resetear todos los campos de esta sucursal
+                          const currentBranchAdjustments = adjustments[s.id_sucursal] || {};
+                          const resetAdjusts: Record<number, number | undefined> = {};
+
+                          // Para que el stock sea 0, el ajuste total debe ser -(initialQuantities)
+                          // Lo aplicamos en la unidad base (índice 0)
+                          const initial = initialQuantities[s.id_sucursal] || 0;
+
+                          // Limpiamos todos los ajustes previos
+                          Object.keys(currentBranchAdjustments).forEach(k => {
+                            resetAdjusts[parseInt(k)] = 0;
+                          });
+
+                          // Ponemos el negativo del inicial en la base
+                          handleVariantAdjustment(s.id_sucursal, 0, -initial);
+
+                          // Sincronizar estado local de inputs
+                          setAdjustments({
+                            ...adjustments,
+                            [s.id_sucursal]: { "0": -initial }
+                          });
+                        }}
+                      >
+                        Resetear Stock a 0
+                      </Button>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      />
     </div>
   );
 
   /* ----------------------- STEP 4 --------------------------- */
   const renderStep4 = () => (
     <div className="space-y-8">
-      <Alert className="bg-white border-green-200">
-        <AlertTitle className="text-lg font-bold text-black flex items-center gap-2">
-          💲 Asignación de Precios
+      <Alert className="bg-green-50 border-green-200">
+        <AlertTitle className="text-lg font-bold text-green-800 flex items-center gap-2">
+          💲 Este producto se vende en
         </AlertTitle>
-        <AlertDescription className="">
+        <AlertDescription className="text-green-700 font-medium">
           Define los precios de venta para cada presentación en las sucursales habilitadas.
         </AlertDescription>
       </Alert>
 
       {variantes.map((v, vIndex) => (
         <div key={vIndex} className="space-y-3">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
             <span className="bg-slate-800 text-white text-[10px] uppercase font-bold px-2 py-1 rounded">Presentación</span>
-            <h3 className="text-lg font-bold text-slate-800 uppercase tracking-tight">{v.nombre_presentacion || "Presentación Principal"}</h3>
+            <h3 className="text-lg font-bold text-slate-800 uppercase tracking-tight">{v.nombre_presentacion || "Sin nombre"}</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {sucursales
-              .filter(s => sucursalesInventarioIds.includes(s.id_sucursal))
-              .map(suc => {
-                const svIndex = v.sucursales_venta.findIndex(s => s.id_sucursal === suc.id_sucursal);
-                const selected = svIndex !== -1;
+            {sucursales.map(suc => {
+              const svIndex = v.sucursales_venta.findIndex(sv => sv.id_sucursal === suc.id_sucursal);
+              const selected = svIndex !== -1;
 
-                return (
-                  <Card key={suc.id_sucursal} className={`border-2 transition-all duration-200 overflow-hidden ${selected ? 'border-blue-600 shadow-md bg-white' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-100 hover:border-green-300'}`}>
+              return (
+                <Card key={suc.id_sucursal} className={`border-2 transition-all duration-200 overflow-hidden ${selected ? 'border-primary shadow-md bg-white' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-100'}`}>
 
-                    {/* Header Clickable */}
-                    <div
-                      className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${selected ? 'bg-green-50 border-b border-green-100' : ''}`}
-                      onClick={() => toggleSucursalVenta(vIndex, suc.id_sucursal)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selected ? 'bg-green-600 border-green-600' : 'bg-white border-gray-400'}`}>
-                          {selected && <Check className="w-3 h-3 text-white font-bold" />}
-                        </div>
-                        <CardTitle className={`text-sm font-bold ${selected ? 'text-green-900' : 'text-gray-500'}`}>
-                          {suc.nombre}
-                        </CardTitle>
+                  <div
+                    className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${selected ? 'bg-green-50 border-b border-green-100' : ''}`}
+                    onClick={() => toggleSucursalVenta(vIndex, suc.id_sucursal)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selected ? 'bg-green-600 border-green-600' : 'bg-white border-slate-300'}`}>
+                        {selected && <Check className="w-3 h-3 text-white font-bold" />}
                       </div>
-                      {!selected && <span className="text-[10px] text-muted-foreground mr-1 font-medium">Click habilitar</span>}
+                      <span className={`text-sm font-bold ${selected ? 'text-green-900' : 'text-slate-400'}`}>
+                        {suc.nombre}
+                      </span>
                     </div>
+                  </div>
 
-                    {selected && (
-                      <CardContent className="p-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="space-y-3">
+                  {selected && (
+                    <CardContent className="p-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="space-y-3">
+                        <FormField
+                          control={form.control}
+                          name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_venta`}
+                          render={({ field }) => (
+                            <FormItem className="space-y-1">
+                              <FormLabel className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Precio Público ($)</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    className="pl-7 text-xl font-bold h-10 border-green-100 focus:border-green-500"
+                                    value={field.value}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onBlur={(e) => {
+                                      const val = parseFloat(e.target.value);
+                                      if (!isNaN(val)) field.onChange(redondearPrecio(val));
+                                    }}
+                                  />
+                                </div>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
 
-                          {/* Precio Venta */}
-                          <FormField
-                            control={form.control}
-                            name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_venta`}
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-[10px] text-muted-foreground uppercase font-bold">Precio Público ($)</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      className="pl-7 text-xl font-bold h-10 bg-white border-green-200 focus:border-green-500 text-slate-800"
-                                      value={field.value}
-                                      onKeyDown={handleSpaceKeyDown}
-                                      onFocus={(e) => e.target.select()}
-                                      onChange={(e) => field.onChange(e.target.value)}
-                                      onBlur={(e) => {
-                                        const val = parseFloat(e.target.value);
-                                        if (!isNaN(val)) {
-                                          field.onChange(redondearPrecio(val));
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {/* Precio Mayoreo */}
-                          <FormField
-                            control={form.control}
-                            name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_mayoreo`}
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-[10px] text-muted-foreground uppercase font-bold">Precio Mayoreo ($)</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      className="pl-7 text-lg font-bold h-9 bg-slate-50 border-gray-200 focus:border-green-500 text-slate-600 border-dashed"
-                                      value={field.value}
-                                      onKeyDown={handleSpaceKeyDown}
-                                      onFocus={(e) => e.target.select()}
-                                      onChange={(e) => field.onChange(e.target.value)}
-                                      onBlur={(e) => {
-                                        const val = parseFloat(e.target.value);
-                                        if (!isNaN(val)) {
-                                          field.onChange(redondearPrecio(val));
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                );
-              })}
+                        <FormField
+                          control={form.control}
+                          name={`variantes.${vIndex}.sucursales_venta.${svIndex}.precio_mayoreo`}
+                          render={({ field }) => (
+                            <FormItem className="space-y-1">
+                              <FormLabel className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Precio Mayoreo ($)</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    className="pl-7 text-lg font-bold h-9 border-dashed border-slate-200"
+                                    value={field.value}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onBlur={(e) => {
+                                      const val = parseFloat(e.target.value);
+                                      if (!isNaN(val)) field.onChange(redondearPrecio(val));
+                                    }}
+                                  />
+                                </div>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
           </div>
-
-          <FormField
-            control={form.control}
-            name={`variantes.${vIndex}.sucursales_venta`}
-            render={() => (
-              <FormItem>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
       ))}
     </div>
@@ -776,8 +777,9 @@ export default function EditarProductoForm() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="p-6 flex flex-col items-center justify-center min-h-screen space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-slate-500 font-medium animate-pulse">Cargando datos del producto...</p>
       </div>
     );
   }
@@ -785,83 +787,90 @@ export default function EditarProductoForm() {
 
   return (
     <div className="p-6">
-      <Card>
-        <CardHeader>
-          <div className="w-full flex justify-between">
-            <Button onClick={() => { window.history.back() }} className="bg-primary text-white p-2 flex rounded-2xl">
-              <ArrowLeft />
+      <Card className="border-none shadow-xl overflow-hidden">
+        <div className="h-2 bg-primary w-full" />
+        <CardHeader className="bg-white border-b border-slate-100">
+          <div className="w-full flex justify-between items-center mb-4">
+            <Button onClick={() => window.history.back()} variant="outline" className="text-white bg-primary hover:text-white hover:bg-primary/80 cursor-pointer transition-colors">
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Regresar
             </Button>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Paso {currentStep} de 4</span>
+              <span className="font-bold text-slate-800">{["Producto Base", "Cajas y Paquetes", "Precios", "Situación de Stock"][currentStep - 1]}</span>
+            </div>
           </div>
-          <CardTitle>Editar Producto</CardTitle>
-          <CardDescription>Formulario de actualización paso a paso</CardDescription>
+          <CardTitle className="text-2xl font-black text-slate-900 leading-none">Editar Producto</CardTitle>
+          <CardDescription className="text-slate-400 font-medium">Actualiza las variantes y el stock multivariante</CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <div className="mb-8">
-            <div className="flex justify-between items-center">
+        <CardContent className="p-0">
+          {/* Progress Bar */}
+          <div className="bg-slate-50 border-b border-slate-100 p-6">
+            <div className="flex justify-between items-center relative">
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 z-0" />
               {[1, 2, 3, 4].map((stepNum, i) => (
-                <React.Fragment key={stepNum}>
-                  <div className="flex flex-col items-center">
-                    <div className={`
-                      w-10 h-10 rounded-full flex items-center justify-center font-bold
-                      ${currentStep > stepNum
-                        ? "bg-green-500 text-white"
-                        : currentStep === stepNum
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-300 text-gray-600"
-                      }
-                    `}>
-                      {currentStep > stepNum ? <Check /> : stepNum}
-                    </div>
-                    <span className="text-xs mt-2">{["Producto Base", "Inventario", "Variantes", "Precios"][i]}</span>
+                <div key={stepNum} className="relative z-10 flex flex-col items-center group">
+                  <div className={`
+                    w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-500
+                    ${currentStep > stepNum
+                      ? "bg-green-500 text-white scale-110 shadow-lg shadow-green-100"
+                      : currentStep === stepNum
+                        ? "bg-primary text-white scale-125 shadow-xl shadow-blue-100 ring-4 ring-white"
+                        : "bg-white border-2 border-slate-200 text-slate-400"
+                    }
+                  `}>
+                    {currentStep > stepNum ? <Check className="h-5 w-5" /> : stepNum}
                   </div>
-                  {i < 3 && <div className="h-1 flex-1 bg-gray-200 mx-2" />}
-                </React.Fragment>
+                  <span className={`text-[10px] mt-2 font-black uppercase tracking-tighter ${currentStep === stepNum ? "text-primary" : "text-slate-400"}`}>
+                    {["Base", "Paquetes", "Precios", "Stock"][i]}
+                  </span>
+                </div>
               ))}
             </div>
           </div>
 
           <Form {...form}>
-            <div className="space-y-6">
-              <div className="min-h-[400px]">
+            <div className="p-8 space-y-8">
+              <div className="min-h-[450px] transition-all duration-300">
                 {currentStep === 1 && renderStep1()}
                 {currentStep === 2 && renderStep2()}
-                {currentStep === 3 && renderStep3()}
-                {currentStep === 4 && renderStep4()}
+                {currentStep === 3 && renderStep4()}
+                {currentStep === 4 && renderStep3()}
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between pt-8 border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
                   disabled={currentStep === 1}
                   onClick={() => setCurrentStep(currentStep - 1)}
+                  className="px-8 font-bold text-slate-500 h-12"
                 >
-                  <ChevronLeft className="mr-2" /> Anterior
+                  <ChevronLeft className="mr-2 h-4 w-4" /> Anterior
                 </Button>
 
                 {currentStep < 4 ? (
-                  <Button type="button" onClick={handleNext}>
-                    Siguiente <ChevronRight className="ml-2" />
+                  <Button type="button" onClick={handleNext} className="px-10 h-12 font-bold bg-slate-900 hover:bg-black text-white shadow-lg transition-all active:scale-95">
+                    Siguiente <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
                   <Button
                     type="button"
                     onClick={() => form.handleSubmit(onSubmit, (errors) => {
-                      console.log('Errores de validación:', errors);
-                      toast.error("Por favor revisa que todos los campos obligatorios estén llenos y los precios sean mayores a 0.");
+                      console.log('Errores:', errors);
+                      toast.error("Revisa los campos obligatorios y que los precios sean válidos.");
                     })()}
-                    className="bg-blue-600 text-white"
+                    className="px-12 h-12 font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-100 transition-all active:scale-95"
                     disabled={updating}
                   >
                     {updating ? (
                       <>
-                        <Loader2 className="mr-2 animate-spin" /> Actualizando...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...
                       </>
                     ) : (
                       <>
-                        <Check className="mr-2" /> Actualizar Producto
+                        <Check className="mr-2 h-4 w-4" /> Guardar Cambios
                       </>
                     )}
                   </Button>

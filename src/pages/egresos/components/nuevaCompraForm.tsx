@@ -167,7 +167,12 @@ export default function NuevaCompraForm() {
                                                 <h4 className="font-bold text-[11px] text-slate-800 leading-tight uppercase line-clamp-2">
                                                     {item.product.nombre_producto}
                                                 </h4>
-                                                <span className="text-[8px] font-medium text-slate-400 mt-0.5">{item.product.sku_presentacion}</span>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-[8px] font-medium text-slate-400">{item.product.sku_presentacion}</span>
+                                                    <span className="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black uppercase border border-blue-100 italic">
+                                                        {item.quantity * item.product.factor_conversion_cantidad} pzas en total
+                                                    </span>
+                                                </div>
                                             </div>
 
                                             {/* Cantidad: Control más esbelto con input manual */}

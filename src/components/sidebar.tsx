@@ -159,25 +159,44 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                 </div>
 
                 {/* Perfil de usuario al fondo */}
-                <div className="p-4 border-t border-sidebar-border bg-sidebar shrink-0 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-lg font-bold text-primary shrink-0">
-                        {user?.usuario?.[0]?.toUpperCase() || "U"}
+                <div className="p-4 border-t border-sidebar-border bg-sidebar shrink-0 space-y-3">
+                    {/* User Info */}
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-lg font-bold text-primary shrink-0">
+                            {user?.usuario?.[0]?.toUpperCase() || "U"}
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                            <span className="font-semibold text-sidebar-foreground truncate text-sm">{user?.usuario}</span>
+                            <span className="text-[10px] text-sidebar-foreground/70 truncate">{user?.rol}</span>
+                        </div>
                     </div>
-                    <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-semibold text-sidebar-foreground truncate text-sm">{user?.usuario}</span>
-                        <span className="text-[10px] text-sidebar-foreground/70 truncate">{user?.rol}</span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/cerrar-caja")} title="Cerrar Caja">
-                            <Lock className="w-4 h-4" />
+
+                    {/* Action Buttons - Full Width and Prominent */}
+                    <div className="flex flex-col gap-2">
+                        <Button
+                            variant="outline"
+                            className="w-full justify-start gap-2 bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/50 text-orange-600 hover:text-orange-700 font-semibold"
+                            onClick={() => navigate("/cerrar-caja")}
+                        >
+                            <Lock className="w-5 h-5" />
+                            <span>Cerrar Caja</span>
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                            localStorage.removeItem("tkn");
-                            localStorage.removeItem("currentUser");
-                            localStorage.removeItem("openCaja");
-                            navigate("/login");
-                        }}>
-                            <LogOut className="w-4 h-4" />
+                        <Button
+                            variant="destructive"
+                            className="w-full justify-start gap-2 bg-red-500 hover:bg-red-500 border-red-500 text-white hover:text-white font-semibold"
+                            onClick={() => {
+                                if (localStorage.getItem("openCaja") != null) {
+                                    navigate("/cerrar-caja");
+                                    return;
+                                }
+                                localStorage.removeItem("tkn");
+                                localStorage.removeItem("currentUser");
+                                localStorage.removeItem("openCaja");
+                                navigate("/login");
+                            }}
+                        >
+                            <LogOut className="w-5 h-5" />
+                            <span>Salir</span>
                         </Button>
                     </div>
                 </div>

@@ -23,6 +23,7 @@ const tempProductSchema = z.object({
     precio_venta: z.coerce.number().min(0.01, "El precio debe ser mayor a 0"),
     precio_mayoreo: z.coerce.number().min(0, "El precio no puede ser negativo").optional(),
     nombre_presentacion: z.string().default("Pieza"),
+    cantidad: z.coerce.number().min(1, "Mínimo 1"),
 })
 
 type TempProductFormValues = z.infer<typeof tempProductSchema>
@@ -45,6 +46,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
             precio_venta: 0,
             precio_mayoreo: 0,
             nombre_presentacion: "Pieza",
+            cantidad: 1,
         },
     })
 
@@ -57,6 +59,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                 precio_venta: 0,
                 precio_mayoreo: 0,
                 nombre_presentacion: "Unidad",
+                cantidad: 1,
             })
         }
     }, [isOpen, form])
@@ -84,7 +87,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
             es_granel: false,
         }
 
-        addProduct(newProduct)
+        addProduct(newProduct, data.cantidad)
 
         setIsOpen(false)
 
@@ -173,6 +176,20 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                                         <FormLabel className="font-semibold text-gray-700">Unidad / Presentación</FormLabel>
                                         <FormControl>
                                             <Input placeholder="Ej. Pza, Kg, Servicio" {...field} className="focus-visible:ring-blue-500" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="cantidad"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="font-semibold text-gray-700">Cantidad</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" {...field} className="focus-visible:ring-blue-500 text-center font-bold" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

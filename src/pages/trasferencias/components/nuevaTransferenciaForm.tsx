@@ -15,7 +15,7 @@ import { useTransferirProductos } from "@/contexts/listaTransferencia";
 import type { ProductoVenta } from "@/types/Producto";
 import type { Sucursal } from "@/types/Sucursal";
 import { Minus, PackageOpen, Plus, Search, Send, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState,} from "react";
+import { useEffect, useMemo, useState, } from "react";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { toast } from "sonner";
@@ -25,14 +25,14 @@ import { toast } from "sonner";
 
 export default function CrearTransferencia() {
   // --- ESTADO ---
-  const {user}=useCurrentUser();
+  const { user } = useCurrentUser();
   const [origen, setOrigen] = useState<string>(user?.id_sucursal.toString() || "");
   const [destino, setDestino] = useState<string>("");
   const [motivo, setMotivo] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [sucursalLista, setSucursalLista] = useState<Sucursal[]>([]);
   const [productosLista, setProductosLista] = useState<ProductoVenta[]>([]);
- 
+
 
   // --- ZUSTAND STORE ---
   const {
@@ -46,8 +46,8 @@ export default function CrearTransferencia() {
   } = useTransferirProductos();
 
   // --- EFECTOS ---
-  
-   // --- EFECTO 1: Carga Inicial de Sucursales ---
+
+  // --- EFECTO 1: Carga Inicial de Sucursales ---
   useEffect(() => {
     let mounted = true;
     obtenerSucursalesApi()
@@ -62,8 +62,8 @@ export default function CrearTransferencia() {
   useEffect(() => {
 
     let mounted = true;
-    setProductosLista([]); 
-    clearCart(); 
+    setProductosLista([]);
+    clearCart();
 
 
     const fetchProductos = async () => {
@@ -80,7 +80,7 @@ export default function CrearTransferencia() {
       } catch (error) {
         console.error("Error obteniendo productos:", error);
         if (mounted) setProductosLista([]);
-      } 
+      }
     };
 
     fetchProductos();
@@ -95,16 +95,17 @@ export default function CrearTransferencia() {
   // --- MEMOIZACIÓN: Filtrado eficiente ---
   const productosFiltrados = useMemo(() => {
     const term = busqueda.toLowerCase();
-    return productosLista.filter((p) =>
-      p.nombre_producto.toLowerCase().includes(term) ||
-      p.sku_pieza.toLowerCase().includes(term)
-    );
+    return productosLista.filter((p) => {
+      const nombre = (p.nombre_producto || "").toLowerCase();
+      const sku = (p.sku_pieza || "").toLowerCase();
+      return nombre.includes(term) || sku.includes(term);
+    });
   }, [productosLista, busqueda]);
-  
+
 
 
   // --- HANDLERS ---
-  const transferirProductos = async(e: React.MouseEvent<HTMLButtonElement>) => {
+  const transferirProductos = async (e: React.MouseEvent<HTMLButtonElement>) => {
 
     const timeZone = "America/Mexico_City";
     const now = new Date();
@@ -132,26 +133,27 @@ export default function CrearTransferencia() {
       })),
     };
 
-    const res=await nuevaTransferenciaApi(nuevaTransferencia);
-    if(res.success){
+    const res = await nuevaTransferenciaApi(nuevaTransferencia);
+    if (res.success) {
       toast.success('Transferencia generada correctamente', {
-        description:`La transferencia se ha generado correctamente, FOLIO ${res.data}`,});
+        description: `La transferencia se ha generado correctamente, FOLIO ${res.data}`,
+      });
       setMotivo("");
       clearCart();
       setDestino("");
-    }else{
-      toast.error("Error al crear la transferencia. Intenta nuevamente.",{
+    } else {
+      toast.error("Error al crear la transferencia. Intenta nuevamente.", {
         description: res.message || "Error desconocido.",
       });
     }
 
-    
-    
+
+
   };
 
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-2rem)] flex flex-col lg:flex-row gap-6">
-      
+
       {/* ---------------- IZQUIERDA: SELECCIÓN Y TABLA ---------------- */}
       <Card className="flex-1 flex flex-col h-full shadow-md border-slate-200">
         <CardHeader className="pb-4">
@@ -163,13 +165,13 @@ export default function CrearTransferencia() {
             Selecciona el origen y destino para ver los productos disponibles.
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-4 flex-1 flex flex-col overflow-hidden">
           {/* Selectores de Sucursal */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Sucursal Origen</Label>
-              <Select value={origen}  onValueChange={setOrigen} disabled={user.id_rol!=1} >
+              <Select value={origen} onValueChange={setOrigen} disabled={user.id_rol != 1} >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar origen..." />
                 </SelectTrigger>
@@ -185,9 +187,9 @@ export default function CrearTransferencia() {
 
             <div className="space-y-2">
               <Label>Sucursal Destino</Label>
-              <Select 
-                value={destino} 
-                onValueChange={setDestino} 
+              <Select
+                value={destino}
+                onValueChange={setDestino}
                 disabled={!origen}
               >
                 <SelectTrigger>
@@ -200,7 +202,7 @@ export default function CrearTransferencia() {
                       <SelectItem key={s.id_sucursal} value={s.id_sucursal.toString()}>
                         {s.nombre}
                       </SelectItem>
-                  ))}
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -257,7 +259,14 @@ export default function CrearTransferencia() {
                         <TableRow key={prod.id_unidad_venta}>
                           <TableCell className="font-medium">
                             <div>{prod.nombre_producto}</div>
-                            <div className="text-xs text-muted-foreground">{prod.sku_pieza}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-muted-foreground font-medium">{prod.sku_pieza}</span>
+                              {prod.factor_conversion_cantidad > 1 && (
+                                <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase">
+                                  Paquete de {prod.factor_conversion_cantidad} pzs
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>{prod.nombre_presentacion}</TableCell>
                           <TableCell className="text-center">
@@ -312,11 +321,16 @@ export default function CrearTransferencia() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-semibold text-sm line-clamp-1">{item.product.nombre_producto}</p>
-                        <p className="text-xs text-muted-foreground">{item.product.nombre_presentacion}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">{item.product.nombre_presentacion}</p>
+                          <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-black uppercase border border-blue-100">
+                            {item.quantity * item.product.factor_conversion_cantidad} pzas totales
+                          </span>
+                        </div>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                         onClick={() => removeProduct(item.product.id_producto)}
                       >
@@ -326,25 +340,25 @@ export default function CrearTransferencia() {
 
                     {/* Controles Cantidad */}
                     <div className="flex justify-between items-center bg-slate-50 p-1 rounded text-xs">
-                       <span className="text-muted-foreground ml-2">
-                         Disp: {item.product.stock_disponible_presentacion}
-                       </span>
-                       <div className="flex items-center gap-1">
-                          <Button 
-                            variant="outline" size="icon" className="h-6 w-6"
-                            onClick={() => decrementQuantity(item.product.id_producto)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
-                          <Button 
-                            variant="outline" size="icon" className="h-6 w-6"
-                            disabled={item.quantity >= item.product.stock_disponible_presentacion}
-                            onClick={() => incrementQuantity(item.product.id_producto)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                       </div>
+                      <span className="text-muted-foreground ml-2">
+                        Disp: {item.product.stock_disponible_presentacion}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline" size="icon" className="h-6 w-6"
+                          onClick={() => decrementQuantity(item.product.id_producto)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
+                        <Button
+                          variant="outline" size="icon" className="h-6 w-6"
+                          disabled={item.quantity >= item.product.stock_disponible_presentacion}
+                          onClick={() => incrementQuantity(item.product.id_producto)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -368,8 +382,8 @@ export default function CrearTransferencia() {
             />
           </div>
 
-          <Button 
-            className="w-full gap-2" 
+          <Button
+            className="w-full gap-2"
             size="lg"
             onClick={transferirProductos}
             disabled={carrito.length === 0 || !motivo || !origen || !destino}

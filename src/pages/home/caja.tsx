@@ -520,6 +520,9 @@ export default function Home() {
                             <Users className="w-4 h-4 mr-2" />
                             {carritoActual?.cliente ? "Cambiar Cliente" : "Asignar Cliente"} (alt+m)
                         </Button>
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => setOpenNuevoProducto(true)}>
+                            nuevo producto temporal (ctrl+p)
+                        </Button>
                     </CardContent>
                 </Card>
 

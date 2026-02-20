@@ -29,6 +29,10 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
     navigate("/productos")
   }
 
+  const verMisVentas = () => {
+    navigate("/reportes/misVentas")
+  }
+
 
   useHotkeys('F10', () => {
     setOpenP(true)
@@ -36,7 +40,8 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
     enableOnFormTags: true
   }, [setOpenP]); // El array de dependencias es opcional pero recomendado
 
-  useHotkeys('F2', () => {
+  useHotkeys('F4', (event) => {
+    event.preventDefault()
     moverAInventario()
   }, {
     enableOnFormTags: true
@@ -73,10 +78,14 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                 user.id_rol === 1 && (
                   <div className="relative hidden sm:block">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
-                    <Button variant={"secondary"} className="px-10 cursor-pointer" onClick={moverAInventario}>Inventario (F2)</Button>
+                    <Button variant={"secondary"} className="px-10 cursor-pointer" onClick={moverAInventario}>Inventario (F4)</Button>
                   </div>
                 )
               }
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
+                <Button variant={"secondary"} className="px-10 cursor-pointer" onClick={verMisVentas}>Ver ventas de hoy</Button>
+              </div>
 
               <div className="relative hidden sm:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />

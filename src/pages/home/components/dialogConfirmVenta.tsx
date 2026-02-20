@@ -36,6 +36,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const turnoData = JSON.parse(turnoDataString);
     const isOnline = useOnlineStatus();
     const [modoTurbo, setModoTurbo] = useState(() => localStorage.getItem("modo_turbo") === "true");
+    const [errorMessage, setErrorMessage] = useState("");
 
     useHotkeys("f1", () => {
         nuevaVenta(true);
@@ -48,6 +49,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const reloadVenta = async () => {
         setCambioEfectivo(0);
         setEstado("Inicio");
+        setErrorMessage("");
         // Eliminar el carrito actual después de confirmar la venta
         if (carritoActivo) {
             eliminarCarrito(carritoActivo);
@@ -73,6 +75,19 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
             });
             return;
         }
+        // Validar que no haya productos con precio 0
+        const productosConPrecioCero = getCarritoActivo()?.productos.filter(p => {
+            const precio = p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta;
+            return precio <= 0;
+        });
+
+        if (productosConPrecioCero && productosConPrecioCero.length > 0) {
+            toast.error('Error en el precio', {
+                description: `Hay productos con precio de $0.00 en el carrito (${productosConPrecioCero[0].product.nombre_producto}).`,
+            });
+            return;
+        }
+
         setEstado("Cargando");
         try {
 
@@ -107,6 +122,8 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                     printerName,
                                     sucursal: "Sucursal " + user.sucursal,
                                     id_sucursal: user.id_sucursal,
+                                    direccion_sucursal: user.direccion_sucursal,
+                                    telefono_sucursal: user.telefono_sucursal,
                                     usuario: user.usuario,
                                     cliente: carritoActual?.cliente?.nombre_cliente || "Público General",
                                     folio: "OFL-" + offlineRes.id,
@@ -191,11 +208,19 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 setEstado("Listo");
             } else {
                 console.error("Error del servidor al crear venta:", res);
+                setErrorMessage(res.message || "Error desconocido en el servidor");
                 setEstado("Error");
+                toast.error("Error al procesar la venta", {
+                    description: `${res.message}`,
+                });
             }
         } catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : String(error));
             setEstado("Error");
             console.error("Error al procesar la venta:", error);
+            toast.error("Error al procesar la venta", {
+                description: `${error}`,
+            });
         }
     }
 
@@ -344,9 +369,12 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 <AlertCircle className="h-8 w-8" />
                             </div>
                             <p className="text-xl font-semibold">Error al procesar</p>
-                            <p className="text-sm text-muted-foreground">Ocurrió un error al completar la venta. Intenta de nuevo.</p>
+                            <p className="text-lg text-red-500 text-center max-w-md">{errorMessage}</p>
                             <div className="w-full flex gap-2 mt-4">
-                                <Button variant="outline" className="flex-1" onClick={() => setEstado("Inicio")}>
+                                <Button variant="outline" className="flex-1" onClick={() => {
+                                    setEstado("Inicio");
+                                    setErrorMessage("");
+                                }}>
                                     Volver
                                 </Button>
                                 <Button className="flex-1" onClick={() => nuevaVenta(true)}>

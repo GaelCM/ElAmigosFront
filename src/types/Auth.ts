@@ -16,7 +16,9 @@ export type authCredentials = {
     rol: string,
     id_sucursal: number,
     sucursal: string
-    permisos: menuItem[]
+    permisos: menuItem[],
+    direccion_sucursal: string,
+    telefono_sucursal: string
 }
 
 

@@ -109,3 +109,16 @@ export const actualizarProductoEspApi = async (id_producto: number, formData: Pr
     const data = await res.json();
     return data as { success: boolean, message: string, data: number | null };
 }
+
+export const eliminarProductoApi = async (idProducto: number) => {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/eliminarProducto/${idProducto}`, {
+        method: "delete",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
+            'Content-Type': 'application/json',
+        }
+    });
+    const data = await res.json();
+    return data as { success: boolean, message: string, details?: string };
+}
+

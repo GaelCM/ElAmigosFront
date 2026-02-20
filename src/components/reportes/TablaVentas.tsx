@@ -255,7 +255,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                 placeholder="Buscar por #Folio de venta..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-9 h-10 bg-green-100"
+                                className="pl-9 h-10 bg-yellow-400"
                             />
                         </div>
                     </div>

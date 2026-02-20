@@ -21,7 +21,9 @@ export const useCurrentUser = create(
                 rol: "",
                 id_sucursal: 0,
                 sucursal: "",
-                permisos: []
+                permisos: [],
+                direccion_sucursal: "",
+                telefono_sucursal: ""
             },
             addUser: (newUser: authCredentials) => {
                 console.log("Usuario actualizado:");
@@ -38,7 +40,9 @@ export const useCurrentUser = create(
                         rol: "",
                         id_sucursal: 0,
                         sucursal: "",
-                        permisos: []
+                        permisos: [],
+                        direccion_sucursal: "",
+                        telefono_sucursal: ""
                     }
                 });
             },
