@@ -135,7 +135,8 @@ export default function CerrarCajaPage() {
                             <div className="flex justify-between"><span>Total Ventas:</span> <span className="font-bold">{formatCurrency(resumen.ventas.total)}</span></div>
                             <div className="flex justify-between text-sm"><span>En Efectivo:</span> <span>{formatCurrency(resumen.ventas.efectivo)}</span></div>
                             <div className="flex justify-between text-sm"><span>En Tarjeta:</span> <span>{formatCurrency(resumen.ventas.tarjeta)}</span></div>
-                            <div className="flex justify-between text-sm"><span>No. Transacciones:</span> <span>{resumen.ventas.numero}</span></div>
+                            <div className="flex justify-between text-sm text-orange-600 font-medium"><span>A Crédito:</span> <span>{formatCurrency(resumen.ventas.credito)}</span></div>
+                            <div className="flex justify-between text-sm pt-1 border-t"><span>No. Transacciones:</span> <span>{resumen.ventas.numero}</span></div>
                         </CardContent>
                     </Card>
 
@@ -175,7 +176,9 @@ export default function CerrarCajaPage() {
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="flex justify-between text-sm"><span>Efectivo Inicial:</span> <span>{formatCurrency(resumen.efectivo.inicial)}</span></div>
-                            <div className="flex justify-between font-semibold pt-2 border-t">
+                            <div className="flex justify-between text-sm"><span>Ventas Efectivo:</span> <span>+{formatCurrency(resumen.ventas.efectivo)}</span></div>
+                            <div className="flex justify-between text-sm"><span>Abonos (Cobranza):</span> <span className="text-green-600 font-medium">+{formatCurrency(resumen.creditos?.abonos_recibidos || 0)}</span></div>
+                            <div className="flex justify-between font-semibold pt-2 border-t text-blue-700">
                                 <span>Efectivo Esperado (Sistema):</span>
                                 <span>{formatCurrency(resumen.efectivo.esperado)}</span>
                             </div>
@@ -229,7 +232,7 @@ export default function CerrarCajaPage() {
                     ) : dashboard ? (
                         <div className="grid grid-cols-1 gap-6">
                             {/* KPIs Rápidos */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
                                 <Card className=" border-blue-100">
                                     <CardContent className="p-4 flex flex-col items-center text-center">
                                         <ShoppingCart className="w-5 h-5 text-blue-600 mb-2" />
@@ -240,22 +243,36 @@ export default function CerrarCajaPage() {
                                 <Card className=" border-green-100">
                                     <CardContent className="p-4 flex flex-col items-center text-center">
                                         <DollarSign className="w-5 h-5 text-green-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-green-400">Ventas en Efectivo</span>
+                                        <span className="text-[10px] font-black uppercase text-green-400">Ventas Efectivo</span>
                                         <span className="text-lg font-black text-green-700">{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</span>
+                                    </CardContent>
+                                </Card>
+                                <Card className=" border-purple-100">
+                                    <CardContent className="p-4 flex flex-col items-center text-center">
+                                        <Wallet className="w-5 h-5 text-purple-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-purple-400">Abonos</span>
+                                        <span className="text-lg font-black text-purple-700">{formatCurrency(dashboard.metricas_principales.abonos_credito)}</span>
+                                    </CardContent>
+                                </Card>
+                                <Card className=" border-orange-100">
+                                    <CardContent className="p-4 flex flex-col items-center text-center">
+                                        <DollarSign className="w-5 h-5 text-orange-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-orange-400">Créditos</span>
+                                        <span className="text-lg font-black text-orange-700">{formatCurrency(dashboard.metricas_principales.ventas_credito)}</span>
                                     </CardContent>
                                 </Card>
                                 <Card className=" border-red-100">
                                     <CardContent className="p-4 flex flex-col items-center text-center">
                                         <ShoppingBag className="w-5 h-5 text-red-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-red-400">Egresos en Efectivo</span>
+                                        <span className="text-[10px] font-black uppercase text-red-400">Egresos</span>
                                         <span className="text-lg font-black text-red-700">-{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</span>
                                     </CardContent>
                                 </Card>
-                                <Card className=" border-orange-100">
+                                <Card className=" border-blue-600 bg-blue-50">
                                     <CardContent className="p-4 flex flex-col items-center text-center">
-                                        <Wallet className="w-5 h-5 text-orange-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-orange-400">Efectivo Esperado</span>
-                                        <span className="text-lg font-black text-orange-700">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</span>
+                                        <CheckCircle2 className="w-5 h-5 text-blue-600 mb-2" />
+                                        <span className="text-[10px] font-black uppercase text-blue-400">Esperado</span>
+                                        <span className="text-lg font-black text-blue-700">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</span>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -274,6 +291,10 @@ export default function CerrarCajaPage() {
                                         <div className="flex justify-between text-sm">
                                             <span className="text-slate-500">Ventas en Efectivo</span>
                                             <span className="font-bold text-green-600">+{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Abonos (Cobranza)</span>
+                                            <span className="font-bold text-green-600">+{formatCurrency(dashboard.metricas_principales.abonos_credito)}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="text-slate-500">Depósitos</span>

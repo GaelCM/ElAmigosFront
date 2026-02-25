@@ -110,18 +110,25 @@ export default function DetalleVentaPage() {
                 const ticketData = {
                     printerName,
                     sucursal: saleInfo.nombre_sucursal ? "Sucursal " + saleInfo.nombre_sucursal : "Sucursal",
+                    id_sucursal: user.id_sucursal,
+                    direccion_sucursal: user.direccion_sucursal,
+                    telefono_sucursal: user.telefono_sucursal,
                     usuario: saleInfo.nombre_usuario,
                     cliente: saleInfo.id_cliente ? `ID Cliente: #${saleInfo.id_cliente}` : "Público General",
                     folio: saleInfo.id_venta,
                     fecha: saleInfo.fecha_venta ? new Date(saleInfo.fecha_venta) : new Date(),
                     productos: items?.map((p: any) => ({
                         cantidad: p.cantidad,
-                        nombre: p.nombre_producto,
+                        nombre: `${p.nombre_producto} ${p.nombre_unidad}`,
                         importe: p.subtotal
                     })) || [],
                     total: totalVenta,
                     pagoCon: saleInfo.monto_recibido,
                     cambio: Math.max(0, saleInfo.cambio || 0),
+                    // @ts-ignore
+                    ahorro: items.reduce((acc, item) => acc + (item.precio_mayoreo ? ((item.precio_normal || item.precio_unitario) - item.precio_unitario) * item.cantidad : 0), 0) || 0,
+                    // @ts-ignore
+                    turno: saleInfo.id_turno || "0",
                     cortar: localStorage.getItem("printer_cut") !== "false"
                 };
 
@@ -322,7 +329,7 @@ export default function DetalleVentaPage() {
                                                 <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-white dark:group-hover:bg-slate-700 transition-colors shadow-sm">
                                                     <Package className="w-4 h-4 text-slate-500" />
                                                 </div>
-                                                <span className="font-semibold text-slate-700 dark:text-slate-200">{item.nombre_producto}</span>
+                                                <span className="font-semibold text-slate-700 dark:text-slate-200">{item.nombre_producto} {item.nombre_unidad}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

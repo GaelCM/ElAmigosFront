@@ -56,7 +56,7 @@ export interface ProductoFormFinal {
     descripcion?: string | undefined;
     id_categoria: string;
     precio_costo: number;
-    sku_pieza?: string | undefined;
+    sku_pieza: string;
     es_granel: boolean;
     cantidad_actual: number;
     cantidad_minima: number;
@@ -69,7 +69,7 @@ export interface ProductoFormFinal {
         id_unidad_venta?: number;
         nombre_presentacion: string;
         factor_conversion_cantidad: number;
-        sku_presentacion?: string | undefined;
+        sku_presentacion: string;
         sucursales_venta: {
             id_sucursal: number;
             precio_venta: number;

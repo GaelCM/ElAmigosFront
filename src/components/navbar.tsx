@@ -142,18 +142,32 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Reportes de Inventario</DropdownMenuLabel>
+                      <DropdownMenuLabel>Reportes</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="gap-2">
                         <Link to={"reportes/stockBajo"} className="flex items-center gap-2 w-full h-full">
                           <TrendingUp className="w-4 h-4" />
                           Stock Bajo
                         </Link>
+
                       </DropdownMenuItem>
 
+                      <DropdownMenuItem className="gap-2">
+                        <Link to={"reportes/misCortes"} className="flex items-center gap-2 w-full h-full">
+                          <TrendingUp className="w-4 h-4" />
+                          Cortes
+                        </Link>
 
+                      </DropdownMenuItem>
 
+                      <DropdownMenuItem className="gap-2">
+                        <Link to={"/creditos"} className="flex items-center gap-2 w-full h-full">
+                          <TrendingUp className="w-4 h-4" />
+                          Créditos
+                        </Link>
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
+
                   </DropdownMenu>
                 </div>
               )}

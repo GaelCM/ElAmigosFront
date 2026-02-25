@@ -10,6 +10,7 @@ export interface ReporteVentaDetallado {
     estado_venta: number;
     estado_venta_descripcion: string;
     id_cliente: number | null;
+    nombre_cliente: string | null;
     id_turno: number;
     id_usuario: number;
     nombre_usuario: string;

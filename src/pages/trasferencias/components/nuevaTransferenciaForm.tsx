@@ -258,7 +258,7 @@ export default function CrearTransferencia() {
                       return (
                         <TableRow key={prod.id_unidad_venta}>
                           <TableCell className="font-medium">
-                            <div>{prod.nombre_producto}</div>
+                            <div>{prod.nombre_producto} {prod.nombre_presentacion}</div>
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] text-muted-foreground font-medium">{prod.sku_pieza}</span>
                               {prod.factor_conversion_cantidad > 1 && (
@@ -320,7 +320,7 @@ export default function CrearTransferencia() {
                     {/* Header Item */}
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-semibold text-sm line-clamp-1">{item.product.nombre_producto}</p>
+                        <p className="font-semibold text-sm line-clamp-1">{item.product.nombre_producto} {item.product.nombre_presentacion}</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-muted-foreground">{item.product.nombre_presentacion}</p>
                           <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-black uppercase border border-blue-100">

@@ -5,8 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useListaProductos } from "@/contexts/listaProductos";
 import type { EstadoVenta } from "@/types/Venta";
-import { Check, Loader2, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Check, Loader2, AlertCircle, Banknote, CreditCard, Landmark } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useOnlineStatus } from "@/hooks/isOnline";
@@ -22,10 +22,11 @@ type dialogProps = {
     onClose: (open: boolean) => void,
     inputRef?: React.RefObject<{ focus: () => void } | null>,
     metodoPago: number,
+    setMetodoPago: (metodoPago: number) => void,
 }
 
 
-export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPago }: dialogProps) {
+export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPago, setMetodoPago }: dialogProps) {
 
     const [estado, setEstado] = useState<EstadoVenta>("Inicio");
     const { getCarritoActivo, getTotalPrice, carritoActivo, eliminarCarrito } = useListaProductos();
@@ -49,6 +50,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const reloadVenta = async () => {
         setCambioEfectivo(0);
         setEstado("Inicio");
+
         setErrorMessage("");
         // Eliminar el carrito actual después de confirmar la venta
         if (carritoActivo) {
@@ -60,6 +62,16 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
             inputRef?.current?.focus();
         }, 100);
     }
+
+    useEffect(() => {
+        if (estado === "Listo") {
+            const timer = setTimeout(() => {
+                reloadVenta();
+                setMetodoPago(0);
+            }, 2000); // 2 segundos para que el usuario pueda ver el cambio
+            return () => clearTimeout(timer);
+        }
+    }, [estado]);
 
     const nuevaVenta = async (isImprimir: boolean) => {
         if (getCarritoActivo()?.productos.length == 0) {
@@ -130,12 +142,14 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                     fecha: new Date(),
                                     productos: carritoActual?.productos?.map((p: any) => ({
                                         cantidad: p.quantity,
-                                        nombre: p.product.nombre_producto,
+                                        nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
                                         importe: redondearPrecio((p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity)
                                     })) || [],
                                     total: getTotalPrice(),
                                     pagoCon: cambioEfectivo,
                                     cambio: Math.max(0, cambioEfectivo - getTotalPrice()),
+                                    ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
+                                    turno: turnoData?.id_turno || "0",
                                     cortar: localStorage.getItem("printer_cut") !== "false"
                                 };
 
@@ -175,18 +189,23 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                             const ticketData = {
                                 printerName,
                                 sucursal: "Sucursal " + user.sucursal,
+                                id_sucursal: user.id_sucursal,
+                                direccion_sucursal: user.direccion_sucursal,
+                                telefono_sucursal: user.telefono_sucursal,
                                 usuario: user.usuario,
                                 cliente: carritoActual?.cliente?.nombre_cliente || "Público General",
                                 folio: res.data || "S/N",
                                 fecha: new Date(),
                                 productos: carritoActual?.productos?.map((p: any) => ({
                                     cantidad: p.quantity,
-                                    nombre: p.product.nombre_producto,
+                                    nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
                                     importe: redondearPrecio((p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity)
                                 })) || [],
                                 total: getTotalPrice(),
                                 pagoCon: cambioEfectivo,
                                 cambio: Math.max(0, cambioEfectivo - getTotalPrice()),
+                                ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
+                                turno: turnoData?.id_turno || "0",
                                 cortar: localStorage.getItem("printer_cut") !== "false"
                             };
 
@@ -206,6 +225,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 // --- FIN LÓGICA DE IMPRESIÓN ---
 
                 setEstado("Listo");
+                setMetodoPago(0);
             } else {
                 console.error("Error del servidor al crear venta:", res);
                 setErrorMessage(res.message || "Error desconocido en el servidor");
@@ -225,6 +245,18 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     }
 
 
+    useEffect(() => {
+        if (isOpen) {
+            if (metodoPago !== 0) {
+                setCambioEfectivo(getTotalPrice());
+            } else {
+                setCambioEfectivo(0);
+            }
+        }
+    }, [isOpen, metodoPago]);
+
+    const totalVenta = getTotalPrice();
+
     return (
         <Dialog open={isOpen} onOpenChange={() => {
             if (estado === "Listo") {
@@ -236,148 +268,177 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 }, 100);
             }
         }}>
-            <DialogContent className="sm:max-w-4xl p-12">
+            <DialogContent className="sm:max-w-4xl max-h-[98vh] overflow-y-auto p-6 md:p-8">
                 <DialogHeader>
                     <div className="flex items-center justify-between gap-4">
                         <div>
-                            <DialogTitle className="text-2xl">Procesar Venta</DialogTitle>
-                            <DialogDescription>Selecciona el método de pago para completar la venta</DialogDescription>
+                            <DialogTitle className="text-xl">Procesar Venta</DialogTitle>
+                            <DialogDescription className="text-xs">Selecciona el método de pago para completar la venta</DialogDescription>
                         </div>
-                        <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/20 px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-900/50">
+                        <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/20 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-900/50">
                             <div className="flex flex-col items-end">
-                                <Label htmlFor="modo-turbo" className="text-xs font-bold text-amber-700 dark:text-amber-500 flex items-center gap-1 uppercase">
+                                <Label htmlFor="modo-turbo" className="text-[10px] font-bold text-amber-700 dark:text-amber-500 flex items-center gap-1 uppercase">
                                     <Zap className="h-3 w-3 fill-current" />
                                     Modo Turbo
                                 </Label>
-                                <span className="text-[10px] text-amber-600/70">Ideal para internet lento</span>
                             </div>
                             <Switch
                                 id="modo-turbo"
                                 checked={modoTurbo}
+                                className="scale-75"
                                 onCheckedChange={(val) => {
                                     setModoTurbo(val);
                                     localStorage.setItem("modo_turbo", val.toString());
-                                    if (val) {
-                                        toast.info("Modo Turbo activado: Las ventas se procesarán localmente e instantáneamente.");
-                                    }
                                 }}
                             />
                         </div>
                     </div>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
+                <div className="space-y-4 py-2">
                     {estado === "Inicio" && (
                         <>
                             {/* Summary */}
-                            <div className="space-y-3 p-4 bg-muted rounded-lg">
-                                <div className="flex items-center justify-between text-sm">
+                            <div className="space-y-2 p-3 bg-muted rounded-lg">
+                                <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground">Productos</span>
                                     <span className="font-medium">{carritoActual?.productos?.length ?? 0}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground">Cantidad total</span>
                                     <span className="font-medium">{carritoActual?.productos?.reduce((sum, item) => sum + item.quantity, 0) ?? 0}</span>
                                 </div>
-                                <Separator />
+                                <Separator className="my-1" />
                                 <div className="flex items-center justify-between">
-                                    <span className="font-semibold">Total a pagar</span>
-                                    <span className="text-2xl font-bold">${getTotalPrice().toFixed(2)}</span>
+                                    <span className="font-bold text-lg">Total a pagar</span>
+                                    <span className="text-4xl font-black text-primary">${totalVenta.toFixed(2)}</span>
                                 </div>
+                            </div>
+
+                            {/* Método de pago — tarjeta pequeña */}
+                            <div className={`flex items-center gap-3 p-3 rounded-xl border-2 ${metodoPago === 0
+                                ? 'bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-600'
+                                : metodoPago === 1
+                                    ? 'bg-blue-50 border-blue-400 dark:bg-blue-900/20 dark:border-blue-600'
+                                    : 'bg-purple-50 border-purple-400 dark:bg-purple-900/20 dark:border-purple-600'
+                                }`}>
+                                <div className={`p-2 rounded-lg ${metodoPago === 0 ? 'bg-green-200 dark:bg-green-700'
+                                    : metodoPago === 1 ? 'bg-blue-200 dark:bg-blue-700'
+                                        : 'bg-purple-200 dark:bg-purple-700'
+                                    }`}>
+                                    {metodoPago === 0 && <Banknote className="h-5 w-5 text-green-700 dark:text-green-200" />}
+                                    {metodoPago === 1 && <CreditCard className="h-5 w-5 text-blue-700 dark:text-blue-200" />}
+                                    {metodoPago === 2 && <Landmark className="h-5 w-5 text-purple-700 dark:text-purple-200" />}
+                                </div>
+                                <p className={`text-xs font-black uppercase tracking-wide ${metodoPago === 0 ? 'text-green-700 dark:text-green-300'
+                                    : metodoPago === 1 ? 'text-blue-700 dark:text-blue-300'
+                                        : 'text-purple-700 dark:text-purple-300'
+                                    }`}>
+                                    {metodoPago === 0 ? 'Efectivo' : metodoPago === 1 ? 'Tarjeta' : 'Crédito'}
+                                </p>
                             </div>
 
 
 
-                            <div className="flex flex-col items-center gap-6 py-4">
-                                <div className="text-center space-y-2">
-                                    <h1 className="text-2xl font-black text-slate-500 uppercase tracking-widest">Pago en Efectivo</h1>
-                                    <div className="relative">
-                                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-4xl font-black text-slate-400">$</span>
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            className="text-7xl text-center font-black w-full max-w-md py-6 px-12 bg-slate-50 border-4 border-slate-200 rounded-3xl focus:border-primary focus:ring-0 transition-all outline-none tabular-nums"
-                                            placeholder="0.00"
-                                            autoFocus
-                                            onChange={(e) => setCambioEfectivo(Number(e.target.value))}
-                                        />
-                                    </div>
+                            <div className="flex flex-col items-center gap-3 py-1">
+                                <div className="text-center space-y-2 w-full">
+                                    <h1 className="text-sm font-black text-slate-500 uppercase tracking-widest">
+                                        {metodoPago === 0 ? 'Monto Recibido' : metodoPago === 1 ? 'Pago con Tarjeta' : 'Venta a Crédito'}
+                                    </h1>
+                                    {metodoPago === 0 ? (
+                                        <div className="relative max-w-md mx-auto">
+                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-5xl font-black text-slate-400">$</span>
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                className="text-7xl text-center font-black w-full py-6 px-12 bg-slate-50 border-4 border-slate-200 rounded-3xl focus:border-primary focus:ring-0 transition-all outline-none tabular-nums"
+                                                placeholder="0.00"
+                                                autoFocus
+                                                onChange={(e) => setCambioEfectivo(Number(e.target.value))}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="py-8 px-12 bg-muted/30 border-4 border-dashed border-muted rounded-3xl max-w-md mx-auto text-center">
+                                            <span className="text-7xl font-black tabular-nums text-slate-600">
+                                                ${totalVenta.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {cambioEfectivo > 0 && (
-                                    <div className={`w-full max-w-md p-6 rounded-3xl border-4 transition-all animate-in zoom-in-95 duration-200 ${cambioEfectivo >= getTotalPrice()
+                                {metodoPago === 0 && cambioEfectivo > 0 && (
+                                    <div className={`w-full max-w-md p-6 rounded-3xl border-4 transition-all animate-in zoom-in-95 duration-200 ${cambioEfectivo >= totalVenta
                                         ? 'bg-green-50 border-green-200 text-green-700'
                                         : 'bg-red-50 border-red-200 text-red-700'
                                         }`}>
                                         <div className="flex flex-col items-center text-center gap-1">
-                                            <span className="text-xs font-black uppercase tracking-widest opacity-70">
-                                                {cambioEfectivo >= getTotalPrice() ? 'Su Cambio es de:' : 'Faltan:'}
+                                            <span className="text-sm font-black uppercase tracking-widest opacity-70">
+                                                {cambioEfectivo >= totalVenta ? 'Su Cambio es de:' : 'Faltan:'}
                                             </span>
-                                            <span className="text-5xl font-black tabular-nums">
-                                                $ {Math.abs(cambioEfectivo - getTotalPrice()).toFixed(2)}
+                                            <span className="text-6xl font-black tabular-nums">
+                                                $ {Math.abs(cambioEfectivo - totalVenta).toFixed(2)}
                                             </span>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
+
                             {/* Actions */}
-                            <div className="flex gap-3">
-                                <Button onClick={() => nuevaVenta(true)} className="flex-1 bg-green-700" disabled={metodoPago === undefined}>
+                            <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                                <Button onClick={() => nuevaVenta(true)} className="flex-1 bg-green-700 h-10 text-xs font-bold uppercase tracking-wide" disabled={metodoPago === undefined}>
                                     Completar e imprimir ticket (F1)
                                 </Button>
-                                <Button onClick={() => nuevaVenta(false)} className="flex-1 bg-yellow-700" disabled={metodoPago === undefined}>
+                                <Button onClick={() => nuevaVenta(false)} className="flex-1 bg-yellow-700 h-10 text-xs font-bold uppercase tracking-wide" disabled={metodoPago === undefined}>
                                     Completar sin imprimir ticket (F2)
                                 </Button>
-                                <Button variant="destructive" onClick={() => onClose(false)} className="flex-1" >
+                                <Button variant="destructive" onClick={() => onClose(false)} className="flex-1 h-10 text-xs font-bold uppercase tracking-wide" >
                                     Cancelar
                                 </Button>
                             </div>
                         </>
                     )}
 
+                    {/* Otros estados (Cargando, Listo, Error) se mantienen similares pero compactos */}
                     {estado === "Cargando" && (
-                        <div className="py-12 flex flex-col items-center justify-center gap-4">
+                        <div className="py-8 flex flex-col items-center justify-center gap-3">
                             <div className="animate-spin">
-                                <Loader2 className="h-8 w-8 text-primary" />
+                                <Loader2 className="h-6 w-6 text-primary" />
                             </div>
-                            <p className="text-sm text-muted-foreground">Procesando la venta, por favor espera...</p>
+                            <p className="text-xs text-muted-foreground">Procesando...</p>
                         </div>
                     )}
 
                     {estado === "Listo" && (
-                        <div className="py-12 flex flex-col items-center justify-center gap-4">
-                            <div className="p-3 rounded-full bg-green-200 text-green-500">
-                                <Check className="h-18 w-18" />
+                        <div className="py-6 flex flex-col items-center justify-center gap-3">
+                            <div className="p-2 rounded-full bg-green-200 text-green-500">
+                                <Check className="h-10 w-10" />
                             </div>
-                            <p className="text-xl font-semibold">Venta procesada</p>
-                            <p className="text-sm text-muted-foreground">La venta se completó correctamente.</p>
+                            <p className="text-lg font-semibold text-center">Venta procesada</p>
                             {metodoPago === 0 && (
-                                <p className="text-6xl font-bold">Cambio: ${Math.max(0, (cambioEfectivo - getTotalPrice())).toFixed(2)}</p>
+                                <p className="text-4xl font-bold">Cambio: ${Math.max(0, (cambioEfectivo - getTotalPrice())).toFixed(2)}</p>
                             )}
-                            <div className="w-full flex gap-2 mt-4">
-                                <Button className="flex-1" autoFocus onClick={reloadVenta}>
-                                    Cerrar
-                                </Button>
-                            </div>
+                            <Button className="w-full h-9" autoFocus onClick={reloadVenta}>
+                                Cerrar
+                            </Button>
                         </div>
                     )}
 
                     {estado === "Error" && (
-                        <div className="py-12 flex flex-col items-center justify-center gap-4">
-                            <div className="p-3 rounded-full bg-destructive/10 text-destructive">
-                                <AlertCircle className="h-8 w-8" />
+                        <div className="py-6 flex flex-col items-center justify-center gap-3">
+                            <div className="p-2 rounded-full bg-destructive/10 text-destructive">
+                                <AlertCircle className="h-6 w-6" />
                             </div>
-                            <p className="text-xl font-semibold">Error al procesar</p>
-                            <p className="text-lg text-red-500 text-center max-w-md">{errorMessage}</p>
-                            <div className="w-full flex gap-2 mt-4">
-                                <Button variant="outline" className="flex-1" onClick={() => {
+                            <p className="text-lg font-semibold">Error</p>
+                            <p className="text-sm text-red-500 text-center max-w-sm">{errorMessage}</p>
+                            <div className="w-full flex gap-2 mt-2">
+                                <Button variant="outline" className="flex-1 h-9 text-xs" onClick={() => {
                                     setEstado("Inicio");
                                     setErrorMessage("");
                                 }}>
                                     Volver
                                 </Button>
-                                <Button className="flex-1" onClick={() => nuevaVenta(true)}>
+                                <Button className="flex-1 h-9 text-xs" onClick={() => nuevaVenta(true)}>
                                     Reintentar
                                 </Button>
                             </div>

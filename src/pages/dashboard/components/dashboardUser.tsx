@@ -233,6 +233,24 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                         <p className="kpi-detail">Ventas con tarjeta</p>
                     </div>
                 </div>
+
+                <div className="kpi-card kpi-danger">
+                    <div className="kpi-icon">📝</div>
+                    <div className="kpi-content">
+                        <p className="kpi-label">Crédito</p>
+                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.ventas_credito)}</h2>
+                        <p className="kpi-detail">Ventas por cobrar</p>
+                    </div>
+                </div>
+
+                <div className="kpi-card kpi-success">
+                    <div className="kpi-icon">🤝</div>
+                    <div className="kpi-content">
+                        <p className="kpi-label">Abonos</p>
+                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.abonos_credito)}</h2>
+                        <p className="kpi-detail">Cobranza recibida</p>
+                    </div>
+                </div>
             </div>
 
             {/* Control de Efectivo y Egresos */}
@@ -245,6 +263,14 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                             <strong>{formatCurrency(dashboard.control_efectivo.efectivo_inicial)}</strong>
                         </div>
                         <div className="info-row">
+                            <span>Ventas Efectivo:</span>
+                            <strong>+ {formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</strong>
+                        </div>
+                        <div className="info-row">
+                            <span>Abonos Recibidos:</span>
+                            <strong>+ {formatCurrency(dashboard.metricas_principales.abonos_credito)}</strong>
+                        </div>
+                        <div className="info-row highlight-blue">
                             <span>Efectivo Esperado:</span>
                             <strong>{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</strong>
                         </div>

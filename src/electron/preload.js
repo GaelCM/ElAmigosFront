@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("electron-api", {
     printTestEscPos: (printerName) => ipcRenderer.invoke('print-test-escpos', printerName),
     printTicketVentaEscPos: (data) => ipcRenderer.invoke('print-ticket-venta-escpos', data),
     printTicketMovimientoEscPos: (data) => ipcRenderer.invoke('print-ticket-movimiento-escpos', data),
+    printTicketTransferenciaEscPos: (data) => ipcRenderer.invoke('print-ticket-transferencia-escpos', data),
 
     // Offline API
     sincronizarProductos: (productos) => ipcRenderer.invoke('sincronizar-productos', productos),

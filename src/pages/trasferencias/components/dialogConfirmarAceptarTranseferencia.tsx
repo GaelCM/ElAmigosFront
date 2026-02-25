@@ -70,31 +70,6 @@ export default function DialogConfirmarAceptarTranseferencia({ isOpen, setIsOpen
         });
     }
 
-    const cancelarTransferencia = async () => {
-        setLoading(true);
-        recibirYAutorizarTransferenciaApi(idTransferencia, {
-            id_usuario: user.id_usuario,
-            aceptar: false,
-            productos_recibidos: detalleTransferencia?.productos.map((producto) => ({
-                id_producto: producto.id_producto,
-                cantidad_recibida: producto.cantidad_enviada,
-            }))
-        }).then((res) => {
-            if (res.success) {
-                toast.success("Transferencia cancelada exitosamente", {
-                    description: res.message,
-                });
-                setIsOpen(false);
-            } else {
-                toast.error("Error al cancelar la transferencia", {
-                    description: res.message,
-                });
-            }
-        }).finally(() => {
-            setLoading(false);
-        });
-    }
-
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="flex flex-col sm:max-w-[950px] ">
@@ -209,7 +184,7 @@ export default function DialogConfirmarAceptarTranseferencia({ isOpen, setIsOpen
                 {detalleTransferencia?.estado === "en_transito" && (
                     <DialogFooter className="gap-2 sm:gap-0">
                         <DialogClose asChild>
-                            <Button variant="outline" onClick={cancelarTransferencia} >Cancelar</Button>
+                            <Button variant="outline">Cerrar</Button>
                         </DialogClose>
                         <Button disabled={loading || !detalleTransferencia} className="bg-green-600 hover:bg-green-700" onClick={recibirYautorizar} >
                             <ArrowRight className="mr-2 h-4 w-4" />

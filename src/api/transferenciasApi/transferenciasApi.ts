@@ -197,3 +197,31 @@ export const recibirYAutorizarTransferenciaApi = async (id_transferencia: number
     }
 
 }
+export const cancelarTransferenciaApi = async (idTransferencia: number, idUsuario: number): Promise<{ success: boolean, message: string, data: any }> => {
+    try {
+        const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/transferencias/cancelar`, {
+            method: "post",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("tkn")}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                idTransferencia,
+                idUsuario
+            })
+        });
+        if (!res.ok) {
+            throw new Error(`Error del servidor: ${res.status}`);
+        }
+        const data = await res.json();
+        return data as { success: boolean, message: string, data: any };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+        if (error instanceof TypeError) {
+            throw new Error("No se pudo conectar con el servidor");
+        }
+        throw new Error(error.message || "Ocurrió un error inesperado");
+    }
+
+}

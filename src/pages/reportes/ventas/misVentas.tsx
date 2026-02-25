@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, RefreshCw } from "lucide-react";
+import { Calendar, RefreshCw, LayoutList } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
 
 export default function MisVentasReport() {
     const timeZone = 'America/Mexico_City';
@@ -22,28 +23,39 @@ export default function MisVentasReport() {
     const [error, setError] = useState<string | null>(null);
     const [fechaDesde, setFechaDesde] = useState(fechaFormateada);
     const [fechaHasta, setFechaHasta] = useState(fechaFormateada);
+    const [soloTurnoActual, setSoloTurnoActual] = useState(false);
     const { user } = useCurrentUser();
+
+    const hasOpenCaja = !!localStorage.getItem("openCaja");
 
     const obtenerMisVentas = async () => {
         setLoading(true);
         setError(null);
         try {
-            const turnoDataString = localStorage.getItem("openCaja");
-            if (turnoDataString) {
-                const data = JSON.parse(turnoDataString);
-                const res = await obtenerReporteMisVentas(fechaDesde, fechaHasta, undefined, data.id_turno, undefined);
-                if (res.success) {
-                    setVentas(res.data);
-                } else {
-                    setError(res.message);
+            let idTurno = undefined;
+
+            // Si el usuario quiere filtrar por turno y hay una caja abierta
+            if (soloTurnoActual) {
+                const turnoDataString = localStorage.getItem("openCaja");
+                if (turnoDataString) {
+                    const data = JSON.parse(turnoDataString);
+                    idTurno = data.id_turno;
                 }
+            }
+
+            // Si hay turno, filtramos por turno. Si no, por sucursal.
+            const res = await obtenerReporteMisVentas(
+                fechaDesde,
+                fechaHasta,
+                undefined,
+                idTurno,
+                idTurno ? undefined : user.id_sucursal
+            );
+
+            if (res.success) {
+                setVentas(res.data);
             } else {
-                const res = await obtenerReporteMisVentas(fechaDesde, fechaHasta, undefined, undefined, user.id_sucursal);
-                if (res.success) {
-                    setVentas(res.data);
-                } else {
-                    setError(res.message);
-                }
+                setError(res.message);
             }
         } catch (error) {
             setError("Error al obtener las ventas");
@@ -54,7 +66,7 @@ export default function MisVentasReport() {
 
     useEffect(() => {
         obtenerMisVentas();
-    }, [fechaDesde, fechaHasta])
+    }, [fechaDesde, fechaHasta, soloTurnoActual])
 
     return (
         <div className="container mx-auto py-8 px-4 space-y-6">
@@ -82,7 +94,7 @@ export default function MisVentasReport() {
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col md:flex-row gap-6 items-end">
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-2 w-full">
                             <Label htmlFor="fecha-desde" className="text-sm font-semibold">
                                 Fecha Desde
                             </Label>
@@ -99,7 +111,7 @@ export default function MisVentasReport() {
                             <div className="h-px w-8 bg-border"></div>
                         </div>
 
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-2 w-full">
                             <Label htmlFor="fecha-hasta" className="text-sm font-semibold">
                                 Fecha Hasta
                             </Label>
@@ -112,10 +124,27 @@ export default function MisVentasReport() {
                             />
                         </div>
 
+                        {hasOpenCaja && (
+                            <div className="flex items-center space-x-3 pb-3 bg-secondary/30 p-3 rounded-lg border border-primary/20 transition-all hover:bg-secondary/50">
+                                <Switch
+                                    id="solo-turno"
+                                    checked={soloTurnoActual}
+                                    onCheckedChange={setSoloTurnoActual}
+                                />
+                                <Label
+                                    htmlFor="solo-turno"
+                                    className="text-sm font-medium cursor-pointer flex items-center gap-2 whitespace-nowrap"
+                                >
+                                    <LayoutList className="h-4 w-4 text-primary" />
+                                    Solo mi turno actual
+                                </Label>
+                            </div>
+                        )}
+
                         <Button
                             onClick={obtenerMisVentas}
                             disabled={loading}
-                            className="gap-2"
+                            className="gap-2 shadow-md hover:shadow-lg transition-all"
                             size="lg"
                         >
                             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />

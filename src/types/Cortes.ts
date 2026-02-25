@@ -24,7 +24,12 @@ export interface ResumenCorte {
         total: number;
         efectivo: number;
         tarjeta: number;
+        credito: number;
         numero: number;
+    };
+    creditos: {
+        ventas_credito: number;
+        abonos_recibidos: number;
     };
     egresos: {
         compras: number;

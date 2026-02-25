@@ -62,7 +62,8 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
     };
 
     const filteredVentas = ventas.filter((venta) =>
-        venta.id_venta.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        venta.id_venta.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+        venta.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const sortedVentas = [...filteredVentas].sort((a, b) => {
@@ -252,7 +253,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                         <div className="relative w-full md:w-72">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Buscar por #Folio de venta..."
+                                placeholder="Buscar por #Folio o cliente..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-9 h-10 bg-yellow-400"
@@ -322,6 +323,12 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                         <div className="flex items-center gap-2">
                                             <User className="h-4 w-4" />
                                             <span className="font-semibold">Usuario</span>
+                                        </div>
+                                    </TableHead>
+                                    <TableHead>
+                                        <div className="flex items-center gap-2">
+                                            <User className="h-4 w-4" />
+                                            <span className="font-semibold">Cliente</span>
                                         </div>
                                     </TableHead>
                                     <TableHead>
@@ -412,6 +419,12 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                             {venta.nombre_usuario.charAt(0).toUpperCase()}
                                                         </div>
                                                         <span className="font-medium text-sm">{venta.nombre_usuario}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <User className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="text-sm">{venta.nombre_cliente}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -532,6 +545,19 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                                         </p>
                                                                     </div>
                                                                 )}
+
+                                                                {venta.nombre_cliente && (
+                                                                    <div className="space-y-1 p-3 rounded-lg bg-background border">
+                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                            Nombre Cliente
+                                                                        </label>
+                                                                        <p className="text-lg font-semibold font-mono">
+                                                                            {venta.nombre_cliente}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+
+
                                                             </div>
                                                         </div>
                                                     </TableCell>

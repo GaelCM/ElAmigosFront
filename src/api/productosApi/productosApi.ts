@@ -122,3 +122,15 @@ export const eliminarProductoApi = async (idProducto: number) => {
     return data as { success: boolean, message: string, details?: string };
 }
 
+export const getProductosInventario = async (idSucursal: number) => {
+    const res = await fetch(`http://localhost:3000/api/productos/getProductosInventario/${idSucursal}`, {
+        method: "get",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    const data = await res.json();
+    return data as ProductoVentaResponse;
+}
+

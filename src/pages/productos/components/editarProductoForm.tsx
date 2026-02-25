@@ -31,7 +31,7 @@ const formSchema = z.object({
   descripcion: z.string().optional().default(''),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
   precio_costo: z.coerce.number().positive({ message: 'El precio de costo debe ser mayor a 0' }),
-  sku_pieza: z.string().optional(),
+  sku_pieza: z.string().min(1, 'El SKU de la pieza es requerido'),
   es_granel: z.boolean().default(false),
   sucursales_inventario: z.array(z.object({
     id_sucursal: z.number(),
@@ -43,7 +43,7 @@ const formSchema = z.object({
       id_unidad_venta: z.number().optional(), // ID para actualizar
       nombre_presentacion: z.string().min(1, 'El nombre es requerido'),
       factor_conversion_cantidad: z.number().positive('El factor debe ser mayor a 0'),
-      sku_presentacion: z.string().optional(),
+      sku_presentacion: z.string().min(1, 'El SKU de la presentación es requerido'),
       sucursales_venta: z.array(
         z.object({
           id_precio: z.number().optional(), // ID para actualizar
@@ -141,6 +141,14 @@ export default function EditarProductoForm() {
     cargarProducto();
   }, [id_producto, form.reset]);
 
+  // Sincronizar SKU de la pieza base con la primera variante
+  const skuPieza = watch("sku_pieza");
+  useEffect(() => {
+    if (variantes.length > 0 && variantes[0].sku_presentacion !== skuPieza) {
+      form.setValue("variantes.0.sku_presentacion", skuPieza);
+    }
+  }, [skuPieza, form, variantes.length]);
+
 
   const onSubmit = async (values: FormValues) => {
     setUpdating(true);
@@ -170,12 +178,14 @@ export default function EditarProductoForm() {
         "nombre_producto",
         "id_categoria",
         "precio_costo",
+        "sku_pieza",
       ]);
     }
     else if (currentStep === 2) {
       const promises = variantes.flatMap((_, i) => [
         form.trigger(`variantes.${i}.nombre_presentacion`),
-        form.trigger(`variantes.${i}.factor_conversion_cantidad`)
+        form.trigger(`variantes.${i}.factor_conversion_cantidad`),
+        form.trigger(`variantes.${i}.sku_presentacion`)
       ]);
       valid = (await Promise.all(promises)).every(r => r);
     }
@@ -319,7 +329,7 @@ export default function EditarProductoForm() {
           <FormItem>
             <FormLabel>Nombre *</FormLabel>
             <FormControl>
-              <Input {...field} placeholder="Nombre del producto" />
+              <Input {...field} placeholder="Nombre del producto" onFocus={(e) => e.target.select()} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -380,6 +390,7 @@ export default function EditarProductoForm() {
                   type="number"
                   step="0.01"
                   value={field.value}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => field.onChange(e.target.value)}
                 />
               </FormControl>
@@ -394,9 +405,9 @@ export default function EditarProductoForm() {
         name="sku_pieza"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>SKU Pieza</FormLabel>
+            <FormLabel>SKU Pieza *</FormLabel>
             <FormControl>
-              <Input {...field} />
+              <Input {...field} onFocus={(e) => e.target.select()} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -463,7 +474,7 @@ export default function EditarProductoForm() {
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase text-slate-500">Nombre Presentación *</FormLabel>
                     <FormControl>
-                      <Input {...field} disabled={index === 0} placeholder="Ej: Caja 24 pzas" />
+                      <Input {...field} disabled={index === 0} placeholder="Ej: Caja 24 pzas" onFocus={(e) => e.target.select()} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -482,7 +493,8 @@ export default function EditarProductoForm() {
                           type="number"
                           className="font-bold"
                           value={field.value}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
                           disabled={index === 0}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">piezas</span>
@@ -499,9 +511,14 @@ export default function EditarProductoForm() {
               name={`variantes.${index}.sku_presentacion`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold uppercase text-slate-500">SKU Presentación</FormLabel>
+                  <FormLabel className="text-xs font-bold uppercase text-slate-500">SKU Presentación *</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Escanea el código del paquete" />
+                    <Input
+                      {...field}
+                      disabled={index === 0}
+                      placeholder={index === 0 ? "Se hereda del SKU de pieza" : "Escanea el código del paquete"}
+                      onFocus={(e) => e.target.select()}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -577,12 +594,18 @@ export default function EditarProductoForm() {
                             // Verificar si está habilitada en esta sucursal en el paso de precios
                             const isEnabledInBranch = v.sucursales_venta.some(sv => sv.id_sucursal === s.id_sucursal);
 
-                            if (!isEnabledInBranch) return null;
+                            // Regla: Mostrar si está a la venta O si es factor 1 (pieza) para ajustes físicos de merma
+                            if (v.factor_conversion_cantidad !== 1 && !isEnabledInBranch) return null;
 
                             return (
                               <div key={vIdx} className="flex items-center gap-2 group p-2 rounded-md hover:bg-slate-50 transition-colors">
                                 <div className="flex-1">
-                                  <p className="text-md font-bold text-slate-700 leading-none">{v.nombre_presentacion || "Sin nombre"}</p>
+                                  <p className="text-md font-bold text-slate-700 leading-none">
+                                    {v.nombre_presentacion || "Sin nombre"}
+                                    {!isEnabledInBranch && (
+                                      <span className="ml-2 text-[8px] bg-amber-100 text-amber-700 px-1 rounded uppercase font-black">Sólo Ajuste Físico</span>
+                                    )}
+                                  </p>
                                   <p className="text-[9px] text-slate-400 font-medium">Contiene {v.factor_conversion_cantidad} pzas</p>
                                 </div>
                                 <div className="flex items-center">

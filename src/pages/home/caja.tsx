@@ -294,63 +294,77 @@ export default function Home() {
     return (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 lg:gap-4 items-start p-4 lg:p-6">
             {/* Contenedor Principal Izquierdo */}
-            <div className="xl:col-span-2 space-y-4 flex flex-col">
+            <div className="xl:col-span-2 space-y-2 flex flex-col">
                 {/* Tabs de Carritos */}
                 <CarritoTabs />
 
                 {/* Scanner y Lista de Productos */}
-                <Card className="shrink-0 shadow-sm border-none bg-slate-50/50">
-                    <CardHeader className="pb-2 pt-4 px-4">
-                        <CardTitle className="flex items-center justify-between text-base">
-                            <div className="flex items-center gap-2">
-                                <Scan className="w-4 h-4 text-primary" />
-                                Scanner de Productos
+                <Card className="shrink-0 shadow-sm border border-primary/20 bg-white overflow-hidden">
+                    <div className="bg-primary/5 px-4 py-1 border-b border-primary/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Badge variant="default" className="bg-primary hover:bg-primary h-5 px-2 text-[10px] font-black uppercase tracking-wider animate-pulse">
+                                Ticket Activo
+                            </Badge>
+                            <span className="text-xs font-bold text-slate-600 uppercase truncate max-w-[200px]">
+                                {carritoActual?.cliente?.nombre_cliente || carritoActual?.nombre || "Sin Nombre"}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                            <ShoppingCart className="w-3 h-3" />
+                            {carritoActual?.productos?.length ?? 0} PRODUCTOS
+                        </div>
+                    </div>
+                    <CardHeader className="py-0.5 px-4 space-y-0">
+                        <CardTitle className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-tight">
+                            <div className="flex items-center gap-1.5 font-black">
+                                <Scan className="w-3 h-3 text-primary" />
+                                Scanner
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                                 {pendingCount > 0 && (
-                                    <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full animate-pulse font-bold">
+                                    <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full animate-pulse font-bold">
                                         {pendingCount} Pendientes
                                     </span>
                                 )}
                                 {!isOnline ? (
-                                    <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                                        <div className="w-1.5 h-1.5 bg-red-600 rounded-full"></div>
+                                    <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                        <div className="w-1 h-1 bg-red-600 rounded-full"></div>
                                         OFFLINE
                                     </span>
                                 ) : (
-                                    <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full animate-pulse"></div>
+                                    <span className="text-[9px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                        <div className="w-1 h-1 bg-green-600 rounded-full animate-pulse"></div>
                                         ONLINE
                                     </span>
                                 )}
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-7 text-[10px] gap-1"
+                                    className="h-6 text-[10px] gap-1 px-2 text-slate-500 hover:text-primary transition-colors"
                                     onClick={() => syncProducts()}
                                     title="Actualizar productos (API)"
                                 >
                                     actualizar
-                                    <RefreshCw className={`h-3 w-3`} />
+                                    <RefreshCw className="h-3 w-3" />
                                 </Button>
                             </div>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent className="px-4 pb-1.5 pt-0">
                         <form className="flex gap-2" onSubmit={buscarProducto}>
                             <div className="relative flex-1">
-                                <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
                                 <Input
                                     ref={inputRef}
-                                    placeholder="Escanear código de barras..."
+                                    placeholder="Escanear producto..."
                                     onChange={(e) => setidProducto(e.target.value)}
                                     value={idProducto || ''}
-                                    className="pl-10 text-base h-10 bg-white"
+                                    className="pl-9 text-base h-9 bg-white border focus-visible:ring-primary shadow-sm"
                                     autoFocus
                                 />
                             </div>
-                            <Button type="submit" size="sm" className="px-5 h-10">
-                                <Plus className="w-4 h-4 mr-2" />
+                            <Button type="submit" size="sm" className="px-6 h-9 text-sm font-bold shadow-sm">
+                                <Plus className="w-4 h-4 mr-1.5" />
                                 Agregar
                             </Button>
                         </form>
@@ -358,9 +372,9 @@ export default function Home() {
                 </Card>
 
                 <Card className="flex-1 flex flex-col min-h-[600px] shadow-sm border-none">
-                    <CardHeader className="shrink-0 py-3 px-4">
+                    <CardHeader className="shrink-0  px-4">
                         <CardTitle className="flex items-center justify-between">
-                            <span className="flex items-center gap-2 text-base">
+                            <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
                                 <ShoppingCart className="w-4 h-4 text-primary" />
                                 Productos ({carritoActual?.productos?.length ?? 0})
                             </span>
@@ -409,7 +423,7 @@ export default function Home() {
                                                     <span className="shrink-0 w-6 h-6 bg-primary/10 rounded flex items-center justify-center">
                                                         <Pill className="w-3.5 h-3.5 text-primary" />
                                                     </span>
-                                                    <p className="font-bold text-sm truncate uppercase tracking-tight text-slate-700">{producto.product.nombre_producto}</p>
+                                                    <p className="font-bold text-sm truncate uppercase tracking-tight text-slate-700">{producto.product.nombre_producto} {producto.product.nombre_presentacion}</p>
                                                     <Badge variant="outline" className={`h-4 text-[9px] px-1 font-bold ${producto.product.stock_disponible_presentacion == 0 ? 'border-red-500 text-red-600 bg-red-50/50' : producto.product.stock_disponible_presentacion <= 5 ? 'border-yellow-500 text-yellow-600 bg-yellow-50/50' : 'border-green-500 text-green-600 bg-green-50/50'}`}>
                                                         {producto.product.stock_disponible_presentacion} STOCK
                                                     </Badge>
@@ -552,7 +566,7 @@ export default function Home() {
                 </Card>
 
                 <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         <Button
                             variant={"default"}
                             className={`h-12 ${metodoPago === 0 ? "bg-blue-500 text-white border-blue-600 shadow-lg" : "bg-gray-200 text-gray-700 border-gray-300"}`}
@@ -562,11 +576,19 @@ export default function Home() {
                             Efectivo(alt+0)
                         </Button>
                         <Button
+                            variant={"default"}
+                            className={`h-12 ${metodoPago === 2 ? "bg-blue-500 text-white border-blue-600 shadow-lg" : "bg-gray-200 text-gray-700 border-gray-300"}`}
+                            disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                            onClick={() => setMetodoPago(2)}
+                        >
+                            Crédito(alt+1)
+                        </Button>
+                        <Button
                             className={`h-12 bg-transparent ${metodoPago === 1 ? "bg-blue-500 text-white border-blue-600 shadow-lg" : "bg-gray-200 text-gray-700 border-gray-300 "}`}
                             disabled={(carritoActual?.productos?.length ?? 0) === 0}
                             onClick={() => setMetodoPago(1)}
                         >
-                            Tarjeta (alt+1)
+                            Tarjeta (alt+2)
                         </Button>
                     </div>
 
@@ -592,7 +614,7 @@ export default function Home() {
                 <Reloj />
             </div>
 
-            <DialogConfirmVenta isOpen={isOpen} onClose={setIsOpen} metodoPago={metodoPago} inputRef={inputRef} />
+            <DialogConfirmVenta isOpen={isOpen} onClose={setIsOpen} metodoPago={metodoPago} inputRef={inputRef} setMetodoPago={setMetodoPago} />
             <DialiogErrorProducto isOpen={error} setIsOpen={setError} inputRef={inputRef} />
             <AddCliente
                 isOpen={openCliente}

@@ -1,15 +1,16 @@
 
 
-import { enviarTransferenciasApi, obtenerTransferenciasApi, obtenerTransferenciasPendientesApi } from "@/api/transferenciasApi/transferenciasApi";
+import { cancelarTransferenciaApi, enviarTransferenciasApi, obtenerDetalleTransferenciaApi, obtenerTransferenciasApi, obtenerTransferenciasPendientesApi } from "@/api/transferenciasApi/transferenciasApi";
 import { useCurrentUser } from "@/contexts/currentUser";
 import type { TablaTransferenciasProps, TransferenciasPendientesProps } from "@/types/ComponentsT";
 import type { TransferenciaDTO } from "@/types/Transferencias";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { ArrowRightLeft, Ban, CheckCircle, Clock, Eye, Package, PackageCheck, Send, XCircle } from "lucide-react";
+import { ArrowRightLeft, Ban, CheckCircle, Clock, Eye, Package, PackageCheck, Send, XCircle, Printer } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import DialogConfirmarAceptarTranseferencia from "./dialogConfirmarAceptarTranseferencia";
+import DialogConfirmarCancelacion from "./dialogConfirmarCancelacion";
 
 
 
@@ -170,7 +171,7 @@ const formatFecha = (fecha: string | number | Date) => {
 // COMPONENTE: TABLA DE TRANSFERENCIAS
 // ====================================
 
-const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetalle, mostrarAcciones = true, loading }: TablaTransferenciasProps) => {
+const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetalle, onImprimir, mostrarAcciones = true, loading }: TablaTransferenciasProps) => {
   return (
     <div className="overflow-x-auto">
 
@@ -270,15 +271,13 @@ const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetall
                             </Button>
                           </>
                         )}
-
-                        {transferencia.estado === 'en_transito' && (
+                        {(transferencia.estado === 'en_transito' || transferencia.estado === 'recibida') && onImprimir && (
                           <Button
                             variant="outline"
                             size="sm"
-                            disabled
+                            onClick={() => onImprimir(transferencia.id_transferencia)}
                           >
-                            <Ban className="w-4 h-4" />
-                            Enviada
+                            <Printer className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
@@ -289,8 +288,6 @@ const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetall
             </tbody>
           </table>
         )}
-
-
 
       {transferencias.length === 0 && (
         <div className="text-center py-12">
@@ -306,7 +303,7 @@ const TablaTransferencias = ({ transferencias, onEnviar, onCancelar, onVerDetall
 // COMPONENTE: TRANSFERENCIAS PENDIENTES DE RECIBIR
 // ====================================
 
-const TransferenciasPendientesRecibir = ({ transferencias, onRecibir }: TransferenciasPendientesProps) => {
+const TransferenciasPendientesRecibir = ({ transferencias, onRecibir, onCancelar }: TransferenciasPendientesProps) => {
 
 
 
@@ -365,6 +362,13 @@ const TransferenciasPendientesRecibir = ({ transferencias, onRecibir }: Transfer
                 <PackageCheck className="w-4 h-4" />
                 Recibir
               </Button>
+              <Button
+                variant="danger"
+                onClick={() => onCancelar(transferencia.id_transferencia)}
+              >
+                <XCircle className="w-4 h-4" />
+                Cancelar
+              </Button>
             </div>
           </div>
         </Card>
@@ -399,6 +403,8 @@ export default function MisTransferencias() {
   const [tabActiva, setTabActiva] = useState('todas');
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isOpenCancel, setIsOpenCancel] = useState(false);
+  const [loadingCancel, setLoadingCancel] = useState(false);
   const [fechaDesde, setFechaDesde] = useState<string>(fechaFormateada);
   const [fechaHasta, setFechaHasta] = useState<string>(fechaFormateada);
   const [transferencias, setTransferencias] = useState<TransferenciaDTO[]>([]);
@@ -436,14 +442,53 @@ export default function MisTransferencias() {
       t.id_sucursal_origen === user.id_sucursal
     );
 
+  const handlePrintTransferencia = async (id: number) => {
+    try {
+      const resDetalle = await obtenerDetalleTransferenciaApi(id);
+      if (resDetalle.success) {
+        const transfer = resDetalle.data;
+        const printerName = localStorage.getItem("printer_device");
+
+        if (!printerName) {
+          toast.error("No se ha configurado una impresora en ajustes");
+          return;
+        }
+
+        const ticketData = {
+          printerName,
+          id_transferencia: transfer.id_transferencia,
+          sucursal_origen: transfer.sucursal_origen,
+          sucursal_destino: transfer.sucursal_destino,
+          usuario_origen: transfer.usuario_origen,
+          fecha: transfer.fecha_envio || transfer.fecha_creacion,
+          productos: transfer.productos, // [{ nombre_producto, nombre_presentacion, cantidad_enviada }]
+          motivo: transfer.motivo,
+          cortar: localStorage.getItem("printer_cut") !== "false"
+        };
+
+        // @ts-ignore
+        await window["electron-api"]?.printTicketTransferenciaEscPos(ticketData);
+        toast.success("Ticket de transferencia enviado a imprimir");
+      } else {
+        toast.error("No se pudo obtener el detalle para imprimir");
+      }
+    } catch (error) {
+      console.error("Error al imprimir transferencia:", error);
+      toast.error("Error al intentar imprimir el ticket");
+    }
+  };
+
   // Handlers
   const handleEnviar = async (id: number) => {
     const res = await enviarTransferenciasApi(id, user.id_usuario);
     if (res.success) {
-
       toast.success("Transferencia enviada correctamente", {
         description: "La transferencia ha sido enviada y está en tránsito."
       });
+
+      // Imprimir ticket automáticamente al enviar
+      handlePrintTransferencia(id);
+
       obtenerTransferenciasApi(user.id_usuario, user.id_rol, fechaDesde, fechaHasta).then(res => {
         if (res.success) {
           setTransferencias(res.data);
@@ -451,7 +496,6 @@ export default function MisTransferencias() {
           setTransferencias([]);
         }
       });
-
     } else {
       toast.error("Error al enviar la transferencia", {
         description: res.message
@@ -460,8 +504,39 @@ export default function MisTransferencias() {
   };
 
   const handleCancelar = (id: number) => {
-    console.log('Cancelar transferencia:', id);
-    alert(`Cancelando transferencia #${id}`);
+    setIdTransferencia(id);
+    setIsOpenCancel(true);
+  };
+
+  const handleConfirmarCancelacion = async () => {
+    if (!idTransferencia) return;
+
+    try {
+      setLoadingCancel(true);
+      const res = await cancelarTransferenciaApi(idTransferencia, user.id_usuario);
+      if (res.success) {
+        toast.success("Transferencia cancelada", {
+          description: res.message
+        });
+
+        // Recargar listas
+        obtenerTransferenciasApi(user.id_usuario, user.id_rol, fechaDesde, fechaHasta).then(res => {
+          if (res.success) setTransferencias(res.data);
+        });
+
+        obtenerTransferenciasPendientesApi(user.id_sucursal).then(res => {
+          if (res.success) setTransferenciasPendientes(res.data);
+        });
+
+        setIsOpenCancel(false);
+      } else {
+        toast.error("Error al cancelar", { description: res.message });
+      }
+    } catch (error: any) {
+      toast.error("Error", { description: error.message });
+    } finally {
+      setLoadingCancel(false);
+    }
   };
 
   const handleVerDetalle = (id: number) => {
@@ -492,6 +567,13 @@ export default function MisTransferencias() {
   return (
     <div className="bg-gray-50 p-6">
       <DialogConfirmarAceptarTranseferencia isOpen={isOpen} setIsOpen={setIsOpen} idTransferencia={idTransferencia} />
+      <DialogConfirmarCancelacion
+        isOpen={isOpenCancel}
+        setIsOpen={setIsOpenCancel}
+        onConfirm={handleConfirmarCancelacion}
+        idTransferencia={idTransferencia}
+        loading={loadingCancel}
+      />
       <div className="mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -542,6 +624,7 @@ export default function MisTransferencias() {
               onEnviar={handleEnviar}
               onCancelar={handleCancelar}
               onVerDetalle={handleVerDetalle}
+              onImprimir={handlePrintTransferencia}
               loading={loading}
               setLoading={setLoading}
             />
@@ -561,6 +644,7 @@ export default function MisTransferencias() {
             <TransferenciasPendientesRecibir
               transferencias={transferenciasPendientes}
               onRecibir={handleRecibir}
+              onCancelar={handleCancelar}
             />
           </div>
         )}

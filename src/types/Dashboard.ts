@@ -19,6 +19,8 @@ export interface MetricasPrincipales {
     ticket_promedio: number;
     ventas_efectivo: number;
     ventas_tarjeta: number;
+    ventas_credito: number;
+    abonos_credito: number;
 }
 
 /**

@@ -1,6 +1,6 @@
 
 import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
-import { getProductos, insertarProductoEspecialApi } from "@/api/productosApi/productosApi";
+import { getProductosInventario, insertarProductoEspecialApi } from "@/api/productosApi/productosApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -127,7 +127,7 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
   };
 
   useEffect(() => {
-    getProductos(id_sucursal).then(res => {
+    getProductosInventario(id_sucursal).then(res => {
       if (res.success) {
         setProductosDisponibles(res.data);
       } else {
@@ -426,22 +426,39 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                         </div>
 
                         {showSearchResults && productosFiltrados.length > 0 && (
-                          <Card className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto">
+                          <Card className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto shadow-xl border-2 border-blue-100">
                             <CardContent className="p-0">
                               {productosFiltrados.map((producto) => (
                                 <div
                                   key={producto.id_unidad_venta}
-                                  className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0"
+                                  className="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-0 transition-colors"
                                   onClick={() => agregarComponente(producto)}
                                 >
                                   <div className="flex justify-between items-center">
-                                    <div>
-                                      <p className="font-medium">{producto.nombre_producto}</p>
-                                      <p className="text-sm text-gray-500">{producto.nombre_presentacion}</p>
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-medium text-gray-900">{producto.nombre_producto}</p>
+                                        <span className={`
+                                          ${producto.es_producto_compuesto === 1
+                                            ? 'bg-purple-100 text-purple-700'
+                                            : producto.factor_conversion_cantidad === 1
+                                              ? 'bg-blue-100 text-blue-700'
+                                              : 'bg-amber-100 text-amber-700'} 
+                                          text-[10px] px-2 py-0.5 rounded-full font-bold uppercase`}>
+                                          {producto.nombre_presentacion}
+                                        </span>
+                                      </div>
                                     </div>
                                     <div className="text-right">
-                                      <p className="font-medium">${producto.precio_venta.toFixed(2)}</p>
-                                      <p className="text-xs text-gray-500">Stock: {producto.stock_disponible_presentacion}</p>
+                                      <p className="font-bold text-sm text-green-700">
+                                        {producto.precio_venta > 0
+                                          ? `$${producto.precio_venta.toFixed(2)}`
+                                          : <span className="text-orange-500 text-[10px]">Sólo Inventario</span>
+                                        }
+                                      </p>
+                                      <p className={`text-[11px] font-medium ${producto.stock_disponible_presentacion > 0 ? 'text-gray-600' : 'text-red-500'}`}>
+                                        Stock: {producto.stock_disponible_presentacion}
+                                      </p>
                                     </div>
                                   </div>
                                 </div>

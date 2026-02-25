@@ -218,32 +218,32 @@ function utilsController() {
             // --- HEADER ---
             printer.alignCenter();
             printer.bold(true);
-            printer.println(sucursal.trim().toUpperCase());
+            printer.println((sucursal || "SUCURSAL").trim().toUpperCase());
             printer.bold(false);
-            printer.println(direccion_sucursal.trim().toUpperCase());
+            printer.println((direccion_sucursal || "DIRECCION NO DISPONIBLE").trim().toUpperCase());
             if (telefono_sucursal) printer.println(`TEL: ${telefono_sucursal}`);
 
-            const fechaObj = new Date(fecha);
+            const fechaObj = new Date(fecha || Date.now());
             const fechaStr = fechaObj.toLocaleDateString('es-MX') + " " + fechaObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
             printer.println(fechaStr);
             printer.newLine();
 
             printer.alignLeft();
-            printer.println(`CAJERO:    ${usuario.toUpperCase()}`);
+            printer.println(`CAJERO:    ${(usuario || "GENERAL").toUpperCase()}`);
             printer.println(`TURNO #    ${turno}`);
             // En la imagen el folio parece estar a la derecha del turno o abajo
             printer.alignRight();
-            printer.println(`FOLIO VENTA: ${folio}`);
+            printer.println(`FOLIO VENTA: ${folio || "S/N"}`);
 
             printer.alignLeft();
-            printer.println(`CLIENTE:   ${cliente.toUpperCase()}`);
+            printer.println(`CLIENTE:   ${(cliente || "GENERAL").toUpperCase()}`);
             printer.println("------------------------------------------------");
 
             printer.println("CANT. DESCRIPCION      PRECIO  IMPORTE");
             printer.println("================================================");
 
             // --- PRODUCTOS ---
-            productos.forEach((p) => {
+            (productos || []).forEach((p) => {
                 const cant = p.cantidad.toString().padEnd(4);
                 // Si el precio no viene, lo calculamos
                 const precioVal = p.precio || (p.importe / p.cantidad);
@@ -254,7 +254,7 @@ function utilsController() {
                 const priceWidth = 10;
                 const impWidth = 11;
 
-                const nombreFull = p.nombre || "";
+                const nombreFull = (p.nombre || "").toUpperCase();
                 let words = nombreFull.split(' ');
                 let lines = [];
                 let currentLine = '';
@@ -290,18 +290,18 @@ function utilsController() {
             // --- TOTALES ---
             printer.alignRight();
             printer.bold(true);
-            printer.println(`TOTAL: $${Number(total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-            printer.println(`PAGO CON: $${Number(pagoCon).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-            printer.println(`SU CAMBIO: $${Number(cambio).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-            printer.println(`USTED AHORRO: $${Number(ahorro).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            printer.println(`TOTAL: $${Number(total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            printer.println(`PAGO CON: $${Number(pagoCon || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            printer.println(`SU CAMBIO: $${Number(cambio || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            printer.println(`USTED AHORRO: $${Number(ahorro || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
             printer.bold(false);
             printer.newLine();
 
             // --- FOOTER ---
             printer.alignCenter();
             printer.println("GRACIAS POR SU COMPRA");
+            printer.println("VUELVA PRONTO");
             printer.println(`PEDIDOS POR WHATSAPP ${telefono_sucursal || '9512036123'}`);
-            printer.println("TOTAL A PAGAR");
             printer.newLine();
             printer.newLine();
 
@@ -341,17 +341,17 @@ function utilsController() {
             // --- HEADER ---
             printer.alignCenter();
             printer.bold(true);
-            printer.println(sucursal);
+            printer.println((sucursal || "SUCURSAL").toUpperCase());
             printer.bold(false);
             printer.println("COMPROBANTE DE MOVIMIENTO");
             printer.drawLine();
             printer.newLine();
 
             printer.alignLeft();
-            printer.println(`TIPO:      ${tipo}`);
-            printer.println(`FECHA:     ${new Date(fecha).toLocaleString()}`);
-            printer.println(`USUARIO:   ${usuario}`);
-            printer.println(`SUCURSAL:  ${sucursal}`);
+            printer.println(`TIPO:      ${(tipo || "N/A").toUpperCase()}`);
+            printer.println(`FECHA:     ${new Date(fecha || Date.now()).toLocaleString()}`);
+            printer.println(`USUARIO:   ${(usuario || "GENERAL").toUpperCase()}`);
+            printer.println(`SUCURSAL:  ${(sucursal || "SUCURSAL").toUpperCase()}`);
             printer.newLine();
 
             printer.drawLine();
@@ -367,9 +367,7 @@ function utilsController() {
 
             printer.alignLeft();
             printer.println("CONCEPTO:");
-            printer.italic(true);
             printer.println(concepto || "SIN CONCEPTO");
-            printer.italic(false);
             printer.newLine();
             printer.newLine();
 
@@ -391,6 +389,108 @@ function utilsController() {
             throw error;
         }
     });
+
+    ipcMain.handle('print-ticket-transferencia-escpos', async (event, data) => {
+        const { printerName, id_transferencia, sucursal_origen, sucursal_destino, usuario_origen, fecha, productos, motivo, cortar = true } = data;
+        console.log("Generando TICKET TRANSFERENCIA ESC/POS para:", printerName);
+
+        try {
+            const { ThermalPrinter, PrinterTypes } = await import('node-thermal-printer');
+
+            let printer = new ThermalPrinter({
+                type: PrinterTypes.EPSON,
+                interface: 'tcp://127.0.0.1',
+                width: 48,
+                characterSet: 'SLOVENIA',
+                removeSpecialCharacters: false,
+                lineCharacter: "=",
+            });
+
+            // --- HEADER ---
+            printer.alignCenter();
+            printer.bold(true);
+            printer.println("EL AMIGOS - TRANSFERENCIA");
+            printer.println("COMPROBANTE DE ENVIO");
+            printer.bold(false);
+            printer.drawLine();
+            printer.newLine();
+
+            printer.alignLeft();
+            printer.println(`FOLIO:      #${id_transferencia}`);
+            printer.println(`FECHA:      ${new Date(fecha || Date.now()).toLocaleString()}`);
+            printer.println(`ORIGEN:     ${(sucursal_origen || "N/A").toUpperCase()}`);
+            printer.println(`DESTINO:    ${(sucursal_destino || "N/A").toUpperCase()}`);
+            printer.println(`SOLICITA:   ${(usuario_origen || "N/A").toUpperCase()}`);
+            printer.newLine();
+
+            if (motivo) {
+                printer.println("MOTIVO:");
+                printer.println(motivo.toUpperCase());
+                printer.newLine();
+            }
+
+            printer.drawLine();
+            printer.println("CANT.   DESCRIPCION");
+            printer.println("================================================");
+
+            // --- PRODUCTOS ---
+            (productos || []).forEach((p) => {
+                const cant = p.cantidad_enviada.toString().padEnd(7);
+                const descWidth = 40;
+                const nombreFull = `${p.nombre_producto} ${p.nombre_presentacion || ""}`.trim().toUpperCase();
+
+                let words = nombreFull.split(' ');
+                let lines = [];
+                let currentLine = '';
+
+                words.forEach(word => {
+                    if ((currentLine + (currentLine ? ' ' : '') + word).length <= descWidth) {
+                        currentLine += (currentLine ? ' ' : '') + word;
+                    } else {
+                        if (currentLine) lines.push(currentLine);
+                        currentLine = word;
+                    }
+                });
+                if (currentLine) lines.push(currentLine);
+
+                // Primera línea
+                printer.println(`${cant} ${lines[0] || ""}`);
+
+                // Líneas adicionales
+                for (let i = 1; i < lines.length; i++) {
+                    printer.println(`        ${lines[i]}`);
+                }
+            });
+
+            printer.drawLine();
+            printer.newLine();
+            printer.newLine();
+
+            // --- FIRMAS ---
+            printer.alignCenter();
+            printer.println("__________________________      __________________________");
+            printer.println("      ENTREGA (ORIGEN)                RECIBE (DESTINO)    ");
+            printer.newLine();
+            printer.println("ESTE DOCUMENTO ES UN COMPROBANTE DE TRASLADO DE MERCANCIA");
+            printer.println("POR FAVOR VERIFIQUE SU MERCANCIA AL RECIBIR");
+            printer.newLine();
+            printer.newLine();
+
+            if (cortar) {
+                printer.cut();
+            }
+            printer.beep();
+
+            const buffer = printer.getBuffer();
+            return await executeRawPrint(printerName, buffer, `Transferencia #${id_transferencia}`);
+        } catch (error) {
+            console.error("Error generando ticket Transferencia ESC/POS:", error);
+            throw error;
+        }
+    });
+
+
+
 
     ipcMain.handle('print-ticket', async (event, { content, printerName }) => {
         console.log("Recibida solicitud de impresión HTML para:", printerName);
@@ -446,6 +546,8 @@ function utilsController() {
             throw e;
         }
     });
+
+
 }
 
 export { utilsController };
