@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, Package, Plus, Trash2 } from "lucide-react";
 import React from "react";
-import { redondearPrecio } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,7 @@ const formSchema = z.object({
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
   descripcion: z.string().optional().default(''),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
-  precio_costo: z.coerce.number().positive({ message: 'El precio de costo debe ser mayor a 0' }),
+  precio_costo: z.coerce.number().min(0, { message: 'El precio de costo debe ser mayor o igual a 0' }),
   sku_pieza: z.string().min(1, 'El SKU de la pieza es requerido'),
   es_granel: z.boolean().default(false),
   sucursales_inventario: z.array(z.object({
@@ -44,8 +43,8 @@ const formSchema = z.object({
       sucursales_venta: z.array(
         z.object({
           id_sucursal: z.number(),
-          precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
-          precio_mayoreo: z.coerce.number().positive({ message: 'El precio de mayoreo debe ser mayor a 0' })
+          precio_venta: z.coerce.number().min(0, { message: 'El precio de venta debe ser mayor o igual a 0' }),
+          precio_mayoreo: z.coerce.number().min(0, { message: 'El precio de mayoreo debe ser mayor o igual a 0' })
         })
       ).min(1, 'Asigna al menos una sucursal a esta presentación')
     })
@@ -271,7 +270,8 @@ export default function NuevoProductoForm() {
     Object.keys(branchAdjusts).forEach(vIdx => {
       const vIndex = parseInt(vIdx);
       const factor = variantes[vIndex]?.factor_conversion_cantidad || 1;
-      const cant = branchAdjusts[vIndex] ?? 0;
+      const valInput = branchAdjusts[vIndex];
+      const cant = (valInput === undefined || isNaN(valInput as number)) ? 0 : valInput as number;
       totalPiezas += (cant * factor);
     });
 
@@ -352,9 +352,9 @@ export default function NuevoProductoForm() {
                 <Input
                   type="number"
                   step="0.01"
-                  value={field.value}
+                  value={field.value ?? ""}
                   onFocus={(e) => e.target.select()}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
@@ -573,8 +573,9 @@ export default function NuevoProductoForm() {
                                     value={adjustments[s.id_sucursal]?.[vIdx] ?? ""}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
-                                      const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
-                                      handleVariantAdjustment(s.id_sucursal, vIdx, val);
+                                      const text = e.target.value;
+                                      const val = text === "" ? undefined : parseFloat(text);
+                                      handleVariantAdjustment(s.id_sucursal, vIdx, isNaN(val as number) ? undefined : val);
                                     }}
                                   />
                                 </div>
@@ -673,10 +674,6 @@ export default function NuevoProductoForm() {
                                     value={field.value}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => field.onChange(e.target.value)}
-                                    onBlur={(e) => {
-                                      const val = parseFloat(e.target.value);
-                                      if (!isNaN(val)) field.onChange(redondearPrecio(val));
-                                    }}
                                   />
                                 </div>
                               </FormControl>
@@ -701,10 +698,6 @@ export default function NuevoProductoForm() {
                                     value={field.value}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => field.onChange(e.target.value)}
-                                    onBlur={(e) => {
-                                      const val = parseFloat(e.target.value);
-                                      if (!isNaN(val)) field.onChange(redondearPrecio(val));
-                                    }}
                                   />
                                 </div>
                               </FormControl>

@@ -412,7 +412,7 @@ export default function Home() {
                                         className={`flex flex-col gap-1 px-4 py-2 transition-colors cursor-pointer ${producto.usarPrecioMayoreo
                                             ? 'bg-yellow-200/60'
                                             : index === selectedIndex
-                                                ? 'bg-primary/5'
+                                                ? 'bg-blue-200'
                                                 : 'hover:bg-slate-50'
                                             } ${index === selectedIndex ? 'ring-1 ring-inset ring-primary' : ''}`}
                                         onClick={() => setSelectedIndex(index)}
@@ -431,7 +431,7 @@ export default function Home() {
                                             </div>
                                             <div className="text-right shrink-0">
                                                 <p className="text-sm font-black text-primary">
-                                                    ${redondearPrecio((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}
+                                                    ${((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}
                                                 </p>
                                             </div>
                                         </div>
@@ -546,7 +546,7 @@ export default function Home() {
                             <div>
                                 <p className="text-sm text-muted-foreground mb-2">Total a Pagar</p>
                                 <div className="text-6xl font-black text-primary tabular-nums">
-                                    ${getTotalPrice().toFixed(2)}
+                                    ${redondearPrecio(getTotalPrice()).toFixed(2)}
                                 </div>
                             </div>
                             <Separator />
@@ -558,7 +558,7 @@ export default function Home() {
                                 <Separator />
                                 <div className="flex justify-between font-bold">
                                     <span>Total:</span>
-                                    <span>${getTotalPrice().toFixed(2)}</span>
+                                    <span>${redondearPrecio(getTotalPrice()).toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>

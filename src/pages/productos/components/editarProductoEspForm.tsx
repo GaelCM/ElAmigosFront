@@ -23,14 +23,14 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  id_sucur: z.number().positive(),
-  isEspecial: z.number().positive(),
+  id_sucur: z.number(),
+  isEspecial: z.number(),
   sku_pieza: z.string().min(1, 'El código es requerido'),
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
   descripcion: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
-  precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
-  precio_mayoreo: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
+  precio_venta: z.coerce.number().min(0, { message: 'El precio de venta debe ser mayor o igual a 0' }),
+  precio_mayoreo: z.coerce.number().min(0, { message: 'El precio de mayoreo debe ser mayor o igual a 0' }),
   componentes: z.array(
     z.object({
       id_unidad_venta: z.number(),
@@ -100,8 +100,8 @@ export default function EditarProductoCompuestoForm() {
         nombre_producto: producto.nombre_producto,
         nombre_presentacion: producto.nombre_presentacion,
         cantidad: 1,
-        precio_unitario: producto.precio_venta,
-        stock_disponible: producto.stock_disponible_presentacion
+        precio_unitario: producto.precio_venta ?? 0,
+        stock_disponible: producto.stock_disponible_presentacion ?? 0
       }
     ]);
 
@@ -350,9 +350,9 @@ export default function EditarProductoCompuestoForm() {
                               <Input
                                 type="number"
                                 step="0.01"
-                                value={field.value}
+                                value={field.value ?? ""}
                                 onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value))
+                                  field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
                                 }
                                 placeholder="Ej: 150.00"
                               />
@@ -391,9 +391,9 @@ export default function EditarProductoCompuestoForm() {
                               <Input
                                 type="number"
                                 step="0.01"
-                                value={field.value}
+                                value={field.value ?? ""}
                                 onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value))
+                                  field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
                                 }
                                 placeholder="Ej: 150.00"
                               />

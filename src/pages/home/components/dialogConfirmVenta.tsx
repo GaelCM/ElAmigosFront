@@ -29,9 +29,10 @@ type dialogProps = {
 export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPago, setMetodoPago }: dialogProps) {
 
     const [estado, setEstado] = useState<EstadoVenta>("Inicio");
-    const { getCarritoActivo, getTotalPrice, carritoActivo, eliminarCarrito } = useListaProductos();
+    const { getCarritoActivo, getTotalPrice, carritoActivo, eliminarCarrito, crearCarrito } = useListaProductos();
     const { user } = useCurrentUser()
     const carritoActual = getCarritoActivo();
+    const totalVenta = redondearPrecio(getTotalPrice());
     const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
     const turnoDataString = localStorage.getItem("openCaja") || "{}";
     const turnoData = JSON.parse(turnoDataString);
@@ -55,6 +56,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
         // Eliminar el carrito actual después de confirmar la venta
         if (carritoActivo) {
             eliminarCarrito(carritoActivo);
+            crearCarrito("Venta Principal");
         }
         await onClose(false);
         // Usar setTimeout para asegurarnos que el focus se aplique después de que el diálogo se cierre
@@ -81,7 +83,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
             return;
         }
         // iniciar proceso
-        if (cambioEfectivo < getTotalPrice() && metodoPago === 0) {
+        if (cambioEfectivo < totalVenta && metodoPago === 0) {
             toast.error('Error en el pago', {
                 description: `El monto recibido es menor al total a pagar.`,
             });
@@ -129,7 +131,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                     try {
                         const printerName = localStorage.getItem("printer_device");
                         if (printerName) {
-                            if (isImprimir) {
+                            if (isImprimir || metodoPago === 2) {
                                 const ticketData = {
                                     printerName,
                                     sucursal: "Sucursal " + user.sucursal,
@@ -143,13 +145,14 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                     productos: carritoActual?.productos?.map((p: any) => ({
                                         cantidad: p.quantity,
                                         nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
-                                        importe: redondearPrecio((p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity)
+                                        importe: (p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
                                     })) || [],
-                                    total: getTotalPrice(),
+                                    total: totalVenta,
                                     pagoCon: cambioEfectivo,
-                                    cambio: Math.max(0, cambioEfectivo - getTotalPrice()),
+                                    cambio: Math.max(0, cambioEfectivo - totalVenta),
                                     ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
                                     turno: turnoData?.id_turno || "0",
+                                    metodo_pago: metodoPago,
                                     cortar: localStorage.getItem("printer_cut") !== "false"
                                 };
 
@@ -185,7 +188,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 try {
                     const printerName = localStorage.getItem("printer_device");
                     if (printerName) {
-                        if (isImprimir) {
+                        if (isImprimir || metodoPago === 2) {
                             const ticketData = {
                                 printerName,
                                 sucursal: "Sucursal " + user.sucursal,
@@ -199,13 +202,14 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 productos: carritoActual?.productos?.map((p: any) => ({
                                     cantidad: p.quantity,
                                     nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
-                                    importe: redondearPrecio((p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity)
+                                    importe: (p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
                                 })) || [],
-                                total: getTotalPrice(),
+                                total: totalVenta,
                                 pagoCon: cambioEfectivo,
-                                cambio: Math.max(0, cambioEfectivo - getTotalPrice()),
+                                cambio: Math.max(0, cambioEfectivo - totalVenta),
                                 ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
                                 turno: turnoData?.id_turno || "0",
+                                metodo_pago: metodoPago,
                                 cortar: localStorage.getItem("printer_cut") !== "false"
                             };
 
@@ -248,14 +252,14 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     useEffect(() => {
         if (isOpen) {
             if (metodoPago !== 0) {
-                setCambioEfectivo(getTotalPrice());
+                setCambioEfectivo(totalVenta);
             } else {
                 setCambioEfectivo(0);
             }
         }
     }, [isOpen, metodoPago]);
 
-    const totalVenta = getTotalPrice();
+
 
     return (
         <Dialog open={isOpen} onOpenChange={() => {
@@ -416,7 +420,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                             </div>
                             <p className="text-lg font-semibold text-center">Venta procesada</p>
                             {metodoPago === 0 && (
-                                <p className="text-4xl font-bold">Cambio: ${Math.max(0, (cambioEfectivo - getTotalPrice())).toFixed(2)}</p>
+                                <p className="text-4xl font-bold">Cambio: ${Math.max(0, (cambioEfectivo - totalVenta)).toFixed(2)}</p>
                             )}
                             <Button className="w-full h-9" autoFocus onClick={reloadVenta}>
                                 Cerrar

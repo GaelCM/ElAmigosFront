@@ -68,7 +68,7 @@ export default function FormCerrarCaja({ onSubmit, isLoading }: FormCerrarCajaPr
                     )}
                 </Button>
             </form>
-            <Button className="w-full cursor-pointer mt-4" size="lg" variant="destructive" onClick={() => {
+            <Button className="w-full cursor-pointer mt-4" size="icon" variant="destructive" onClick={() => {
                 localStorage.removeItem("tkn");
                 localStorage.removeItem("currentUser");
                 localStorage.removeItem("openCaja");

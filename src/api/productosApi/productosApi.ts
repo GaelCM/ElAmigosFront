@@ -123,7 +123,7 @@ export const eliminarProductoApi = async (idProducto: number) => {
 }
 
 export const getProductosInventario = async (idSucursal: number) => {
-    const res = await fetch(`http://localhost:3000/api/productos/getProductosInventario/${idSucursal}`, {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/getProductosInventario/${idSucursal}`, {
         method: "get",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('tkn')}`,

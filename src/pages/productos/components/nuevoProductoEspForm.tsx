@@ -21,14 +21,14 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  id_sucur: z.number().positive(),
-  isEspecial: z.number().positive(),
+  id_sucur: z.number(),
+  isEspecial: z.number(),
   sku_pieza: z.string().min(1, 'El código es requerido'),
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
   descripcion: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
-  precio_venta: z.coerce.number().positive({ message: 'El precio de venta debe ser mayor a 0' }),
-  precio_mayoreo: z.coerce.number().positive({ message: 'El precio de mayoreo debe ser mayor a 0' }),
+  precio_venta: z.coerce.number().min(0, { message: 'El precio de venta debe ser mayor o igual a 0' }),
+  precio_mayoreo: z.coerce.number().min(0, { message: 'El precio de mayoreo debe ser mayor o igual a 0' }),
   componentes: z.array(
     z.object({
       id_unidad_venta: z.number(),
@@ -54,6 +54,7 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
   const [searchTerm, setSearchTerm] = useState("");
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
     obtenerCategoriasApi().then(res => {
@@ -90,6 +91,33 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
     );
   });
 
+  // Reset selectedIndex when filter changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchTerm]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSearchResults || productosFiltrados.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % productosFiltrados.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev - 1 + productosFiltrados.length) % productosFiltrados.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      agregarComponente(productosFiltrados[selectedIndex]);
+    }
+  };
+
+  useEffect(() => {
+    const activeElement = document.querySelector(`[data-product-index="${selectedIndex}"]`);
+    if (activeElement) {
+      activeElement.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
+
   const agregarComponente = (producto: typeof productosDisponibles[0]) => {
     const yaExiste = componentes.find(c => c.id_unidad_venta === producto.id_unidad_venta);
     if (yaExiste) {
@@ -104,8 +132,8 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
         nombre_producto: producto.nombre_producto,
         nombre_presentacion: producto.nombre_presentacion,
         cantidad: 1,
-        precio_unitario: producto.precio_venta,
-        stock_disponible: producto.stock_disponible_presentacion
+        precio_unitario: producto.precio_venta ?? 0,
+        stock_disponible: producto.stock_disponible_presentacion ?? 0
       }
     ]);
 
@@ -161,7 +189,13 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
         <CardContent>
           {/* ---------------------- FORMULARIO ÚNICO ---------------------- */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+            <form
+              onSubmit={form.handleSubmit(onSubmit, (errors) => {
+                console.log("ERRORES VALIDACION:", errors);
+                toast.error("Por favor completa los campos requeridos");
+              })}
+              className="space-y-10"
+            >
 
               {/* GRID PRINCIPAL DE DOS COLUMNAS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -315,9 +349,9 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                               <Input
                                 type="number"
                                 step="0.01"
-                                value={field.value}
+                                value={field.value ?? ""}
                                 onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value))
+                                  field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
                                 }
                                 placeholder="Ej: 150.00"
                               />
@@ -356,9 +390,9 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                               <Input
                                 type="number"
                                 step="0.01"
-                                value={field.value}
+                                value={field.value ?? ""}
                                 onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value))
+                                  field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
                                 }
                                 placeholder="Ej: 150.00"
                               />
@@ -421,6 +455,7 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                               setShowSearchResults(e.target.value.length > 0);
                             }}
                             onFocus={() => setShowSearchResults(searchTerm.length > 0)}
+                            onKeyDown={handleKeyDown}
                             className="pl-10"
                           />
                         </div>
@@ -428,10 +463,12 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                         {showSearchResults && productosFiltrados.length > 0 && (
                           <Card className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto shadow-xl border-2 border-blue-100">
                             <CardContent className="p-0">
-                              {productosFiltrados.map((producto) => (
+                              {productosFiltrados.map((producto, index) => (
                                 <div
                                   key={producto.id_unidad_venta}
-                                  className="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-0 transition-colors"
+                                  data-product-index={index}
+                                  className={`p-3 cursor-pointer border-b last:border-0 transition-colors ${index === selectedIndex ? "bg-blue-300" : "hover:bg-blue-50"
+                                    }`}
                                   onClick={() => agregarComponente(producto)}
                                 >
                                   <div className="flex justify-between items-center">
@@ -550,7 +587,7 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
 
               {/* BOTÓN FINAL */}
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-                Crear Paquete
+                Crear Paquetes
               </Button>
 
             </form>

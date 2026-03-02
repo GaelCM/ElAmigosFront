@@ -6,8 +6,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function redondearPrecio(monto: number): number {
-  const entero = Math.floor(monto);
-  const decimal = monto - entero;
-  return decimal >= 0.75 ? entero + 1 : entero;
+  return Math.round(monto * 2) / 2;
 }
 

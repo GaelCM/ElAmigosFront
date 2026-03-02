@@ -39,6 +39,9 @@ export default function DetalleVentaPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const idVenta = searchParams.get("id");
+    const cliente = searchParams.get("cliente");
+    console.log(cliente);
+
     const [loading, setLoading] = useState(true);
     const [items, setItems] = useState<DetalleVentaItem[]>([]);
     const { user } = useCurrentUser();
@@ -114,7 +117,7 @@ export default function DetalleVentaPage() {
                     direccion_sucursal: user.direccion_sucursal,
                     telefono_sucursal: user.telefono_sucursal,
                     usuario: saleInfo.nombre_usuario,
-                    cliente: saleInfo.id_cliente ? `ID Cliente: #${saleInfo.id_cliente}` : "Público General",
+                    cliente: saleInfo.id_cliente ? `Cliente: ${cliente}` : "Público General",
                     folio: saleInfo.id_venta,
                     fecha: saleInfo.fecha_venta ? new Date(saleInfo.fecha_venta) : new Date(),
                     productos: items?.map((p: any) => ({
@@ -244,6 +247,7 @@ export default function DetalleVentaPage() {
                             <div className="space-y-1">
                                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cliente ID</p>
                                 <p className="text-sm font-bold text-slate-700 dark:text-slate-200">#{saleInfo?.id_cliente || "General"}</p>
+                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{cliente}</p>
                             </div>
                         </div>
                     </div>
@@ -281,14 +285,14 @@ export default function DetalleVentaPage() {
                     />
                     <CardKpi
                         title="Recibido"
-                        value={formatCurrency(redondearPrecio(saleInfo?.monto_recibido || 0))}
+                        value={formatCurrency(saleInfo?.monto_recibido || 0)}
                         icon={<Tag className="w-6 h-6 text-amber-500" />}
                         description="Monto entregado por cliente"
                         variant="amber"
                     />
                     <CardKpi
                         title="Cambio"
-                        value={formatCurrency(redondearPrecio(saleInfo?.cambio || 0))}
+                        value={formatCurrency(saleInfo?.cambio || 0)}
                         icon={<Layers className="w-6 h-6 text-purple-500" />}
                         description="Monto devuelto al cliente"
                         variant="purple"
@@ -343,7 +347,7 @@ export default function DetalleVentaPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="text-slate-600 dark:text-slate-400">{formatCurrency(redondearPrecio(item.precio_unitario))}</span>
+                                            <span className="text-slate-600 dark:text-slate-400">{formatCurrency(item.precio_unitario)}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {item.precio_mayoreo ? (
@@ -353,7 +357,7 @@ export default function DetalleVentaPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(redondearPrecio(item.subtotal))}</span>
+                                            <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.subtotal)}</span>
                                         </td>
                                         {saleInfo?.estado_venta !== 0 && (
                                             <td className="px-6 py-4 text-center">
@@ -417,13 +421,13 @@ export default function DetalleVentaPage() {
                                                                     </div>
                                                                     <p className="text-xs text-slate-500">
                                                                         Se restarán <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                                                                            {formatCurrency(redondearPrecio(Number(item.precio_unitario) * cantidadACancelar))}
+                                                                            {formatCurrency(Number(item.precio_unitario) * cantidadACancelar)}
                                                                         </span> del total.
                                                                     </p>
                                                                 </div>
                                                             ) : (
                                                                 <p className="text-slate-600 dark:text-slate-400">
-                                                                    Se regresará el stock y se restará <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatCurrency(redondearPrecio(item.subtotal))}</span> del total.
+                                                                    Se regresará el stock y se restará <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatCurrency(item.subtotal)}</span> del total.
                                                                 </p>
                                                             )}
                                                         </div>
@@ -479,8 +483,8 @@ export default function DetalleVentaPage() {
                                     <span>Cambio</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(redondearPrecio(saleInfo?.monto_recibido || 0))}</span>
-                                    <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(redondearPrecio(saleInfo?.cambio || 0))}</span>
+                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(saleInfo?.monto_recibido || 0)}</span>
+                                    <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(saleInfo?.cambio || 0)}</span>
                                 </div>
                             </div>
                         </div>

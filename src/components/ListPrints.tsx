@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Printer, RefreshCw } from "lucide-react";
+import { Check, Coins, Printer, RefreshCw } from "lucide-react";
 import {
     Card,
     CardContent,
@@ -92,32 +92,6 @@ export function ListPrints() {
         localStorage.setItem("printer_cut", String(checked));
     };
 
-    const handleTestPrint = async () => {
-        if (!selectedPrinter) return;
-
-        const testHtml = `
-            <div style="font-family: monospace; width: 100%; text-align: center; font-size: 12px;">
-                <h3>PRUEBA DE IMPRESION</h3>
-                <p>--------------------------------</p>
-                <p>Si puedes leer esto,</p>
-                <p>la impresora funciona correctamente.</p>
-                <p>--------------------------------</p>
-                <p>El Amigos POS</p>
-                <br/><br/>.
-            </div>
-        `;
-
-        try {
-            // @ts-ignore
-            await window["electron-api"]?.printTicket({
-                content: testHtml,
-                printerName: selectedPrinter
-            });
-        } catch (error) {
-            console.error("Error imprimiendo:", error);
-        }
-    };
-
     const handleTestPrintEscPos = async () => {
         if (!selectedPrinter) return;
 
@@ -126,6 +100,17 @@ export function ListPrints() {
             await window["electron-api"]?.printTestEscPos(selectedPrinter);
         } catch (error) {
             console.error("Error imprimiendo modo RAW:", error);
+        }
+    };
+
+    const handleOpenDrawer = async () => {
+        if (!selectedPrinter) return;
+
+        try {
+            // @ts-ignore
+            await window["electron-api"]?.openCashDrawer(selectedPrinter);
+        } catch (error) {
+            console.error("Error abriendo cajón:", error);
         }
     };
 
@@ -212,17 +197,8 @@ export function ListPrints() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            className="w-full"
-                            onClick={handleTestPrint}
-                            disabled={!selectedPrinter || loading}
-                        >
-                            <Printer className="mr-2 h-4 w-4" />
-                            Prueba HTML
-                        </Button>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+
                         <Button
                             variant="default"
                             size="sm"
@@ -231,7 +207,18 @@ export function ListPrints() {
                             disabled={!selectedPrinter || loading}
                         >
                             <Printer className="mr-2 h-4 w-4" />
-                            Prueba ESC/POS
+                            Probar Impresora ESC/POS
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full col-span-2 border-primary text-primary hover:bg-primary/5 font-bold"
+                            onClick={handleOpenDrawer}
+                            disabled={!selectedPrinter || loading}
+                        >
+                            <Coins className="mr-2 h-4 w-4" />
+                            Probar Cajón de Dinero
                         </Button>
                     </div>
 

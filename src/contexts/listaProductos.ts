@@ -7,7 +7,7 @@ import type { ProductoItem, ProductoVenta } from "@/types/Producto";
 import type { Cliente } from "@/types/Cliente";
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
-import { redondearPrecio } from "@/lib/utils";
+
 
 export type Carrito = {
     id: string;
@@ -349,7 +349,7 @@ export const useListaProductos = create(
             },
 
             /**
-             * Obtiene el precio total del carrito activo
+             * Obtiene el precio total exacto del carrito activo sin redondear
              */
             getTotalPrice: () => {
                 const carritoActivo = get().getCarritoActivo();
@@ -357,8 +357,8 @@ export const useListaProductos = create(
                 return carritoActivo.productos.reduce(
                     (total, item) => {
                         const precioArr = item.usarPrecioMayoreo ? item.product.precio_mayoreo : item.product.precio_venta;
-                        const subtotalRedondeado = redondearPrecio(precioArr * item.quantity);
-                        return total + subtotalRedondeado;
+                        const subtotalExacto = precioArr * item.quantity;
+                        return total + subtotalExacto;
                     },
                     0
                 );

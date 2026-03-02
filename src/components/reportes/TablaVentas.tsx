@@ -2,27 +2,21 @@ import type { ReporteVentaDetallado } from "@/types/ReporteVentasT";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
-    Receipt,
-    CreditCard,
-    Calendar,
-    User,
-    Building2,
-    Clock,
-    Package,
-    TrendingUp,
     CheckCircle2,
     XCircle,
     AlertCircle,
     DollarSign,
-    ArrowUpDown,
+    Receipt,
+    Clock,
+    Package,
+    TrendingUp,
     ChevronDown,
     ChevronUp,
-    Settings,
     Trash,
     Eye,
     Search
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import DialogCancelarVenta from "./DialogCancelarVenta";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,8 +43,15 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
     const [ventaToCancel, setVentaToCancel] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedIndex, setSelectedIndex] = useState<number>(0);
+    const tableContainerRef = useRef<HTMLDivElement>(null);
     const { user } = useCurrentUser();
     const navigate = useNavigate();
+
+    // Reset selection when search or sorting changes
+    useEffect(() => {
+        setSelectedIndex(0);
+    }, [searchTerm, sortField, sortDirection]);
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -84,6 +85,55 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
             return aValue < bValue ? 1 : -1;
         }
     });
+
+    // Keyboard navigation
+    useEffect(() => {
+        if (sortedVentas.length === 0) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Don't navigate if focused on input
+            if (document.activeElement?.tagName === 'INPUT') {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    // Allow moving focus from search to table? 
+                } else if (e.key === 'Enter') {
+                    // Default behavior
+                } else {
+                    return;
+                }
+            }
+
+            switch (e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setSelectedIndex(prev => (prev > 0 ? prev - 1 : sortedVentas.length - 1));
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    setSelectedIndex(prev => (prev < sortedVentas.length - 1 ? prev + 1 : 0));
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    const selectedVenta = sortedVentas[selectedIndex];
+                    if (selectedVenta) {
+                        navigate(`/reportes/detalleVenta?id=${selectedVenta.id_venta}&cliente=${selectedVenta.nombre_cliente}`);
+                    }
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [sortedVentas, selectedIndex, navigate]);
+
+    // Automatic scroll to selected row
+    useEffect(() => {
+        if (tableContainerRef.current && sortedVentas.length > 0) {
+            const selectedRow = tableContainerRef.current.querySelector(`[data-index="${selectedIndex}"]`);
+            if (selectedRow) {
+                selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+    }, [selectedIndex, sortedVentas]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-MX', {
@@ -256,111 +306,76 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                 placeholder="Buscar por #Folio o cliente..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-9 h-10 bg-yellow-400"
+                                autoFocus
+                                className="pl-9 h-10 bg-background border-primary/20 focus:border-primary focus:ring-primary/20 transition-all"
                             />
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto" ref={tableContainerRef}>
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
-                                    <TableHead className="w-[50px]"></TableHead>
+                                    <TableHead className="w-[40px] px-2 py-4"></TableHead>
                                     <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors"
+                                        className="cursor-pointer hover:bg-muted/80 transition-colors px-2 py-4"
                                         onClick={() => handleSort('id_venta')}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <Receipt className="h-4 w-4" />
-                                            <span className="font-semibold">ID</span>
-                                            <ArrowUpDown className="h-3 w-3 opacity-50" />
-                                        </div>
+                                        <span className="font-bold text-sm md:text-base">ID</span>
                                     </TableHead>
                                     <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors"
+                                        className="cursor-pointer hover:bg-muted/80 transition-colors px-2 py-4"
                                         onClick={() => handleSort('fecha_venta')}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="h-4 w-4" />
-                                            <span className="font-semibold">Fecha y Hora</span>
-                                            <ArrowUpDown className="h-3 w-3 opacity-50" />
-                                        </div>
+                                        <span className="font-bold text-sm md:text-base">Fecha/Hora</span>
                                     </TableHead>
                                     <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-right"
+                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-right px-2 py-4"
                                         onClick={() => handleSort('total_venta')}
                                     >
-                                        <div className="flex items-center justify-end gap-2">
-                                            <span className="font-semibold">Total</span>
-                                            <DollarSign className="h-4 w-4" />
-                                            <ArrowUpDown className="h-3 w-3 opacity-50" />
-                                        </div>
+                                        <span className="font-bold text-sm md:text-base">Total</span>
                                     </TableHead>
-                                    <TableHead>
-                                        <div className="flex items-center gap-2">
-                                            <CreditCard className="h-4 w-4" />
-                                            <span className="font-semibold">Método de Pago</span>
-                                        </div>
-                                    </TableHead>
+                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold whitespace-nowrap">Pago</TableHead>
                                     <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-center"
+                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-center px-2 py-4"
                                         onClick={() => handleSort('cantidad_productos')}
                                     >
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Package className="h-4 w-4" />
-                                            <span className="font-semibold">Productos</span>
-                                            <ArrowUpDown className="h-3 w-3 opacity-50" />
-                                        </div>
+                                        <span className="font-bold text-sm md:text-base">Pzas</span>
                                     </TableHead>
-                                    <TableHead>
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle2 className="h-4 w-4" />
-                                            <span className="font-semibold">Estado</span>
-                                        </div>
-                                    </TableHead>
-                                    <TableHead>
-                                        <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4" />
-                                            <span className="font-semibold">Usuario</span>
-                                        </div>
-                                    </TableHead>
-                                    <TableHead>
-                                        <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4" />
-                                            <span className="font-semibold">Cliente</span>
-                                        </div>
-                                    </TableHead>
-                                    <TableHead>
-                                        <div className="flex items-center gap-2">
-                                            <Building2 className="h-4 w-4" />
-                                            <span className="font-semibold">Sucursal</span>
-                                        </div>
-                                    </TableHead>
-                                    {user?.id_rol === 1 && (
-                                        <TableHead>
-                                            <div className="flex items-center gap-2">
-                                                <Settings className="h-4 w-4" />
-                                                <span className="font-semibold">Acciones</span>
-                                            </div>
-                                        </TableHead>
-                                    )}
+                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Estado</TableHead>
+                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Usuario</TableHead>
+                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Cliente</TableHead>
+                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold text-center">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {sortedVentas.map((venta) => {
+                                {sortedVentas.map((venta, index) => {
                                     const EstadoIcon = getEstadoConfig(venta.estado_venta).icon;
                                     const isExpanded = expandedVenta === venta.id_venta;
+                                    const isSelected = selectedIndex === index;
 
                                     return (
-                                        <>
+                                        <div key={venta.id_venta} className="contents">
                                             <TableRow
-                                                key={venta.id_venta}
-                                                className="cursor-pointer hover:bg-muted/50 transition-colors"
-                                                onClick={() => setExpandedVenta(isExpanded ? null : venta.id_venta)}
+                                                data-index={index}
+                                                className={`cursor-pointer transition-all duration-200 select-none ${isSelected
+                                                    ? 'bg-blue-300 border-l-4 border-l-blue-600 dark:bg-blue-400/20'
+                                                    : 'hover:bg-muted/50'
+                                                    }`}
+                                                onClick={() => setSelectedIndex(index)}
+                                                onDoubleClick={() => navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`)}
                                             >
                                                 <TableCell>
-                                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 w-6 p-0"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setExpandedVenta(isExpanded ? null : venta.id_venta);
+                                                        }}
+                                                    >
                                                         {isExpanded ? (
                                                             <ChevronUp className="h-4 w-4" />
                                                         ) : (
@@ -368,83 +383,76 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                         )}
                                                     </Button>
                                                 </TableCell>
-                                                <TableCell className="font-mono font-semibold">
-                                                    <Badge variant="outline" className="bg-primary/5">
+                                                <TableCell className="px-2 py-4 font-mono">
+                                                    <span className="text-sm md:text-base font-bold bg-primary/5 px-2 py-1 rounded border border-primary/10">
                                                         #{venta.id_venta}
-                                                    </Badge>
+                                                    </span>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="font-medium text-sm">
-                                                            {formatDate(venta.fecha_venta)}
+                                                <TableCell className="px-2 py-4">
+                                                    <div className="flex flex-col text-sm md:text-base font-bold leading-tight">
+                                                        <span className="whitespace-nowrap">
+                                                            {formatDate(venta.fecha_venta).split(',')[0]}
                                                         </span>
-                                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                            <Clock className="h-3 w-3" />
+                                                        <span className="text-muted-foreground whitespace-nowrap text-xs md:text-sm">
                                                             {formatTime(venta.fecha_venta)}
                                                         </span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <span className="font-bold text-lg text-emerald-600 dark:text-emerald-400">
-                                                            {formatCurrency(venta.total_venta)}
-                                                        </span>
-                                                        {venta.cambio > 0 && (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                Cambio: {formatCurrency(venta.cambio)}
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                <TableCell className="px-2 py-4 text-right">
+                                                    <span className="font-black text-sm md:text-lg text-emerald-600 dark:text-emerald-400">
+                                                        {formatCurrency(venta.total_venta)}
+                                                    </span>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="secondary" className="gap-1.5">
-                                                        <CreditCard className="h-3 w-3" />
+                                                <TableCell className="px-2 py-4">
+                                                    <Badge variant="secondary" className="px-2 py-1 text-xs md:text-sm font-bold whitespace-nowrap">
                                                         {venta.metodo_pago_descripcion}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
+                                                <TableCell className="px-2 py-4 text-center">
+                                                    <Badge variant="outline" className="px-2 py-1 text-xs md:text-sm font-bold bg-purple-500/10 text-purple-700 border-purple-500/20">
                                                         {venta.cantidad_productos}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Badge className={`gap-1.5 ${getEstadoConfig(venta.estado_venta).className}`}>
-                                                        <EstadoIcon className="h-3 w-3" />
+                                                <TableCell className="px-2 py-4">
+                                                    <Badge className={`px-2 py-1 text-xs md:text-sm font-bold gap-1 ${getEstadoConfig(venta.estado_venta).className}`}>
+                                                        <EstadoIcon className="h-4 w-4" />
                                                         {getEstadoConfig(venta.estado_venta).label}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs">
-                                                            {venta.nombre_usuario.charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <span className="font-medium text-sm">{venta.nombre_usuario}</span>
-                                                    </div>
+                                                <TableCell className="px-2 py-4">
+                                                    <span className="font-bold text-sm md:text-base truncate max-w-[100px] block">{venta.nombre_usuario}</span>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <User className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="text-sm">{venta.nombre_cliente}</span>
-                                                    </div>
+                                                <TableCell className="px-2 py-4">
+                                                    <span className="font-bold text-sm md:text-base truncate max-w-[120px] block">{venta.nombre_cliente}</span>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="text-sm">{venta.nombre_sucursal}</span>
-                                                    </div>
-                                                </TableCell>
-                                                {user?.id_rol === 1 && (
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2" onClick={() => cancelarVenta(venta.id_venta)}>
-                                                            <Trash className="h-4 w-4 text-red-600" />
-                                                            <span className="text-sm">Cancelar Venta</span>
-                                                        </div>
-                                                    </TableCell>
-                                                )}
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2" onClick={() => navigate(`/reportes/detalleVenta?id=${venta.id_venta}`)}>
-                                                        <Eye className="h-4 w-4 text-blue-600" />
-                                                        <span className="text-sm">Ver</span>
+                                                <TableCell className="px-2 py-4">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Button
+                                                            variant="default"
+                                                            size="sm"
+                                                            className="h-9 gap-2 font-bold"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`);
+                                                            }}
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                            Ver Detalles
+                                                        </Button>
+                                                        {user?.id_rol === 1 && (
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                className="h-9 gap-2 font-bold"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    cancelarVenta(venta.id_venta);
+                                                                }}
+                                                            >
+                                                                <Trash className="h-4 w-4" />
+                                                                Cancelar Venta
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -563,7 +571,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                     </TableCell>
                                                 </TableRow>
                                             )}
-                                        </>
+                                        </div>
                                     );
                                 })}
                             </TableBody>

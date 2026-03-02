@@ -52,7 +52,7 @@ export const cerrarCorteApi = async (corte: CerrarCorteBody): Promise<{ success:
 }
 
 export const obtenerReporteCortesApi = async (fecha_desde: string, fecha_hasta: string, id_sucursal?: number): Promise<{ success: boolean, message: string, data: any[] }> => {
-    const res = await fetch("http://localhost:3000/api/cortes/reporte-cortes", {
+    const res = await fetch("https://elamigos-elamigosapi.xj7zln.easypanel.host/api/cortes/reporte-cortes", {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${localStorage.getItem("tkn")}`,

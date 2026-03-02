@@ -200,7 +200,37 @@ export default function CerrarCajaPage() {
                     </Card>
                 </div>
 
-                <div className="flex justify-center mt-6">
+                <div className="flex justify-center gap-3 mt-6">
+                    <button
+                        onClick={async () => {
+                            try {
+                                const printerName = localStorage.getItem("printer_device");
+                                if (printerName) {
+                                    const ticketData = {
+                                        printerName,
+                                        sucursal: "Sucursal " + (user?.sucursal || ""),
+                                        usuario: user?.usuario || "",
+                                        fecha: new Date(),
+                                        id_turno: idTurno,
+                                        ventas: resumen.ventas,
+                                        egresos: resumen.egresos,
+                                        movimientos: resumen.movimientos,
+                                        efectivo: resumen.efectivo,
+                                        abonos_recibidos: resumen.creditos?.abonos_recibidos || 0,
+                                        cortar: localStorage.getItem("printer_cut") !== "false"
+                                    };
+                                    // @ts-ignore
+                                    await window["electron-api"]?.printTicketCorteEscPos(ticketData);
+                                }
+                            } catch (e) {
+                                console.error("Error al imprimir corte:", e);
+                            }
+                        }}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-colors flex items-center gap-2"
+                    >
+                        <ShoppingCart className="h-4 w-4" />
+                        Imprimir Ticket de Corte
+                    </button>
                     <button
                         onClick={() => navigate('/')}
                         className="px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors"

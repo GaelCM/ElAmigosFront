@@ -197,7 +197,7 @@ function utilsController() {
     });
 
     ipcMain.handle('print-ticket-venta-escpos', async (event, data) => {
-        const { printerName, sucursal, id_sucursal, direccion_sucursal, telefono_sucursal, usuario, cliente, folio, fecha, productos, total, pagoCon, cambio, ahorro = 0, turno = "0", cortar = true } = data;
+        const { printerName, sucursal, id_sucursal, direccion_sucursal, telefono_sucursal, usuario, cliente, folio, fecha, productos, total, pagoCon, cambio, ahorro = 0, turno = "0", metodo_pago = 0, cortar = true } = data;
         console.log("Generando TICKET VENTA ESC/POS para:", printerName);
 
         try {
@@ -243,18 +243,23 @@ function utilsController() {
             printer.println("================================================");
 
             // --- PRODUCTOS ---
-            (productos || []).forEach((p) => {
-                const cant = p.cantidad.toString().padEnd(4);
-                // Si el precio no viene, lo calculamos
-                const precioVal = p.precio || (p.importe / p.cantidad);
+            const listaProductos = productos || [];
+            listaProductos.forEach((p) => {
+                const cantidadVal = Number(p.cantidad || 0);
+                const cant = cantidadVal.toString().padEnd(4);
+
+                // Si el precio no viene, lo calculamos buscando no dividir por cero
+                const importeVal = Number(p.importe || 0);
+                const precioVal = p.precio || (cantidadVal > 0 ? (importeVal / cantidadVal) : 0);
+
                 const precio = "$" + precioVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                const importe = "$" + p.importe.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const importe = "$" + importeVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 const descWidth = 19;
                 const priceWidth = 10;
                 const impWidth = 11;
 
-                const nombreFull = (p.nombre || "").toUpperCase();
+                const nombreFull = (p.nombre || "PRODUCTO SIN NOMBRE").toUpperCase();
                 let words = nombreFull.split(' ');
                 let lines = [];
                 let currentLine = '';
@@ -271,7 +276,6 @@ function utilsController() {
                 if (lines.length === 0) lines.push("");
 
                 // Primera línea con cantidad, descripción parcial, precio e importe
-                // CANT(4) + gap(1) + DESC(19) + gap(1) + PRECIO(10) + gap(1) + IMPORTE(11) = 47
                 printer.println(`${cant} ${lines[0].padEnd(descWidth)} ${precio.padStart(priceWidth)} ${importe.padStart(impWidth)}`);
 
                 // Líneas adicionales de descripción (indentadas)
@@ -283,19 +287,42 @@ function utilsController() {
             printer.println("------------------------------------------------");
 
             // --- TOTAL PIEZAS ---
-            const totalPiezas = productos.reduce((sum, p) => sum + Number(p.cantidad), 0);
+            const totalPiezas = listaProductos.reduce((sum, p) => sum + Number(p.cantidad || 0), 0);
             printer.alignLeft();
             printer.println(`NO. DE ARTICULOS: ${totalPiezas}`);
 
             // --- TOTALES ---
             printer.alignRight();
+            printer.setTextDoubleHeight();
+            printer.setTextDoubleWidth();
             printer.bold(true);
             printer.println(`TOTAL: $${Number(total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-            printer.println(`PAGO CON: $${Number(pagoCon || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-            printer.println(`SU CAMBIO: $${Number(cambio || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            printer.setTextNormal();
+            printer.bold(false);
+
+            if (metodo_pago === 2) {
+                printer.println("METODO DE PAGO: CREDITO");
+            } else {
+                printer.println(`PAGO CON: $${Number(pagoCon || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                printer.println(`SU CAMBIO: $${Number(cambio || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            }
+
             printer.println(`USTED AHORRO: $${Number(ahorro || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
             printer.bold(false);
             printer.newLine();
+
+            // --- FIRMAS (Solo para crédito) ---
+            if (metodo_pago === 2) {
+                printer.alignCenter();
+                printer.newLine();
+                printer.println("__________________________");
+                printer.println("FIRMA DEL CLIENTE");
+                printer.newLine();
+                printer.newLine();
+                printer.println("__________________________");
+                printer.println("FIRMA DEL CAJERO");
+                printer.newLine();
+            }
 
             // --- FOOTER ---
             printer.alignCenter();
@@ -386,6 +413,195 @@ function utilsController() {
             return await executeRawPrint(printerName, buffer, "Ticket Movimiento");
         } catch (error) {
             console.error("Error generando ticket Movimiento ESC/POS:", error);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('print-ticket-corte-escpos', async (event, data) => {
+        const { printerName, sucursal, usuario, fecha, id_turno, ventas, egresos, movimientos, efectivo, cortar = true } = data;
+        console.log("Generando TICKET CORTE ESC/POS para:", printerName);
+
+        try {
+            const { ThermalPrinter, PrinterTypes } = await import('node-thermal-printer');
+
+            let printer = new ThermalPrinter({
+                type: PrinterTypes.EPSON,
+                interface: 'tcp://127.0.0.1',
+                width: 48,
+                characterSet: 'SLOVENIA',
+                removeSpecialCharacters: false,
+                lineCharacter: "=",
+            });
+
+            // --- HEADER ---
+            printer.alignCenter();
+            printer.bold(true);
+            printer.println((sucursal || "SUCURSAL").toUpperCase());
+            printer.println("CORTE DE CAJA");
+            printer.bold(false);
+            printer.println(`TURNO # ${id_turno}`);
+            printer.println("------------------------------------------------");
+            printer.newLine();
+
+            printer.alignLeft();
+            printer.println(`FECHA:   ${new Date(fecha || Date.now()).toLocaleString()}`);
+            printer.println(`USUARIO: ${(usuario || "GENERAL").toUpperCase()}`);
+            printer.newLine();
+
+            // --- VENTAS ---
+            printer.bold(true);
+            printer.println("RESUMEN DE VENTAS");
+            printer.bold(false);
+            printer.println(`  TOTAL VENTAS:      $${Number(ventas.total).toFixed(2)}`);
+            printer.println(`  (+) EFECTIVO:      $${Number(ventas.efectivo).toFixed(2)}`);
+            printer.println(`  (+) TARJETA:       $${Number(ventas.tarjeta).toFixed(2)}`);
+            printer.println(`  (+) CREDITO:       $${Number(ventas.credito).toFixed(2)}`);
+            printer.println(`  NO. VENTAS:        ${ventas.numero}`);
+            printer.newLine();
+
+            // --- EGRESOS ---
+            printer.bold(true);
+            printer.println("EGRESOS Y MOVIMIENTOS");
+            printer.bold(false);
+            printer.println(`  (-) COMPRAS:       $${Number(egresos.compras).toFixed(2)}`);
+            printer.println(`  (-) GASTOS:        $${Number(egresos.gastos).toFixed(2)}`);
+            printer.println(`  (+) DEPOSITOS:     $${Number(movimientos.depositos).toFixed(2)}`);
+            printer.println(`  (-) RETIROS:       $${Number(movimientos.retiros).toFixed(2)}`);
+            printer.newLine();
+
+            // --- AUDITORIA ---
+            printer.println("------------------------------------------------");
+            printer.alignRight();
+            printer.println(`EFECTIVO INICIAL:    $${Number(efectivo.inicial).toFixed(2)}`);
+            printer.println(`VENTAS EFECTIVO:    $${Number(ventas.efectivo).toFixed(2)}`);
+
+            // Abonos/Cobranza si están disponibles
+            if (data.abonos_recibidos) {
+                printer.println(`ABONOS RECIBIDOS:   $${Number(data.abonos_recibidos).toFixed(2)}`);
+            }
+
+            printer.bold(true);
+            printer.println(`ESPERADO CAJA:      $${Number(efectivo.esperado).toFixed(2)}`);
+
+            printer.setTextDoubleHeight();
+            printer.setTextDoubleWidth();
+            printer.println(`CONTADO: $${Number(efectivo.contado).toFixed(2)}`);
+            printer.setTextNormal();
+
+            printer.println(`DIFERENCIA:         $${Number(efectivo.diferencia).toFixed(2)}`);
+            printer.bold(false);
+            printer.println("------------------------------------------------");
+            printer.newLine();
+
+            if (efectivo.diferencia < 0) {
+                printer.alignCenter();
+                printer.println("*** FALTANTE DETECTADO ***");
+            } else if (efectivo.diferencia > 0) {
+                printer.alignCenter();
+                printer.println("*** SOBRANTE DETECTADO ***");
+            } else {
+                printer.alignCenter();
+                printer.println("*** CAJA CUADRADA ***");
+            }
+            printer.newLine();
+
+            printer.alignCenter();
+            printer.println("__________________________");
+            printer.println("FIRMA DE RESPONSABLE");
+            printer.newLine();
+
+            if (cortar) {
+                printer.cut();
+            }
+            printer.beep();
+
+            const buffer = printer.getBuffer();
+            return await executeRawPrint(printerName, buffer, `Corte Turno ${id_turno}`);
+        } catch (error) {
+            console.error("Error generando ticket Corte ESC/POS:", error);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('print-ticket-abono-escpos', async (event, data) => {
+        const { printerName, sucursal, usuario, cliente, fecha, monto, saldoAnterior, saldoNuevo, concepto, tipo, cortar = true } = data;
+        console.log("Generando TICKET ABONO ESC/POS para:", printerName);
+
+        try {
+            const { ThermalPrinter, PrinterTypes } = await import('node-thermal-printer');
+
+            let printer = new ThermalPrinter({
+                type: PrinterTypes.EPSON,
+                interface: 'tcp://127.0.0.1',
+                width: 48,
+                characterSet: 'SLOVENIA',
+                removeSpecialCharacters: false,
+                lineCharacter: "=",
+            });
+
+            // --- HEADER ---
+            printer.alignCenter();
+            printer.bold(true);
+            printer.println((sucursal || "SUCURSAL").toUpperCase());
+            printer.bold(false);
+            printer.println("COMPROBANTE DE PAGO");
+            printer.println("------------------------------------------------");
+            printer.newLine();
+
+            printer.alignLeft();
+            printer.println(`TIPO:      ${(tipo || "ABONO").toUpperCase()}`);
+            printer.println(`FECHA:     ${new Date(fecha || Date.now()).toLocaleString()}`);
+            printer.println(`CLIENTE:   ${(cliente || "N/A").toUpperCase()}`);
+            printer.println(`CAJERO:    ${(usuario || "GENERAL").toUpperCase()}`);
+            printer.newLine();
+
+            printer.println("------------------------------------------------");
+            printer.alignRight();
+            printer.println(`SALDO ANTERIOR: $${Number(saldoAnterior).toFixed(2)}`);
+
+            printer.setTextDoubleHeight();
+            printer.setTextDoubleWidth();
+            printer.bold(true);
+            printer.println(`ABONO: $${Number(monto).toFixed(2)}`);
+            printer.setTextNormal();
+
+            printer.println(`SALDO ACTUAL: $${Number(saldoNuevo).toFixed(2)}`);
+            printer.bold(false);
+            printer.println("------------------------------------------------");
+            printer.newLine();
+
+            if (concepto) {
+                printer.alignLeft();
+                printer.println("CONCEPTO:");
+                printer.println(concepto.toUpperCase());
+                printer.newLine();
+            }
+
+            if (Number(saldoNuevo) <= 0) {
+                printer.alignCenter();
+                printer.bold(true);
+                printer.println("¡CUENTA LIQUIDADA!");
+                printer.println("GRACIAS POR SU PUNTUALIDAD");
+                printer.bold(false);
+                printer.newLine();
+            }
+
+            printer.alignCenter();
+            printer.println("__________________________");
+            printer.println("FIRMA DE RECIBIDO");
+            printer.newLine();
+            printer.println("CONSERVE ESTE COMPROBANTE");
+            printer.newLine();
+
+            if (cortar) {
+                printer.cut();
+            }
+            printer.beep();
+
+            const buffer = printer.getBuffer();
+            return await executeRawPrint(printerName, buffer, "Ticket Abono");
+        } catch (error) {
+            console.error("Error generando ticket Abono ESC/POS:", error);
             throw error;
         }
     });
@@ -488,7 +704,6 @@ function utilsController() {
             throw error;
         }
     });
-
 
 
 

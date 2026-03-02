@@ -5,11 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { useTransferirProductos } from "@/contexts/listaTransferencia";
 import type { ProductoVenta } from "@/types/Producto";
@@ -20,9 +18,6 @@ import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { toast } from "sonner";
 
-
-
-
 export default function CrearTransferencia() {
   // --- ESTADO ---
   const { user } = useCurrentUser();
@@ -32,7 +27,6 @@ export default function CrearTransferencia() {
   const [busqueda, setBusqueda] = useState("");
   const [sucursalLista, setSucursalLista] = useState<Sucursal[]>([]);
   const [productosLista, setProductosLista] = useState<ProductoVenta[]>([]);
-
 
   // --- ZUSTAND STORE ---
   const {
@@ -46,8 +40,6 @@ export default function CrearTransferencia() {
   } = useTransferirProductos();
 
   // --- EFECTOS ---
-
-  // --- EFECTO 1: Carga Inicial de Sucursales ---
   useEffect(() => {
     let mounted = true;
     obtenerSucursalesApi()
@@ -58,18 +50,14 @@ export default function CrearTransferencia() {
     return () => { mounted = false; };
   }, []);
 
-  // --- EFECTO 2: Cargar Productos al cambiar Origen ---
   useEffect(() => {
-
     let mounted = true;
     setProductosLista([]);
     clearCart();
 
-
     const fetchProductos = async () => {
       try {
-        const res = await obtenerProductosTransferirApi(origen); // Asegurar que sea número si la API lo espera  
-        // Solo actualizamos el estado si el componente sigue montado y el origen no ha cambiado de nuevo
+        const res = await obtenerProductosTransferirApi(origen);
         if (mounted) {
           if (res.success) {
             setProductosLista(res.data);
@@ -84,12 +72,10 @@ export default function CrearTransferencia() {
     };
 
     fetchProductos();
-
-    // Cleanup function para evitar race conditions
     return () => {
       mounted = false;
     };
-  }, [origen, clearCart]); // Añadimos clearCart a dependencias (es estable en Zustand, pero es buena práctica)
+  }, [origen, clearCart]);
 
 
   // --- MEMOIZACIÓN: Filtrado eficiente ---
@@ -102,11 +88,8 @@ export default function CrearTransferencia() {
     });
   }, [productosLista, busqueda]);
 
-
-
   // --- HANDLERS ---
   const transferirProductos = async (e: React.MouseEvent<HTMLButtonElement>) => {
-
     const timeZone = "America/Mexico_City";
     const now = new Date();
     const zonedDate = toZonedTime(now, timeZone);
@@ -114,7 +97,6 @@ export default function CrearTransferencia() {
     e.preventDefault();
     if (!origen || !destino || carrito.length === 0) return;
 
-    // Payload final basado en tu imagen de base de datos
     const nuevaTransferencia = {
       id_sucursal_origen: Number(origen),
       id_sucursal_destino: Number(destino),
@@ -124,7 +106,7 @@ export default function CrearTransferencia() {
       fecha_creacion: fechaFormateada,
       fecha_recepcion: null,
       fecha_autorizacion: null,
-      estado: "pendiente", // Default según DB
+      estado: "pendiente",
       motivo: motivo,
       productos: carrito.map((item) => ({
         id_producto: item.product.id_producto,
@@ -146,16 +128,12 @@ export default function CrearTransferencia() {
         description: res.message || "Error desconocido.",
       });
     }
-
-
-
   };
 
   return (
-    <div className="container mx-auto p-4 h-[calc(100vh-2rem)] flex flex-col lg:flex-row gap-6">
-
-      {/* ---------------- IZQUIERDA: SELECCIÓN Y TABLA ---------------- */}
-      <Card className="flex-1 flex flex-col h-full shadow-md border-slate-200">
+    <div className="w-full px-4 h-[calc(100vh-2rem)] flex flex-col lg:flex-row gap-4">
+      {/* ---------------- IZQUIERDA: SELECCIÓN Y TABLA (40%) ---------------- */}
+      <Card className="lg:flex-[4] flex flex-col h-full shadow-md border-slate-200">
         <CardHeader className="pb-4">
           <CardTitle className="text-xl flex items-center gap-2">
             <PackageOpen className="w-5 h-5 text-primary" />
@@ -166,7 +144,7 @@ export default function CrearTransferencia() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4 flex-1 flex flex-col overflow-hidden">
+        <CardContent className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Selectores de Sucursal */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -223,91 +201,89 @@ export default function CrearTransferencia() {
           </div>
 
           {/* Tabla de Productos */}
-          <div className="border rounded-md flex-1 overflow-hidden relative">
-            <ScrollArea className="h-full">
-              <Table>
-                <TableHeader className="bg-slate-50 sticky top-0">
+          <div className="border rounded-md flex-1 overflow-y-auto relative min-h-0">
+            <Table>
+              <TableHeader className="bg-slate-50 sticky top-0">
+                <TableRow>
+                  <TableHead>Producto</TableHead>
+                  <TableHead>Presentación</TableHead>
+                  <TableHead className="text-center">Stock Disp.</TableHead>
+                  <TableHead className="text-right">Acción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {!origen ? (
                   <TableRow>
-                    <TableHead>Producto</TableHead>
-                    <TableHead>Presentación</TableHead>
-                    <TableHead className="text-center">Stock Disp.</TableHead>
-                    <TableHead className="text-right">Acción</TableHead>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      Selecciona una sucursal de origen para comenzar.
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {!origen ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                        Selecciona una sucursal de origen para comenzar.
-                      </TableCell>
-                    </TableRow>
-                  ) : productosFiltrados.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                        No se encontraron productos.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    productosFiltrados.map((prod) => {
-                      // Calcular stock restante en tiempo real restando lo que ya está en el carrito
-                      const itemEnCarrito = carrito.find(item => item.product.id_producto === prod.id_producto);
-                      const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.quantity : 0;
-                      const stockReal = prod.stock_disponible_presentacion - cantidadEnCarrito;
-                      const sinStock = stockReal <= 0;
+                ) : productosFiltrados.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      No se encontraron productos.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  productosFiltrados.map((prod) => {
+                    const itemEnCarrito = carrito.find(item => item.product.id_unidad_venta === prod.id_unidad_venta);
+                    const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.quantity : 0;
+                    const stockReal = prod.stock_disponible_presentacion - cantidadEnCarrito;
+                    const sinStock = stockReal <= 0;
 
-                      return (
-                        <TableRow key={prod.id_unidad_venta}>
-                          <TableCell className="font-medium">
-                            <div>{prod.nombre_producto} {prod.nombre_presentacion}</div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-muted-foreground font-medium">{prod.sku_pieza}</span>
-                              {prod.factor_conversion_cantidad > 1 && (
-                                <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase">
-                                  Paquete de {prod.factor_conversion_cantidad} pzs
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>{prod.nombre_presentacion}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant={sinStock ? "destructive" : "secondary"}>
-                              {stockReal}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant={sinStock ? "ghost" : "default"}
-                              disabled={sinStock}
-                              onClick={() => addProduct(prod as ProductoVenta)} // Cast si TS se queja por campos extra
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </ScrollArea>
+                    return (
+                      <TableRow key={prod.id_unidad_venta}>
+                        <TableCell className="font-medium text-sm">
+                          <div>{prod.nombre_producto}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground font-medium">{prod.sku_pieza}</span>
+                            {prod.factor_conversion_cantidad > 1 && (
+                              <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase">
+                                Paquete de {prod.factor_conversion_cantidad} pzs
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{prod.nombre_presentacion}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={sinStock ? "destructive" : "secondary"} className="font-bold">
+                            {stockReal}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="icon"
+                            variant={sinStock ? "ghost" : "default"}
+                            disabled={sinStock}
+                            className="h-8 w-8"
+                            onClick={() => addProduct(prod as ProductoVenta)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
 
-      {/* ---------------- DERECHA: RESUMEN / CARRITO ---------------- */}
-      <Card className="w-full lg:w-[400px] flex flex-col h-full shadow-lg border-l-4 border-l-primary/20">
-        <CardHeader className="bg-slate-50 border-b pb-4">
-          <CardTitle className="text-lg flex justify-between items-center">
+      {/* ---------------- DERECHA: RESUMEN / CARRITO (60%) ---------------- */}
+      <Card className="lg:flex-[6] flex flex-col h-full shadow-lg border-l-4 border-l-primary/20">
+        <CardHeader className="bg-slate-50 border-b p-3">
+          <CardTitle className="text-xl font-bold flex justify-between items-center">
             Resumen de Envío
-            <Badge variant="default" className="text-sm">
+            <Badge variant="default" className="text-base font-bold bg-blue-600">
               {getTotalItems()} Items
             </Badge>
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
-          <ScrollArea className="flex-1 p-4">
+        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-4 min-h-0">
             {carrito.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-muted-foreground space-y-2">
                 <PackageOpen className="h-10 w-10 opacity-20" />
@@ -316,74 +292,80 @@ export default function CrearTransferencia() {
             ) : (
               <div className="space-y-3">
                 {carrito.map((item) => (
-                  <div key={item.product.id_producto} className="flex flex-col gap-2 p-3 border rounded-lg bg-card shadow-sm">
-                    {/* Header Item */}
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold text-sm line-clamp-1">{item.product.nombre_producto} {item.product.nombre_presentacion}</p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs text-muted-foreground">{item.product.nombre_presentacion}</p>
-                          <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-black uppercase border border-blue-100">
-                            {item.quantity * item.product.factor_conversion_cantidad} pzas totales
-                          </span>
+                  <div key={item.product.id_unidad_venta} className="flex flex-col p-1.5 border rounded-md bg-card shadow-sm hover:shadow-md transition-shadow">
+                    {/* Fila 1: Nombre y Borrar */}
+                    <div className="flex justify-between items-center gap-2">
+                      <div className="flex flex-col flex-1 truncate">
+                        <p className="font-bold text-sm md:text-base leading-tight truncate">
+                          {item.product.nombre_producto}
+                        </p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Badge variant="secondary" className="text-[11px] py-0.5 px-2 font-bold bg-slate-200 text-slate-700 border border-slate-300">
+                            {item.product.nombre_presentacion} {item.product.factor_conversion_cantidad > 1 ? `(${item.product.factor_conversion_cantidad} pzs)` : ''}
+                          </Badge>
                         </div>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                        onClick={() => removeProduct(item.product.id_producto)}
+                        className="h-6 w-6 text-destructive hover:bg-destructive/10 shrink-0"
+                        onClick={() => removeProduct(item.product.id_unidad_venta)}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
 
-                    {/* Controles Cantidad */}
-                    <div className="flex justify-between items-center bg-slate-50 p-1 rounded text-xs">
-                      <span className="text-muted-foreground ml-2">
-                        Disp: {item.product.stock_disponible_presentacion}
-                      </span>
-                      <div className="flex items-center gap-1">
+                    {/* Fila 2: Controles, Stock y Total */}
+                    <div className="flex items-center justify-between mt-1 gap-2">
+                      <div className="flex items-center bg-slate-100 rounded border p-0.5 gap-1 shrink-0">
                         <Button
-                          variant="outline" size="icon" className="h-6 w-6"
-                          onClick={() => decrementQuantity(item.product.id_producto)}
+                          variant="ghost" size="icon" className="h-6 w-6 hover:bg-white"
+                          onClick={() => decrementQuantity(item.product.id_unidad_venta)}
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
-                        <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
+                        <span className="w-7 text-center font-black text-sm">{item.quantity}</span>
                         <Button
-                          variant="outline" size="icon" className="h-6 w-6"
+                          variant="ghost" size="icon" className="h-6 w-6 hover:bg-white"
                           disabled={item.quantity >= item.product.stock_disponible_presentacion}
-                          onClick={() => incrementQuantity(item.product.id_producto)}
+                          onClick={() => incrementQuantity(item.product.id_unidad_venta)}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
+                      </div>
+
+                      <div className="flex flex-1 items-center justify-end gap-3 truncate">
+                        <span className="text-[11px] font-bold text-muted-foreground whitespace-nowrap">
+                          Stock: {item.product.stock_disponible_presentacion}
+                        </span>
+                        <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-bold border-blue-200 text-blue-700 bg-blue-50 whitespace-nowrap">
+                          {item.quantity * item.product.factor_conversion_cantidad} pzas
+                        </Badge>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </CardContent>
 
         <Separator />
 
-        <CardFooter className="flex flex-col gap-4 p-4 bg-slate-50">
-          <div className="w-full space-y-2">
-            <Label htmlFor="motivo">Motivo de la transferencia *</Label>
-            <Textarea
+        <CardFooter className="flex flex-col gap-2 p-3 bg-slate-50">
+          <div className="w-full space-y-1">
+            <Label htmlFor="motivo" className="font-bold text-sm">Motivo de transferencia *</Label>
+            <Input
               id="motivo"
-              placeholder="Ej. Reabastecimiento semanal..."
-              className="resize-none bg-white"
-              rows={3}
+              placeholder="Ej. Reabastecimiento..."
+              className="bg-white font-bold h-9"
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
             />
           </div>
 
           <Button
-            className="w-full gap-2"
+            className="w-full gap-2 font-bold"
             size="lg"
             onClick={transferirProductos}
             disabled={carrito.length === 0 || !motivo || !origen || !destino}
@@ -393,7 +375,6 @@ export default function CrearTransferencia() {
           </Button>
         </CardFooter>
       </Card>
-
     </div>
   );
 }

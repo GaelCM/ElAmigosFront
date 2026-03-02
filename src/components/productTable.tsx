@@ -262,7 +262,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
       <div className="flex-1 overflow-y-auto w-full" ref={tableRef}>
         <table className="w-full table-auto">
           <thead className="sticky top-0 bg-background">
-            <tr className="text-left text-sm text-muted-foreground border-b">
+            <tr className="text-left text-base font-bold text-muted-foreground border-b">
               <th className="px-3 py-2">Sku Presentación</th>
               <th className="px-3 py-2">Nombre</th>
               <th className="px-3 py-2">Unidad</th>
@@ -286,28 +286,28 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                   data-index={index}
 
                   className={`align-top border-t cursor-pointer transition-colors ${isSelected
-                    ? 'bg-primary/10 border-primary shadow-sm'
-                    : 'hover:bg-muted/50'
+                    ? 'bg-blue-300 border-blue-300 shadow-sm'
+                    : 'hover:bg-blue-100/50'
                     } ${outStock && !allowOutOfStock ? 'opacity-50' : ''}`}
                 >
-                  <td className="px-3 py-3 align-middle text-sm text-muted-foreground">{p.sku_presentacion}</td>
+                  <td className="px-3 py-3 align-middle text-base font-bold text-muted-foreground">{p.sku_presentacion}</td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="font-medium text-sm">{p.nombre_producto + " " + (p.es_granel ? "Granel" : p.nombre_presentacion) + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
+                    <div className="font-bold text-base">{p.nombre_producto + " " + (p.es_granel ? "Granel" : p.nombre_presentacion) + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
                   </td>
 
-                  <td className="px-3 py-3 align-middle text-sm ">
+                  <td className="px-3 py-3 align-middle text-base font-bold">
                     <Badge className={`${p.es_granel ? 'bg-green-600' : p.nombre_presentacion === "Pieza" ? 'bg-blue-600' : 'bg-orange-600'}`}>{p.es_granel ? "Granel" : p.nombre_presentacion}</Badge>
                   </td>
 
                   <td className="px-3 py-3 align-middle">
-                    <div className="text-sm text-muted-foreground max-w-md truncate">{p.descripcion}</div>
+                    <div className="text-base font-bold text-muted-foreground max-w-md truncate">{p.descripcion}</div>
                   </td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="text-sm font-semibold">${p.precio_venta.toFixed(2)}</div>
+                    <div className="text-base font-bold">${p.precio_venta.toFixed(2)}</div>
                   </td>
                   <td className="px-3 py-3 align-middle">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{p.stock_disponible_presentacion}</span>
+                      <span className="font-bold text-base">{p.stock_disponible_presentacion}</span>
                       {outStock ? (
                         <Badge variant="destructive">Agotado</Badge>
                       ) : lowStock ? (
@@ -316,10 +316,10 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                     </div>
                   </td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="text-sm font-semibold">{p.stock_piezas}</div>
+                    <div className="text-base font-bold">{p.stock_piezas}</div>
                   </td>
                   <td className="px-3 py-3 align-middle">
-                    <div className="text-sm font-semibold">${p.precio_mayoreo.toFixed(2)}</div>
+                    <div className="text-base font-bold">${p.precio_mayoreo.toFixed(2)}</div>
                   </td>
 
 

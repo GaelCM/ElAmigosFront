@@ -40,15 +40,15 @@ import { differenceInDays, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 const TIPO_ICONS: Record<string, React.ReactNode> = {
-    CARGO: <ShoppingCart className="h-4 w-4 text-destructive" />,
-    ABONO: <TrendingDown className="h-4 w-4 text-green-500" />,
-    LIQUIDACION: <CheckCircle className="h-4 w-4 text-blue-500" />,
+    cargo: <ShoppingCart className="h-4 w-4 text-destructive" />,
+    abono: <TrendingDown className="h-4 w-4 text-green-500" />,
+    liquidado: <CheckCircle className="h-4 w-4 text-blue-500" />,
 };
 
 const TIPO_LABELS: Record<string, string> = {
-    CARGO: "Venta a crédito",
-    ABONO: "Abono",
-    LIQUIDACION: "Liquidación total",
+    cargo: "Venta a crédito",
+    abono: "Abono",
+    liquidado: "Liquidación total",
 };
 
 export default function EstadoCuentaCliente() {
@@ -109,15 +109,52 @@ export default function EstadoCuentaCliente() {
         setAccionLoading(true);
         setAccionMsg(null);
         try {
+            const turnoDataString = localStorage.getItem("openCaja") || "{}";
+            const turnoData = JSON.parse(turnoDataString);
+            const id_turno = turnoData.id_turno;
+
+            if (!id_turno) {
+                setAccionMsg({ tipo: "error", texto: "No hay un turno de caja abierto." });
+                setAccionLoading(false);
+                return;
+            }
+
             const res = await registrarAbono({
                 id_cliente: Number(id_cliente),
                 monto,
                 id_usuario: user.id_usuario,
                 id_sucursal: user.id_sucursal,
+                id_turno: id_turno,
                 concepto: conceptoAbono || "Abono a cuenta",
             });
             if (!res.success) throw new Error(res.message);
             setAccionMsg({ tipo: "ok", texto: `Abono de $${monto.toFixed(2)} registrado. Nuevo saldo: $${res.data.saldo_nuevo.toFixed(2)}` });
+
+            // --- INICIO LÓGICA DE IMPRESIÓN ---
+            try {
+                const printerName = localStorage.getItem("printer_device");
+                if (printerName) {
+                    const ticketData = {
+                        printerName,
+                        sucursal: "Sucursal " + user.sucursal,
+                        usuario: user.usuario,
+                        cliente: credito?.nombre_cliente || "N/A",
+                        fecha: new Date(),
+                        monto: monto,
+                        saldoAnterior: credito?.saldo_actual || 0,
+                        saldoNuevo: res.data.saldo_nuevo,
+                        concepto: conceptoAbono || "Abono a cuenta",
+                        tipo: "ABONO",
+                        cortar: localStorage.getItem("printer_cut") !== "false"
+                    };
+                    // @ts-ignore
+                    await window["electron-api"]?.printTicketAbonoEscPos(ticketData);
+                }
+            } catch (printError) {
+                console.error("Error al imprimir ticket de abono:", printError);
+            }
+            // --- FIN LÓGICA DE IMPRESIÓN ---
+
             setDialogAbono(false);
             setMontoAbono("");
             setConceptoAbono("");
@@ -134,13 +171,50 @@ export default function EstadoCuentaCliente() {
         setAccionLoading(true);
         setAccionMsg(null);
         try {
+            const turnoDataString = localStorage.getItem("openCaja") || "{}";
+            const turnoData = JSON.parse(turnoDataString);
+            const id_turno = turnoData.id_turno;
+
+            if (!id_turno) {
+                setAccionMsg({ tipo: "error", texto: "No hay un turno de caja abierto." });
+                setAccionLoading(false);
+                return;
+            }
+
             const res = await liquidarDeuda({
                 id_cliente: Number(id_cliente),
                 id_usuario: user.id_usuario,
                 id_sucursal: user.id_sucursal,
+                id_turno: id_turno,
             });
             if (!res.success) throw new Error(res.message);
             setAccionMsg({ tipo: "ok", texto: `Deuda de $${res.data.monto_liquidado.toFixed(2)} liquidada completamente ✓` });
+
+            // --- INICIO LÓGICA DE IMPRESIÓN ---
+            try {
+                const printerName = localStorage.getItem("printer_device");
+                if (printerName) {
+                    const ticketData = {
+                        printerName,
+                        sucursal: "Sucursal " + user.sucursal,
+                        usuario: user.usuario,
+                        cliente: credito?.nombre_cliente || "N/A",
+                        fecha: new Date(),
+                        monto: res.data.monto_liquidado,
+                        saldoAnterior: res.data.monto_liquidado, // Liquidamos el total
+                        saldoNuevo: 0,
+                        concepto: "LIQUIDACION TOTAL DE DEUDA",
+                        tipo: "LIQUIDACION",
+                        cortar: localStorage.getItem("printer_cut") !== "false"
+                    };
+                    // @ts-ignore
+                    await window["electron-api"]?.printTicketAbonoEscPos(ticketData);
+                }
+            } catch (printError) {
+                console.error("Error al imprimir ticket de liquidación:", printError);
+            }
+            // --- FIN LÓGICA DE IMPRESIÓN ---
+
             setDialogLiquidar(false);
             cargarDatos();
         } catch (err: any) {
@@ -176,7 +250,7 @@ export default function EstadoCuentaCliente() {
     const saldo = Number(credito?.saldo_actual ?? 0);
     const limite = Number(credito?.limite_credito ?? 0);
     const pct = limite > 0 ? Math.min((saldo / limite) * 100, 100) : null;
-    const ultimoPago = historial.find((m) => m.tipo_movimiento === "abono" || m.tipo_movimiento === "liquidacion");
+    const ultimoPago = historial.find((m) => m.tipo_movimiento === "abono" || m.tipo_movimiento === "liquidado");
     const diasSinPago = ultimoPago
         ? differenceInDays(new Date(), parseISO(ultimoPago.fecha_movimiento))
         : historial.length > 0

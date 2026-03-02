@@ -111,8 +111,52 @@ export default function DetalleCortePage() {
                 </div>
 
                 <div className="flex gap-2">
+                    <Button variant="default" className="gap-2 shadow-sm bg-blue-600 hover:bg-blue-500" onClick={async () => {
+                        try {
+                            const printerName = localStorage.getItem("printer_device");
+                            if (printerName) {
+                                const ticketData = {
+                                    printerName,
+                                    sucursal: "Sucursal " + data.info_turno.sucursal,
+                                    usuario: data.info_turno.usuario_cierre || data.info_turno.usuario_apertura,
+                                    fecha: data.info_turno.fecha_cierre || new Date(),
+                                    id_turno: data.info_turno.id_turno,
+                                    ventas: {
+                                        total: data.metricas_principales.total_ventas,
+                                        efectivo: data.metricas_principales.ventas_efectivo,
+                                        tarjeta: data.metricas_principales.ventas_tarjeta,
+                                        credito: data.metricas_principales.ventas_credito,
+                                        numero: data.metricas_principales.numero_ventas
+                                    },
+                                    egresos: {
+                                        total: data.egresos.total_egresos,
+                                        compras: data.egresos.compras_efectivo,
+                                        gastos: data.egresos.gastos_efectivo
+                                    },
+                                    movimientos: {
+                                        depositos: data.movimientos_caja.depositos,
+                                        retiros: data.movimientos_caja.retiros
+                                    },
+                                    efectivo: {
+                                        inicial: data.control_efectivo.efectivo_inicial,
+                                        esperado: data.control_efectivo.efectivo_esperado,
+                                        contado: data.control_efectivo.efectivo_contado,
+                                        diferencia: data.control_efectivo.diferencia
+                                    },
+                                    abonos_recibidos: data.metricas_principales.abonos_credito,
+                                    cortar: localStorage.getItem("printer_cut") !== "false"
+                                };
+                                // @ts-ignore
+                                await window["electron-api"]?.printTicketCorteEscPos(ticketData);
+                            }
+                        } catch (e) {
+                            console.error("Error al imprimir corte desde auditoría:", e);
+                        }
+                    }}>
+                        <Printer className="h-4 w-4" /> Imprimir Ticket (Térmico)
+                    </Button>
                     <Button variant="outline" className="gap-2 shadow-sm" onClick={() => window.print()}>
-                        <Printer className="h-4 w-4" /> Imprimir Auditoría
+                        <Printer className="h-4 w-4" /> Vista Previa / PDF
                     </Button>
                 </div>
             </div>

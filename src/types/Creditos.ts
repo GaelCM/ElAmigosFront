@@ -2,7 +2,7 @@
 //  TIPOS - MÓDULO CRÉDITOS A CLIENTES
 // ─────────────────────────────────────────────────────────
 
-export type TipoMovimientoCredito = 'cargo' | 'abono' | 'liquidacion';
+export type TipoMovimientoCredito = 'cargo' | 'abono' | 'liquidado';
 
 export interface CreditoCliente {
     id_credito: number;
@@ -51,6 +51,7 @@ export interface AbonoPayload {
     monto: number;
     id_usuario: number;
     id_sucursal: number;
+    id_turno: number;
     concepto?: string;
 }
 
@@ -60,12 +61,14 @@ export interface CargaVentaPayload {
     id_venta: number;
     id_usuario: number;
     id_sucursal: number;
+    id_turno?: number;
 }
 
 export interface LiquidarDeudaPayload {
     id_cliente: number;
     id_usuario: number;
     id_sucursal: number;
+    id_turno: number;
 }
 
 // ── Respuestas ──
