@@ -46,12 +46,12 @@ export function ListPrints() {
                 setPrinters(list);
 
                 // Lógica de selección inicial:
-                // 1. Buscamos si ya guardamos una en localStorage
-                const savedPrinter = localStorage.getItem("printer_device");
-                const savedCut = localStorage.getItem("printer_cut");
+                // 1. Buscamos si ya guardamos una en electron-store
+                const savedPrinter = await api.getConfig("printer_device");
+                const savedCut = await api.getConfig("printer_cut");
 
-                if (savedCut !== null) {
-                    setCortarPapel(savedCut === "true");
+                if (savedCut !== undefined && savedCut !== null) {
+                    setCortarPapel(savedCut === true || savedCut === "true");
                 }
 
                 // 2. Verificamos que la guardada aún exista
@@ -64,7 +64,7 @@ export function ListPrints() {
                     const systemDefault = list.find((p: any) => p.isDefault);
                     if (systemDefault) {
                         setSelectedPrinter(systemDefault.name);
-                        localStorage.setItem("printer_device", systemDefault.name);
+                        await api.setConfig("printer_device", systemDefault.name);
                     }
                 }
             } else {
@@ -82,14 +82,16 @@ export function ListPrints() {
     }, []);
 
 
-    const handlePrinterChange = (value: string) => {
+    const handlePrinterChange = async (value: string) => {
         setSelectedPrinter(value);
-        localStorage.setItem("printer_device", value);
+        // @ts-ignore
+        await window["electron-api"]?.setConfig("printer_device", value);
     };
 
-    const handleCutChange = (checked: boolean) => {
+    const handleCutChange = async (checked: boolean) => {
         setCortarPapel(checked);
-        localStorage.setItem("printer_cut", String(checked));
+        // @ts-ignore
+        await window["electron-api"]?.setConfig("printer_cut", checked);
     };
 
     const handleTestPrintEscPos = async () => {

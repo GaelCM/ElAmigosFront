@@ -19,28 +19,43 @@ function createWindow() {
 
     const isDev = process.env.NODE_ENV !== 'production';
 
-    /*if (isDev) {
+    if (isDev) {
         // En desarrollo, carga desde el servidor local de Vite/React
         mainWindow.loadURL('http://localhost:5173'); // Cambia el puerto si usas otro
     } else {
         // En producción, carga el archivo generado
         mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
-    }*/
+    }
 
-    mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
+    //mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
 }
 
-app.whenReady().then(() => {
-    // Inicializamos el controlador de utilidades
-    utilsController();
-    offlineController();
+const gotTheLock = app.requestSingleInstanceLock();
 
-    createWindow();
-
-    app.on('activate', function () {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Alguien intentó abrir una segunda instancia, enfocamos la actual.
+        const mainWindow = BrowserWindow.getAllWindows()[0];
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+        }
     });
-});
+
+    app.whenReady().then(() => {
+        // Inicializamos el controlador de utilidades
+        utilsController();
+        offlineController();
+
+        createWindow();
+
+        app.on('activate', function () {
+            if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        });
+    });
+}
 
 app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') app.quit();

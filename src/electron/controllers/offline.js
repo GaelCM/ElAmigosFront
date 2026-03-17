@@ -1,5 +1,7 @@
 import { ipcMain } from "electron";
 import db from "../db.js";
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 function offlineController() {
     // Sincronizar catálogo de productos completo
@@ -71,9 +73,15 @@ function offlineController() {
 
     // Guardar una venta en la cola offline
     ipcMain.handle('guardar-venta-offline', (event, ventaPayload) => {
+
+        const timeZone = 'America/Mexico_City';
+        const now = new Date();
+        const zonedDate = toZonedTime(now, timeZone);
+        const fechaFormateada = format(zonedDate, 'yyyy-MM-dd HH:mm:ss');
+
         try {
-            const stmt = db.prepare('INSERT INTO offline_ventas (data_venta) VALUES (?)');
-            const info = stmt.run(JSON.stringify(ventaPayload));
+            const stmt = db.prepare('INSERT INTO offline_ventas (data_venta, fecha) VALUES (?, ?)');
+            const info = stmt.run(JSON.stringify(ventaPayload), fechaFormateada);
             return { success: true, id: info.lastInsertRowid };
         } catch (error) {
             console.error("Error al guardar venta offline:", error);

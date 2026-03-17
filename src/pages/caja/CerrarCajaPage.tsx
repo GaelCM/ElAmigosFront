@@ -21,32 +21,33 @@ export default function CerrarCajaPage() {
     const [loadingDashboard, setLoadingDashboard] = useState(false);
 
     useEffect(() => {
-        // Obtener ID del turno de localStorage
-        const corteStorage = localStorage.getItem("openCaja");
-        if (corteStorage) {
-            try {
-                const parsed = JSON.parse(corteStorage);
-                let currentId: number | null = null;
-                if (typeof parsed === 'number') {
-                    currentId = parsed;
-                } else if (parsed && typeof parsed === 'object' && (parsed.id || parsed.id_turno)) {
-                    currentId = parsed.id || parsed.id_turno;
-                } else if (!isNaN(Number(corteStorage))) {
-                    currentId = Number(corteStorage);
-                }
+        const checkOpenCaja = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const corteStore = await api?.getConfig("open_caja");
+            const corteStorage = localStorage.getItem("openCaja");
 
-                if (currentId) {
-                    setIdTurno(currentId);
-                    fetchDashboardData(currentId);
-                }
-            } catch (e) {
-                if (!isNaN(Number(corteStorage))) {
-                    const currentId = Number(corteStorage);
-                    setIdTurno(currentId);
-                    fetchDashboardData(currentId);
+            const rawData = corteStore || (corteStorage ? JSON.parse(corteStorage) : null);
+
+            if (rawData) {
+                try {
+                    let currentId: number | null = null;
+                    if (typeof rawData === 'number') {
+                        currentId = rawData;
+                    } else if (rawData && typeof rawData === 'object' && (rawData.id || rawData.id_turno)) {
+                        currentId = rawData.id || rawData.id_turno;
+                    }
+
+                    if (currentId) {
+                        setIdTurno(currentId);
+                        fetchDashboardData(currentId);
+                    }
+                } catch (e) {
+                    console.error("Error parsing caja data:", e);
                 }
             }
-        }
+        };
+        checkOpenCaja();
     }, []);
 
     const fetchDashboardData = async (id: number) => {
@@ -94,7 +95,8 @@ export default function CerrarCajaPage() {
 
             if (response.success) {
                 setResumenData(response.data);
-                localStorage.removeItem("openCaja");
+                // @ts-ignore
+                await window["electron-api"]?.setConfig("open_caja", null);
             } else {
                 setError(response.message);
             }
@@ -204,8 +206,12 @@ export default function CerrarCajaPage() {
                     <button
                         onClick={async () => {
                             try {
-                                const printerName = localStorage.getItem("printer_device");
+                                // @ts-ignore
+                                const api = window["electron-api"];
+                                const printerName = await api?.getConfig("printer_device");
+
                                 if (printerName) {
+                                    const isCut = (await api?.getConfig("printer_cut")) !== false;
                                     const ticketData = {
                                         printerName,
                                         sucursal: "Sucursal " + (user?.sucursal || ""),
@@ -217,10 +223,9 @@ export default function CerrarCajaPage() {
                                         movimientos: resumen.movimientos,
                                         efectivo: resumen.efectivo,
                                         abonos_recibidos: resumen.creditos?.abonos_recibidos || 0,
-                                        cortar: localStorage.getItem("printer_cut") !== "false"
+                                        cortar: isCut
                                     };
-                                    // @ts-ignore
-                                    await window["electron-api"]?.printTicketCorteEscPos(ticketData);
+                                    await api?.printTicketCorteEscPos(ticketData);
                                 }
                             } catch (e) {
                                 console.error("Error al imprimir corte:", e);

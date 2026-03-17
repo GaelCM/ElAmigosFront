@@ -26,7 +26,18 @@ export default function MisVentasReport() {
     const [soloTurnoActual, setSoloTurnoActual] = useState(false);
     const { user } = useCurrentUser();
 
-    const hasOpenCaja = !!localStorage.getItem("openCaja");
+    const [hasOpenCaja, setHasOpenCaja] = useState(false);
+
+    useEffect(() => {
+        const checkCaja = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const storeCaja = await api?.getConfig("open_caja");
+            if (storeCaja) setHasOpenCaja(true);
+            else setHasOpenCaja(!!localStorage.getItem("openCaja"));
+        };
+        checkCaja();
+    }, []);
 
     const obtenerMisVentas = async () => {
         setLoading(true);
@@ -36,9 +47,13 @@ export default function MisVentasReport() {
 
             // Si el usuario quiere filtrar por turno y hay una caja abierta
             if (soloTurnoActual) {
+                // @ts-ignore
+                const api = window["electron-api"];
+                const storeCaja = await api?.getConfig("open_caja");
                 const turnoDataString = localStorage.getItem("openCaja");
-                if (turnoDataString) {
-                    const data = JSON.parse(turnoDataString);
+
+                const data = storeCaja || (turnoDataString ? JSON.parse(turnoDataString) : null);
+                if (data) {
                     idTurno = data.id_turno;
                 }
             }

@@ -20,15 +20,17 @@ export default function Bienvenida({ onCajaOpened }: BienvenidaProps) {
 
         const res = await existCorteApi(user.id_usuario!, user.id_sucursal!);
         if (res.data.existe) {
-            localStorage.setItem("openCaja", JSON.stringify(res.data));
+            // @ts-ignore
+            const api = window["electron-api"];
+            await api?.setConfig("open_caja", res.data);
+
             onCajaOpened();
             toast.success("Caja abierta");
 
             // Abrir cajón de dinero al iniciar
-            const printerName = localStorage.getItem("printer_device");
+            const printerName = await api?.getConfig("printer_device");
             if (printerName) {
-                // @ts-ignore
-                window["electron-api"]?.openCashDrawer(printerName);
+                await api?.openCashDrawer(printerName);
             }
         } else {
             setIsOpen(true);

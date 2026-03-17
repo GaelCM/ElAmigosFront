@@ -10,17 +10,19 @@ export default function DashboardPage() {
     const [turnoId, setTurnoId] = useState<number | null>(null);
 
     useEffect(() => {
-        const turnoDataString = localStorage.getItem("openCaja");
-        if (turnoDataString) {
-            try {
-                const data = JSON.parse(turnoDataString);
-                if (data && data.id_turno) {
-                    setTurnoId(data.id_turno);
-                }
-            } catch (e) {
-                console.error("Error parsing openCaja", e);
+        const checkTurno = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const storeCaja = await api?.getConfig("open_caja");
+            const turnoDataString = localStorage.getItem("openCaja");
+
+            const data = storeCaja || (turnoDataString ? JSON.parse(turnoDataString) : null);
+
+            if (data && data.id_turno) {
+                setTurnoId(data.id_turno);
             }
-        }
+        };
+        checkTurno();
     }, []);
 
     if (!turnoId && user.id_rol == 1) {

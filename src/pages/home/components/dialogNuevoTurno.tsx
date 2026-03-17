@@ -55,7 +55,10 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
             })
             if (res.success) {
                 console.log(res.data)
-                localStorage.setItem("openCaja", JSON.stringify(res.data))
+                // @ts-ignore
+                const api = window["electron-api"];
+                await api?.setConfig("open_caja", res.data);
+
                 toast.success("Turno abierto exitosamente.", {
                     description: "El turno se abrió correctamente.",
                 })
@@ -63,10 +66,9 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
                 onCajaOpened()
 
                 // Abrir cajón de dinero al iniciar turno nuevo
-                const printerName = localStorage.getItem("printer_device");
+                const printerName = await api?.getConfig("printer_device");
                 if (printerName) {
-                    // @ts-ignore
-                    window["electron-api"]?.openCashDrawer(printerName);
+                    await api?.openCashDrawer(printerName);
                 }
             } else {
                 toast("Error al abrir el turno.", {

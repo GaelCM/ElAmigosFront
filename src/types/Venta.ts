@@ -16,6 +16,7 @@ interface CarritoItem {
     sku_pieza: string;
   };
   quantity: number;
+  usarPrecioMayoreo?: boolean;
 }
 
 export interface CarritoPayload {

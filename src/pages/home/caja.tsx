@@ -12,7 +12,7 @@ import DialogConfirmVenta from "./components/dialogConfirmVenta";
 import AddCliente from "@/components/dialogAddCliente";
 import { getProductoVenta } from "@/api/productosApi/productosApi";
 import DialiogErrorProducto from "./Dialogs/noEncontrado";
-import { useOutletContext } from "react-router";
+import { useOutletContext, useNavigate } from "react-router";
 import CarritoTabs from "@/components/carritoTabs";
 import { Switch } from "@/components/ui/switch";
 import { useCurrentUser } from "@/contexts/currentUser";
@@ -28,6 +28,7 @@ import { redondearPrecio } from "@/lib/utils";
 
 export default function Home() {
     const { user } = useCurrentUser();
+    const navigate = useNavigate();
     const [idProducto, setidProducto] = useState<string>();
     const [metodoPago, setMetodoPago] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -233,6 +234,9 @@ export default function Home() {
 
         if (isOnline) {
             const syncPendingSales = async () => {
+                // Si el diálogo de confirmación está abierto, pausamos la sincronización para priorizar la red
+                if (isOpen) return;
+
                 // @ts-ignore
                 const pendingSales = await window["electron-api"]?.obtenerVentasPendientes();
                 if (pendingSales && pendingSales.length > 0) {
@@ -269,7 +273,7 @@ export default function Home() {
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isOnline]);
+    }, [isOnline, isOpen]);
 
     useEffect(() => {
         setFocusScanner(() => focusInput);
@@ -322,7 +326,10 @@ export default function Home() {
                             </div>
                             <div className="flex items-center gap-2">
                                 {pendingCount > 0 && (
-                                    <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full animate-pulse font-bold">
+                                    <span 
+                                        onClick={() => navigate("/reportes/ventasPendientes")}
+                                        className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full animate-pulse font-bold cursor-pointer hover:bg-orange-200 transition-colors"
+                                    >
                                         {pendingCount} Pendientes
                                     </span>
                                 )}
@@ -429,43 +436,53 @@ export default function Home() {
                                                     </Badge>
                                                 </div>
                                             </div>
-                                            <div className="text-right shrink-0">
-                                                <p className="text-sm font-black text-primary">
-                                                    ${((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}
-                                                </p>
+                                            <div className="flex items-end gap-4 shrink-0 text-right">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-bold text-muted-foreground uppercase leading-none">Precio</span>
+                                                    <p className="text-sm font-black text-slate-600">
+                                                        ${(producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta).toFixed(2)}
+                                                    </p>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-bold text-muted-foreground uppercase leading-none">Cant.</span>
+                                                    <p className="text-sm font-black text-slate-600">
+                                                        {producto.quantity}
+                                                    </p>
+                                                </div>
+                                                <div className="flex flex-col min-w-[60px]">
+                                                    <span className="text-[9px] font-bold text-muted-foreground uppercase leading-none">Importe</span>
+                                                    <p className="text-sm font-black text-primary">
+                                                        ${((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center justify-between gap-4 ml-8">
-                                            <div className="flex items-center gap-1.5">
-                                                <p className="text-[10px] font-bold text-muted-foreground mr-1">
-                                                    ${(producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta).toFixed(2)} p/u
-                                                </p>
-                                                <div className="flex items-center bg-white border border-slate-200 rounded-md h-7 px-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            decrementQuantity(producto.product.id_unidad_venta);
-                                                        }}
-                                                        className="w-5 h-5 p-0 hover:bg-slate-100"
-                                                    >
-                                                        <Minus className="w-2.5 h-2.5" />
-                                                    </Button>
-                                                    <span className="min-w-[28px] text-center font-black text-xs text-slate-700">{producto.quantity}</span>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            incrementQuantity(producto.product.id_unidad_venta);
-                                                        }}
-                                                        className="w-5 h-5 p-0 hover:bg-slate-100"
-                                                    >
-                                                        <Plus className="w-2.5 h-2.5" />
-                                                    </Button>
-                                                </div>
+                                            <div className="flex items-center bg-white border border-slate-200 rounded-md h-7 px-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        decrementQuantity(producto.product.id_unidad_venta);
+                                                    }}
+                                                    className="w-5 h-5 p-0 hover:bg-slate-100"
+                                                >
+                                                    <Minus className="w-2.5 h-2.5" />
+                                                </Button>
+                                                <span className="min-w-[28px] text-center font-black text-xs text-slate-700">{producto.quantity}</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        incrementQuantity(producto.product.id_unidad_venta);
+                                                    }}
+                                                    className="w-5 h-5 p-0 hover:bg-slate-100"
+                                                >
+                                                    <Plus className="w-2.5 h-2.5" />
+                                                </Button>
                                             </div>
 
                                             <div className="flex items-center gap-3">

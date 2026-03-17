@@ -17,6 +17,10 @@ export interface TransferenciaProducto {
     id_sucursal: number;
     stock_piezas: number;
     stock_disponible_presentacion: number;
+    componentes?: {
+        nombre_componente: string;
+        cantidad_por_unidad: number;
+    }[];
 }
 
 export interface TransferenciaItem {
@@ -92,7 +96,13 @@ export interface DetalleTransferenciaDTO {
     productos: ProductoDetalleDTO[];
 }
 
-interface ProductoDetalleDTO {
+export interface ComponenteDetalleDTO {
+    nombre_componente: string;
+    cantidad_por_unidad: number;
+    total_piezas: number;
+}
+
+export interface ProductoDetalleDTO {
     id_detalle_transferencia: number;
     id_producto: number;
     nombre_producto: string;
@@ -102,6 +112,8 @@ interface ProductoDetalleDTO {
     factor_conversion_cantidad: number;
     cantidad_enviada: number;
     cantidad_recibida: number;
+    es_producto_compuesto: number;
+    componentes?: ComponenteDetalleDTO[];
 }
 
 

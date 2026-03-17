@@ -42,6 +42,10 @@ export interface ProductoVenta {
     stock_piezas: number;
     stock_disponible_presentacion: number;
     es_granel: boolean;
+    componentes?: {
+        nombre_componente: string;
+        cantidad_por_unidad: number;
+    }[];
 }
 
 export type ProductoVentaResponse = {

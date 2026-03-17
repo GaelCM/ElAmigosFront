@@ -1,6 +1,6 @@
 import type { ReporteEgresoItem } from "@/types/Egresos";
 import type { ReporteBajoStockResponse, ReporteMovimientoItem } from "@/types/Reportes";
-import type { DetalleVentaResponse, ReporteVentaDetallado, ReporteVentasMensualesResponse } from "@/types/ReporteVentasT";
+import type { DetalleVentaResponse, ReporteVentasMensualesResponse, ReporteVentasResponse } from "@/types/ReporteVentasT";
 
 
 export const obtenerReporteMisVentas = async (fechaDesde: string, fechaHasta: string, idUsuario?: number, idTurno?: number, idSucursal?: number) => {
@@ -19,7 +19,7 @@ export const obtenerReporteMisVentas = async (fechaDesde: string, fechaHasta: st
         })
     });
     const data = await res.json();
-    return data as { success: boolean, message: string, data: ReporteVentaDetallado[] };
+    return data as ReporteVentasResponse;
 }
 
 

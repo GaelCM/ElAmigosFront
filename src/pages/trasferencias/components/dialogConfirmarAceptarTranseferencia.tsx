@@ -10,7 +10,7 @@ import { useCurrentUser } from "@/contexts/currentUser";
 import type { DetalleTransferenciaDTO } from "@/types/Transferencias";
 import { format } from "date-fns";
 import { ArrowRight, Calendar, MapPin, Package, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { toast } from "sonner";
 
 interface DialogProps {
@@ -72,7 +72,7 @@ export default function DialogConfirmarAceptarTranseferencia({ isOpen, setIsOpen
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="flex flex-col sm:max-w-[950px] ">
+            <DialogContent className="sm:max-w-[950px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-xl">Detalle de Transferencia #{idTransferencia}</DialogTitle>
                     <DialogDescription>
@@ -80,7 +80,7 @@ export default function DialogConfirmarAceptarTranseferencia({ isOpen, setIsOpen
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-hidden flex flex-col gap-4 py-2">
+                <div className="flex flex-col gap-4 py-2">
                     {loading ? (
                         <div className="flex items-center justify-center h-64">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -145,8 +145,9 @@ export default function DialogConfirmarAceptarTranseferencia({ isOpen, setIsOpen
                                     <div className="flex items-center gap-2">
                                         <Package className="h-4 w-4" /> Productos ({detalleTransferencia.productos.length})
                                     </div>
-                                    <div className="text-muted-foreground">
-                                        Total Piezas: {detalleTransferencia.productos.reduce((acc, prod) => acc + prod.cantidad_enviada, 0)}
+                                    <div className="flex gap-4 text-muted-foreground">
+                                        <span>Paquetes: {detalleTransferencia.productos.reduce((acc, prod) => acc + Math.round(prod.cantidad_enviada / prod.factor_conversion_cantidad), 0)}</span>
+                                        <span>Piezas: {detalleTransferencia.productos.reduce((acc, prod) => acc + prod.cantidad_enviada, 0)}</span>
                                     </div>
                                 </div>
                                 <ScrollArea className="flex-1">
@@ -155,18 +156,53 @@ export default function DialogConfirmarAceptarTranseferencia({ isOpen, setIsOpen
                                             <TableRow>
                                                 <TableHead>Producto</TableHead>
                                                 <TableHead>SKU</TableHead>
-                                                <TableHead>Presentación</TableHead>
                                                 <TableHead className="text-right">Cant. Enviada</TableHead>
+                                                <TableHead className="text-right">Cant. Piezas</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {detalleTransferencia.productos.map((prod) => (
-                                                <TableRow key={prod.id_detalle_transferencia}>
-                                                    <TableCell className="font-medium">{prod.nombre_producto}</TableCell>
-                                                    <TableCell className="font-mono text-xs text-muted-foreground">{prod.sku_pieza}</TableCell>
-                                                    <TableCell>{prod.nombre_presentacion}</TableCell>
-                                                    <TableCell className="text-right font-bold">{prod.cantidad_enviada}</TableCell>
-                                                </TableRow>
+                                                <Fragment key={prod.id_detalle_transferencia}>
+                                                    <TableRow className={Number(prod.es_producto_compuesto) === 1 ? "bg-amber-50/30" : ""}>
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span>{prod.nombre_producto}</span>
+                                                                <div className="flex items-center gap-1 flex-wrap">
+                                                                    <Badge variant="outline" className="w-fit text-[10px] h-4 px-1.5 bg-slate-100 text-slate-500 border-slate-200 font-normal">
+                                                                        {prod.nombre_presentacion}
+                                                                    </Badge>
+                                                                    {Number(prod.es_producto_compuesto) === 1 && (
+                                                                        <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 bg-amber-100 text-amber-700 border-amber-200">
+                                                                            Compuesto
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="font-mono text-xs text-muted-foreground">{prod.sku_pieza}</TableCell>
+                                                        <TableCell className="text-right font-bold">{Math.round(prod.cantidad_enviada / prod.factor_conversion_cantidad)}</TableCell>
+                                                        <TableCell className="text-right text-muted-foreground">{prod.cantidad_enviada}</TableCell>
+                                                    </TableRow>
+                                                    {(Number(prod.es_producto_compuesto) === 1 && prod.componentes && prod.componentes.length > 0) && (
+                                                        <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                                                            <TableCell colSpan={4} className="py-2 pl-10 border-b">
+                                                                <div className="flex flex-col gap-1.5 border-l-2 border-amber-200 pl-4 py-1">
+                                                                    <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Desglose de componentes:</span>
+                                                                    {prod.componentes.map((comp, idx) => (
+                                                                        <div key={idx} className="flex justify-between items-center text-xs text-slate-600">
+                                                                            <span className="flex items-center gap-1.5">
+                                                                                <div className="w-1 h-1 rounded-full bg-amber-400" />
+                                                                                {comp.nombre_componente}
+                                                                                <span className="text-[10px] text-slate-400">({comp.cantidad_por_unidad} pza/u)</span>
+                                                                            </span>
+                                                                            <span className="font-semibold text-slate-800">{comp.total_piezas} piezas</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </Fragment>
                                             ))}
                                         </TableBody>
                                     </Table>

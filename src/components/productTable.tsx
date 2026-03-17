@@ -156,7 +156,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
   }, [productos, searchTerm]);
 
   const [currentPage, setCurrentPage] = useState<number>(1)
-  const [pageSize, setPageSize] = useState<number>(50)
+  const [pageSize, setPageSize] = useState<number>(20)
 
 
   const totalItems = filteredProductos.length || 0

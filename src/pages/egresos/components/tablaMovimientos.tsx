@@ -94,17 +94,19 @@ export default function TablaMovimientos({ turnoId }: { turnoId: number | null }
 
                     // --- INICIO LÓGICA DE IMPRESIÓN ESC/POS ---
                     try {
-                        const printerName = localStorage.getItem("printer_device");
+                        // @ts-ignore
+                        const api = window["electron-api"];
+                        const printerName = await api?.getConfig("printer_device");
+
                         if (printerName) {
-                            // @ts-ignore
-                            window["electron-api"]?.printTicketMovimientoEscPos({
+                            await api?.printTicketMovimientoEscPos({
                                 printerName,
                                 sucursal: "Sucursal " + user.sucursal,
                                 usuario: user.usuario,
                                 fecha: new Date(),
                                 monto: payload.monto,
                                 concepto: payload.concepto,
-                                tipo: payload.tipo_movimiento === 0 ? "DEPÓSITO" : "RETIRO",
+                                tipo: payload.tipo_movimiento === 0 ? "RETIRO" : "DEPÓSITO",
                                 abrirCajon: true
                             });
                         }

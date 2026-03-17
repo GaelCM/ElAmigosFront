@@ -91,13 +91,12 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         if (sortedVentas.length === 0) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Don't navigate if focused on input
+            // Si el diálogo está abierto, bloqueamos la navegación de la tabla
+            if (isCancelDialogOpen) return;
+
+            // Don't navigate if focused on input (except Enter to open details)
             if (document.activeElement?.tagName === 'INPUT') {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    // Allow moving focus from search to table? 
-                } else if (e.key === 'Enter') {
-                    // Default behavior
-                } else {
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') {
                     return;
                 }
             }
@@ -179,8 +178,20 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         setIsCancelDialogOpen(true);
     };
 
-    const totalVentas = filteredVentas.reduce((sum, venta) => sum + Number(venta.total_venta), 0);
-    const totalProductos = filteredVentas.reduce((sum, venta) => sum + Number(venta.cantidad_productos), 0);
+    const totalVentas = filteredVentas.reduce((sum, venta) => {
+        return venta.estado_venta === 1 ? sum + Number(venta.total_venta) : sum;
+    }, 0);
+
+    const totalCancelado = filteredVentas.reduce((sum, venta) => {
+        return venta.estado_venta === 0 ? sum + Number(venta.total_venta) : sum;
+    }, 0);
+
+    const ventasExitosas = filteredVentas.filter(v => v.estado_venta === 1).length;
+    const ventasCanceladas = filteredVentas.filter(v => v.estado_venta === 0).length;
+
+    const totalProductos = filteredVentas.reduce((sum, venta) => {
+        return venta.estado_venta === 1 ? sum + Number(venta.cantidad_productos) : sum;
+    }, 0);
 
     if (loading) {
         return (
@@ -217,16 +228,16 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                 <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Total Ventas
+                            Ventas Exitosas
                         </CardTitle>
                         <div className="p-2 bg-blue-500/10 rounded-lg">
                             <Receipt className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">{filteredVentas.length}</div>
+                        <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">{ventasExitosas}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Transacciones realizadas
+                            {ventasCanceladas > 0 ? `${ventasCanceladas} canceladas (no sumadas)` : "Sin cancelaciones"}
                         </p>
                     </CardContent>
                 </Card>
@@ -234,7 +245,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                 <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Ingresos Totales
+                            Ingresos Reales
                         </CardTitle>
                         <div className="p-2 bg-emerald-500/10 rounded-lg">
                             <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -245,7 +256,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                             {formatCurrency(totalVentas)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Monto total vendido
+                            Excluye {formatCurrency(totalCancelado)} cancelados
                         </p>
                     </CardContent>
                 </Card>
@@ -262,7 +273,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                     <CardContent>
                         <div className="text-3xl font-bold text-purple-700 dark:text-purple-400">{totalProductos}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Unidades totales
+                            En ventas completadas
                         </p>
                     </CardContent>
                 </Card>
@@ -278,10 +289,10 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-amber-700 dark:text-amber-400">
-                            {formatCurrency(filteredVentas.length > 0 ? totalVentas / filteredVentas.length : 0)}
+                            {formatCurrency(ventasExitosas > 0 ? totalVentas / ventasExitosas : 0)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Promedio por venta
+                            De ventas completadas
                         </p>
                     </CardContent>
                 </Card>

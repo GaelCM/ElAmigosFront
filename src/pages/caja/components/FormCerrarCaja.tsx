@@ -68,13 +68,16 @@ export default function FormCerrarCaja({ onSubmit, isLoading }: FormCerrarCajaPr
                     )}
                 </Button>
             </form>
-            <Button className="w-full cursor-pointer mt-4" size="icon" variant="destructive" onClick={() => {
+            <Button className="w-full cursor-pointer mt-4" size="icon" variant="destructive" onClick={async () => {
+                // @ts-ignore
+                const api = window["electron-api"];
+                await api?.setConfig("open_caja", null);
                 localStorage.removeItem("tkn");
                 localStorage.removeItem("currentUser");
                 localStorage.removeItem("openCaja");
                 navigate("/login");
             }}>
-                Salir del sistema
+                Salir del sistema con turno abierto
             </Button>
         </>
     )

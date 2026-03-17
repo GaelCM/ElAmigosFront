@@ -184,11 +184,20 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                         <Button
                             variant="destructive"
                             className="w-full justify-start gap-2 bg-red-500 hover:bg-red-500 border-red-500 text-white hover:text-white font-semibold"
-                            onClick={() => {
-                                if (localStorage.getItem("openCaja") != null) {
+                            onClick={async () => {
+                                // @ts-ignore
+                                const api = window["electron-api"];
+                                const storeCaja = await api?.getConfig("open_caja");
+                                const localCaja = localStorage.getItem("openCaja");
+
+                                if (storeCaja != null || localCaja != null) {
+                                    // Si hay un turno abierto, primero enviamos a cerrar caja
                                     navigate("/cerrar-caja");
                                     return;
                                 }
+
+                                // Si no hay turno, cerramos sesión directo
+                                await api?.setConfig("open_caja", null);
                                 localStorage.removeItem("tkn");
                                 localStorage.removeItem("currentUser");
                                 localStorage.removeItem("openCaja");

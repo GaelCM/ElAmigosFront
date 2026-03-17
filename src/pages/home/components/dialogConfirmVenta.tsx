@@ -34,11 +34,25 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const carritoActual = getCarritoActivo();
     const totalVenta = redondearPrecio(getTotalPrice());
     const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
-    const turnoDataString = localStorage.getItem("openCaja") || "{}";
-    const turnoData = JSON.parse(turnoDataString);
+    const [turnoData, setTurnoData] = useState<any>({});
     const isOnline = useOnlineStatus();
-    const [modoTurbo, setModoTurbo] = useState(() => localStorage.getItem("modo_turbo") === "true");
+    const [modoTurbo, setModoTurbo] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+
+    useEffect(() => {
+        const loadSettings = async () => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const tData = await api?.getConfig("open_caja");
+            const mTurbo = await api?.getConfig("modo_turbo");
+
+            if (tData) setTurnoData(tData);
+            if (mTurbo !== undefined) setModoTurbo(!!mTurbo);
+        };
+        if (isOpen) {
+            loadSettings();
+        }
+    }, [isOpen]);
 
     useHotkeys("f1", () => {
         nuevaVenta(true);
@@ -129,9 +143,13 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
                     // Lógica de impresión (ESC/POS Offline)
                     try {
-                        const printerName = localStorage.getItem("printer_device");
+                        // @ts-ignore
+                        const api = window["electron-api"];
+                        const printerName = await api?.getConfig("printer_device");
+
                         if (printerName) {
                             if (isImprimir || metodoPago === 2) {
+                                const isCut = (await api?.getConfig("printer_cut")) !== false;
                                 const ticketData = {
                                     printerName,
                                     sucursal: "Sucursal " + user.sucursal,
@@ -153,15 +171,13 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                     ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
                                     turno: turnoData?.id_turno || "0",
                                     metodo_pago: metodoPago,
-                                    cortar: localStorage.getItem("printer_cut") !== "false"
+                                    cortar: isCut
                                 };
 
-                                // @ts-ignore
-                                await window["electron-api"]?.printTicketVentaEscPos(ticketData);
+                                await api?.printTicketVentaEscPos(ticketData);
                                 toast.success("Ticket enviado a imprimir");
                             } else {
-                                // @ts-ignore
-                                await window["electron-api"]?.openCashDrawer(printerName);
+                                await api?.openCashDrawer(printerName);
                             }
                         } else {
                             toast.error("No se ha configurado una impresora en ajustes");
@@ -186,9 +202,13 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
                 // --- INICIO LÓGICA DE IMPRESIÓN (ESC/POS) ---
                 try {
-                    const printerName = localStorage.getItem("printer_device");
+                    // @ts-ignore
+                    const api = window["electron-api"];
+                    const printerName = await api?.getConfig("printer_device");
+
                     if (printerName) {
                         if (isImprimir || metodoPago === 2) {
+                            const isCut = (await api?.getConfig("printer_cut")) !== false;
                             const ticketData = {
                                 printerName,
                                 sucursal: "Sucursal " + user.sucursal,
@@ -210,15 +230,13 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
                                 turno: turnoData?.id_turno || "0",
                                 metodo_pago: metodoPago,
-                                cortar: localStorage.getItem("printer_cut") !== "false"
+                                cortar: isCut
                             };
 
-                            // @ts-ignore
-                            await window["electron-api"]?.printTicketVentaEscPos(ticketData);
+                            await api?.printTicketVentaEscPos(ticketData);
                             toast.success("Ticket enviado a imprimir");
                         } else {
-                            // @ts-ignore
-                            await window["electron-api"]?.openCashDrawer(printerName);
+                            await api?.openCashDrawer(printerName);
                             toast.success("Venta finalizada (Sin ticket)");
                         }
                     }
@@ -290,9 +308,10 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 id="modo-turbo"
                                 checked={modoTurbo}
                                 className="scale-75"
-                                onCheckedChange={(val) => {
+                                onCheckedChange={async (val) => {
                                     setModoTurbo(val);
-                                    localStorage.setItem("modo_turbo", val.toString());
+                                    // @ts-ignore
+                                    await window["electron-api"]?.setConfig("modo_turbo", val);
                                 }}
                             />
                         </div>

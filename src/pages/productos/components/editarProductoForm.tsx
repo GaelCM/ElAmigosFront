@@ -140,13 +140,7 @@ export default function EditarProductoForm() {
     cargarProducto();
   }, [id_producto, form.reset]);
 
-  // Sincronizar SKU de la pieza base con la primera variante
-  const skuPieza = watch("sku_pieza");
-  useEffect(() => {
-    if (variantes.length > 0 && variantes[0].sku_presentacion !== skuPieza) {
-      form.setValue("variantes.0.sku_presentacion", skuPieza);
-    }
-  }, [skuPieza, form, variantes.length]);
+
 
 
   const onSubmit = async (values: FormValues) => {
@@ -515,8 +509,7 @@ export default function EditarProductoForm() {
                   <FormControl>
                     <Input
                       {...field}
-                      disabled={index === 0}
-                      placeholder={index === 0 ? "Se hereda del SKU de pieza" : "Escanea el código del paquete"}
+                      placeholder="Escanea el código de barras"
                       onFocus={(e) => e.target.select()}
                     />
                   </FormControl>

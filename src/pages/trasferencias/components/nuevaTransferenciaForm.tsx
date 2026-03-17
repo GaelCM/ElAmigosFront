@@ -12,11 +12,13 @@ import { useCurrentUser } from "@/contexts/currentUser";
 import { useTransferirProductos } from "@/contexts/listaTransferencia";
 import type { ProductoVenta } from "@/types/Producto";
 import type { Sucursal } from "@/types/Sucursal";
-import { Minus, PackageOpen, Plus, Search, Send, Trash2 } from "lucide-react";
+import { AlertCircle, Minus, PackageOpen, Plus, Search, Send, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState, } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 export default function CrearTransferencia() {
   // --- ESTADO ---
@@ -27,6 +29,8 @@ export default function CrearTransferencia() {
   const [busqueda, setBusqueda] = useState("");
   const [sucursalLista, setSucursalLista] = useState<Sucursal[]>([]);
   const [productosLista, setProductosLista] = useState<ProductoVenta[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // --- ZUSTAND STORE ---
   const {
@@ -53,7 +57,6 @@ export default function CrearTransferencia() {
   useEffect(() => {
     let mounted = true;
     setProductosLista([]);
-    clearCart();
 
     const fetchProductos = async () => {
       try {
@@ -63,11 +66,19 @@ export default function CrearTransferencia() {
             setProductosLista(res.data);
           } else {
             setProductosLista([]);
+            toast.error("Error al cargar productos", {
+              description: res.message || "No se pudieron obtener los productos de esta sucursal."
+            });
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error obteniendo productos:", error);
-        if (mounted) setProductosLista([]);
+        if (mounted) {
+          setProductosLista([]);
+          toast.error("Error de conexión", {
+            description: "No se pudo establecer conexión con el servidor de inventario."
+          });
+        }
       }
     };
 
@@ -90,6 +101,7 @@ export default function CrearTransferencia() {
 
   // --- HANDLERS ---
   const transferirProductos = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    setErrorMessage(null);
     const timeZone = "America/Mexico_City";
     const now = new Date();
     const zonedDate = toZonedTime(now, timeZone);
@@ -123,9 +135,11 @@ export default function CrearTransferencia() {
       setMotivo("");
       clearCart();
       setDestino("");
+      navigate("/transferencias");
     } else {
-      toast.error("Error al crear la transferencia. Intenta nuevamente.", {
-        description: res.message || "Error desconocido.",
+      setErrorMessage(res.message || "Ocurrió un error inesperado al procesar la transferencia.");
+      toast.error("Error al crear la transferencia", {
+        description: "Revisa los detalles en el panel de resumen.",
       });
     }
   };
@@ -299,11 +313,27 @@ export default function CrearTransferencia() {
                         <p className="font-bold text-sm md:text-base leading-tight truncate">
                           {item.product.nombre_producto}
                         </p>
-                        <div className="flex items-center gap-1 mt-0.5">
+                        <div className="flex flex-wrap items-center gap-1 mt-0.5">
                           <Badge variant="secondary" className="text-[11px] py-0.5 px-2 font-bold bg-slate-200 text-slate-700 border border-slate-300">
                             {item.product.nombre_presentacion} {item.product.factor_conversion_cantidad > 1 ? `(${item.product.factor_conversion_cantidad} pzs)` : ''}
                           </Badge>
+                          {item.product.es_producto_compuesto === 1 && (
+                            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 py-0 h-4">
+                              Compuesto (Ver Desglose)
+                            </Badge>
+                          )}
                         </div>
+                        {/* Desglose de componentes en el carrito */}
+                        {item.product.es_producto_compuesto === 1 && item.product.componentes && (
+                          <div className="mt-2 pl-3 border-l-2 border-amber-200 flex flex-col gap-1">
+                            {item.product.componentes.map((comp: any, idx: number) => (
+                              <div key={idx} className="flex justify-between items-center text-[10px] text-slate-500">
+                                <span>• {comp.nombre_componente}</span>
+                                <span className="font-semibold text-slate-700">{comp.cantidad_por_unidad * item.quantity} pzas</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <Button
                         variant="ghost"
@@ -354,13 +384,30 @@ export default function CrearTransferencia() {
 
         <CardFooter className="flex flex-col gap-2 p-3 bg-slate-50">
           <div className="w-full space-y-1">
+            {errorMessage && (
+              <Alert variant="destructive" className="mb-4 bg-red-50 border-red-200 animate-in fade-in slide-in-from-top-1 duration-300">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle className="font-bold flex justify-between items-center">
+                  Atención requerida
+                  <Button variant="ghost" size="icon" className="h-5 w-5 p-0 hover:bg-red-100" onClick={() => setErrorMessage(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </AlertTitle>
+                <AlertDescription className="text-xs font-semibold">
+                  {errorMessage}
+                </AlertDescription>
+              </Alert>
+            )}
             <Label htmlFor="motivo" className="font-bold text-sm">Motivo de transferencia *</Label>
             <Input
               id="motivo"
               placeholder="Ej. Reabastecimiento..."
               className="bg-white font-bold h-9"
               value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
+              onChange={(e) => {
+                setMotivo(e.target.value);
+                if (errorMessage) setErrorMessage(null);
+              }}
             />
           </div>
 

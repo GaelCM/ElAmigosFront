@@ -421,6 +421,7 @@ export default function MisTransferencias() {
         setTransferencias(res.data);
       } else {
         setTransferencias([]);
+        toast.error("Error al cargar historial", { description: res.message });
       }
     });
 
@@ -447,13 +448,17 @@ export default function MisTransferencias() {
       const resDetalle = await obtenerDetalleTransferenciaApi(id);
       if (resDetalle.success) {
         const transfer = resDetalle.data;
-        const printerName = localStorage.getItem("printer_device");
+
+        // @ts-ignore
+        const api = window["electron-api"];
+        const printerName = await api?.getConfig("printer_device");
 
         if (!printerName) {
           toast.error("No se ha configurado una impresora en ajustes");
           return;
         }
 
+        const isCut = (await api?.getConfig("printer_cut")) !== false;
         const ticketData = {
           printerName,
           id_transferencia: transfer.id_transferencia,
@@ -463,11 +468,10 @@ export default function MisTransferencias() {
           fecha: transfer.fecha_envio || transfer.fecha_creacion,
           productos: transfer.productos, // [{ nombre_producto, nombre_presentacion, cantidad_enviada }]
           motivo: transfer.motivo,
-          cortar: localStorage.getItem("printer_cut") !== "false"
+          cortar: isCut
         };
 
-        // @ts-ignore
-        await window["electron-api"]?.printTicketTransferenciaEscPos(ticketData);
+        await api?.printTicketTransferenciaEscPos(ticketData);
         toast.success("Ticket de transferencia enviado a imprimir");
       } else {
         toast.error("No se pudo obtener el detalle para imprimir");

@@ -61,10 +61,10 @@ export default function ClientesXCreditos() {
     // ── Helpers visuales ──────────────────────────────────
     const getDiasSinPago = (cliente: CreditoClienteCompleto): number | null => {
         if (cliente.ultima_fecha_pago) {
-            return differenceInDays(new Date(), parseISO(cliente.ultima_fecha_pago));
+            return differenceInDays(new Date(), parseISO(cliente.ultima_fecha_pago.replace('Z', '')));
         }
         if (cliente.primer_cargo) {
-            return differenceInDays(new Date(), parseISO(cliente.primer_cargo));
+            return differenceInDays(new Date(), parseISO(cliente.primer_cargo.replace('Z', '')));
         }
         return null;
     };
@@ -262,7 +262,7 @@ export default function ClientesXCreditos() {
                                                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                                         <Clock className="h-3 w-3 shrink-0" />
                                                         {cliente.ultima_fecha_pago
-                                                            ? format(parseISO(cliente.ultima_fecha_pago), "dd MMM yyyy", { locale: es })
+                                                            ? format(parseISO(cliente.ultima_fecha_pago.replace('Z', '')), "dd MMM yyyy", { locale: es })
                                                             : <span className="italic">Sin abonos{dias !== null ? ` (${dias}d)` : ""}</span>}
                                                     </div>
                                                 </td>

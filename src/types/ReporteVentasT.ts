@@ -25,7 +25,11 @@ export interface ReporteVentaDetallado {
 export interface ReporteVentasResponse {
     success: boolean;
     message: string;
-    ventas: ReporteVentaDetallado[];
+    total_ingresos: number;
+    total_cancelado: number;
+    cantidad_ventas: number;
+    cantidad_canceladas: number;
+    data: ReporteVentaDetallado[];
 }
 
 

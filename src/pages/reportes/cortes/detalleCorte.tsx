@@ -113,8 +113,12 @@ export default function DetalleCortePage() {
                 <div className="flex gap-2">
                     <Button variant="default" className="gap-2 shadow-sm bg-blue-600 hover:bg-blue-500" onClick={async () => {
                         try {
-                            const printerName = localStorage.getItem("printer_device");
+                            // @ts-ignore
+                            const api = window["electron-api"];
+                            const printerName = await api?.getConfig("printer_device");
+
                             if (printerName) {
+                                const isCut = (await api?.getConfig("printer_cut")) !== false;
                                 const ticketData = {
                                     printerName,
                                     sucursal: "Sucursal " + data.info_turno.sucursal,
@@ -144,10 +148,9 @@ export default function DetalleCortePage() {
                                         diferencia: data.control_efectivo.diferencia
                                     },
                                     abonos_recibidos: data.metricas_principales.abonos_credito,
-                                    cortar: localStorage.getItem("printer_cut") !== "false"
+                                    cortar: isCut
                                 };
-                                // @ts-ignore
-                                await window["electron-api"]?.printTicketCorteEscPos(ticketData);
+                                await api?.printTicketCorteEscPos(ticketData);
                             }
                         } catch (e) {
                             console.error("Error al imprimir corte desde auditoría:", e);

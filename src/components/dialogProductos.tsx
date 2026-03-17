@@ -9,7 +9,6 @@ type props = {
 }
 
 export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef }: props) {
-
     return (
         <Dialog open={isOpen} onOpenChange={() => {
             setIsOpen(false);
@@ -21,6 +20,9 @@ export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef
                 className="
                     p-0 
                     overflow-hidden 
+                    /* VELOCIDAD PURA: Sin animaciones */
+                    duration-0
+                    animate-none
 
                     /* WEB */
                     md:max-w-[1200px] 

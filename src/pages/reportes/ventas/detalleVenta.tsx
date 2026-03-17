@@ -108,8 +108,12 @@ export default function DetalleVentaPage() {
         }
 
         try {
-            const printerName = localStorage.getItem("printer_device");
+            // @ts-ignore
+            const api = window["electron-api"];
+            const printerName = await api?.getConfig("printer_device");
+
             if (printerName) {
+                const isCut = (await api?.getConfig("printer_cut")) !== false;
                 const ticketData = {
                     printerName,
                     sucursal: saleInfo.nombre_sucursal ? "Sucursal " + saleInfo.nombre_sucursal : "Sucursal",
@@ -132,11 +136,11 @@ export default function DetalleVentaPage() {
                     ahorro: items.reduce((acc, item) => acc + (item.precio_mayoreo ? ((item.precio_normal || item.precio_unitario) - item.precio_unitario) * item.cantidad : 0), 0) || 0,
                     // @ts-ignore
                     turno: saleInfo.id_turno || "0",
-                    cortar: localStorage.getItem("printer_cut") !== "false"
+                    cortar: isCut,
+                    isCopia: true
                 };
 
-                // @ts-ignore
-                await window["electron-api"]?.printTicketVentaEscPos(ticketData);
+                await api?.printTicketVentaEscPos(ticketData);
                 toast.success("Ticket enviado a imprimir");
             } else {
                 toast.error("No se ha configurado una impresora en ajustes");

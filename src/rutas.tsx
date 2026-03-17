@@ -39,6 +39,7 @@ import ClientesXCreditos from "./pages/clientes/creditos/clientesXcreditos"
 import EstadoCuentaCliente from "./pages/clientes/creditos/estadoCuentaCliente"
 import MisCortesPage from "./pages/reportes/cortes/misCortes";
 import DetalleCortePage from "./pages/reportes/cortes/detalleCorte";
+import VentasPendientesLocal from "./pages/reportes/ventas/pendientesLocal";
 
 export const rutas = createHashRouter([
     {
@@ -165,6 +166,10 @@ export const rutas = createHashRouter([
                     {
                         path: "/reportes/ventasPorMes",
                         element: <VentasPorMes />
+                    },
+                    {
+                        path: "/reportes/ventasPendientes",
+                        element: <VentasPendientesLocal />
                     },
                     {
                         path: "/reportes/misEgresos",

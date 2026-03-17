@@ -3,6 +3,9 @@ import { exec } from "child_process";
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import Store from 'electron-store';
+
+const store = new Store();
 
 // Helper para enviar datos RAW a la impresora en Windows usando P/Invoke desde PowerShell
 const executeRawPrint = async (printerName, buffer, docName = "Hermes POS Print") => {
@@ -133,6 +136,16 @@ function utilsController() {
         }
     });
 
+    // Handlers para electron-store
+    ipcMain.handle('store-get', (event, key) => {
+        return store.get(key);
+    });
+
+    ipcMain.handle('store-set', (event, key, value) => {
+        store.set(key, value);
+        return true;
+    });
+
     ipcMain.handle('open-cash-drawer', async (event, printerName) => {
         console.log("Solicitud de apertura de cajón (MODE RAW) para:", printerName);
         if (!printerName) return false;
@@ -197,7 +210,7 @@ function utilsController() {
     });
 
     ipcMain.handle('print-ticket-venta-escpos', async (event, data) => {
-        const { printerName, sucursal, id_sucursal, direccion_sucursal, telefono_sucursal, usuario, cliente, folio, fecha, productos, total, pagoCon, cambio, ahorro = 0, turno = "0", metodo_pago = 0, cortar = true } = data;
+        const { printerName, sucursal, id_sucursal, direccion_sucursal, telefono_sucursal, usuario, cliente, folio, fecha, productos, total, pagoCon, cambio, ahorro = 0, turno = "0", metodo_pago = 0, cortar = true, isCopia = false } = data;
         console.log("Generando TICKET VENTA ESC/POS para:", printerName);
 
         try {
@@ -289,7 +302,9 @@ function utilsController() {
             // --- TOTAL PIEZAS ---
             const totalPiezas = listaProductos.reduce((sum, p) => sum + Number(p.cantidad || 0), 0);
             printer.alignLeft();
+            printer.bold(true);
             printer.println(`NO. DE ARTICULOS: ${totalPiezas}`);
+            printer.bold(false);
 
             // --- TOTALES ---
             printer.alignRight();
@@ -297,8 +312,6 @@ function utilsController() {
             printer.setTextDoubleWidth();
             printer.bold(true);
             printer.println(`TOTAL: $${Number(total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-            printer.setTextNormal();
-            printer.bold(false);
 
             if (metodo_pago === 2) {
                 printer.println("METODO DE PAGO: CREDITO");
@@ -307,6 +320,7 @@ function utilsController() {
                 printer.println(`SU CAMBIO: $${Number(cambio || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
             }
 
+            printer.setTextNormal();
             printer.println(`USTED AHORRO: $${Number(ahorro || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
             printer.bold(false);
             printer.newLine();
@@ -329,6 +343,7 @@ function utilsController() {
             printer.println("GRACIAS POR SU COMPRA");
             printer.println("VUELVA PRONTO");
             printer.println(`PEDIDOS POR WHATSAPP ${telefono_sucursal || '9512036123'}`);
+            if (isCopia) printer.println("ESTA ES UNA COPIA DEL TICKET");
             printer.newLine();
             printer.newLine();
 
