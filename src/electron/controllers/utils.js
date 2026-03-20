@@ -661,14 +661,21 @@ function utilsController() {
             }
 
             printer.drawLine();
-            printer.println("CANT.   DESCRIPCION");
+            printer.println("CANT.PKT  PIEZAS  DESCRIPCION");
             printer.println("================================================");
 
             // --- PRODUCTOS ---
             (productos || []).forEach((p) => {
-                const cant = p.cantidad_enviada.toString().padEnd(7);
-                const descWidth = 40;
-                const nombreFull = `${p.nombre_producto} ${p.nombre_presentacion || ""}`.trim().toUpperCase();
+                const factor = Number(p.factor_conversion_cantidad) || 1;
+                const piezas = Number(p.cantidad_enviada) || 0;
+                const paquetes = Math.round(piezas / factor);
+
+                const cantPkt = paquetes.toString().padEnd(9);
+                const cantPzas = piezas.toString().padEnd(8);
+                const descWidth = 30;
+
+                // Nombre: presentacion primero, luego producto
+                const nombreFull = `${p.nombre_presentacion || ""} ${p.nombre_producto || ""}`.trim().toUpperCase();
 
                 let words = nombreFull.split(' ');
                 let lines = [];
@@ -684,12 +691,22 @@ function utilsController() {
                 });
                 if (currentLine) lines.push(currentLine);
 
-                // Primera línea
-                printer.println(`${cant} ${lines[0] || ""}`);
+                // Primera línea: paquetes | piezas | descripcion
+                printer.println(`${cantPkt}${cantPzas}${lines[0] || ""}`);
 
-                // Líneas adicionales
+                // Líneas adicionales de descripcion (indentadas)
                 for (let i = 1; i < lines.length; i++) {
-                    printer.println(`        ${lines[i]}`);
+                    printer.println(`                 ${lines[i]}`);
+                }
+
+                // Desglose de componentes si es producto compuesto
+                if (Number(p.es_producto_compuesto) === 1 && Array.isArray(p.componentes) && p.componentes.length > 0) {
+                    printer.println(`  DESGLOSE:`);
+                    p.componentes.forEach((comp) => {
+                        const compNombre = (comp.nombre_componente || "").toUpperCase();
+                        const compPzas = Number(comp.total_piezas) || 0;
+                        printer.println(`    - ${compNombre}: ${compPzas} pzas`);
+                    });
                 }
             });
 

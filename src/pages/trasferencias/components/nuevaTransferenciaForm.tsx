@@ -252,7 +252,7 @@ export default function CrearTransferencia() {
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-muted-foreground font-medium">{prod.sku_pieza}</span>
                             {prod.factor_conversion_cantidad > 1 && (
-                              <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase">
+                              <span className="text-[9px] bg-blue-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase">
                                 Paquete de {prod.factor_conversion_cantidad} pzs
                               </span>
                             )}
@@ -314,7 +314,7 @@ export default function CrearTransferencia() {
                           {item.product.nombre_producto}
                         </p>
                         <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                          <Badge variant="secondary" className="text-[11px] py-0.5 px-2 font-bold bg-slate-200 text-slate-700 border border-slate-300">
+                          <Badge variant="outline" className="text-[11px] py-0.5 px-2 font-bold bg-blue-200 text-slate-700 border border-slate-300">
                             {item.product.nombre_presentacion} {item.product.factor_conversion_cantidad > 1 ? `(${item.product.factor_conversion_cantidad} pzs)` : ''}
                           </Badge>
                           {item.product.es_producto_compuesto === 1 && (

@@ -14,7 +14,8 @@ import type { Categoria } from "@/types/Categoria";
 import type { Producto } from "@/types/Producto";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Package, Search, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, Package, Search, Trash2 } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -505,9 +506,24 @@ export default function EditarProductoCompuestoForm() {
                                   <div className="flex-1">
                                     <p className="font-medium">{comp.nombre_producto}</p>
                                     <p className="text-sm text-gray-500">{comp.nombre_presentacion}</p>
-                                    <p className="text-xs text-gray-400">
-                                      Stock disponible: {comp.stock_disponible}
-                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <p className="text-xs text-gray-400">Stock: {comp.stock_disponible}</p>
+                                      {comp.stock_disponible === 0 ? (
+                                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 gap-0.5">
+                                          <AlertTriangle className="h-2.5 w-2.5" />
+                                          Agotado
+                                        </Badge>
+                                      ) : comp.stock_disponible < 5 ? (
+                                        <Badge className="text-[10px] px-1.5 py-0 h-4 gap-0.5 bg-amber-500 hover:bg-amber-600 text-white">
+                                          <AlertTriangle className="h-2.5 w-2.5" />
+                                          Stock bajo
+                                        </Badge>
+                                      ) : (
+                                        <Badge className="text-[10px] px-1.5 py-0 h-4 bg-emerald-500 hover:bg-emerald-600 text-white">
+                                          Disponible
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
 
                                   <FormField
