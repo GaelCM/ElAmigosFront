@@ -6,7 +6,7 @@ import { useCurrentUser } from "@/contexts/currentUser";
 import { useListaProductos } from "@/contexts/listaProductos";
 import type { EstadoVenta } from "@/types/Venta";
 import { Check, Loader2, AlertCircle, Banknote, CreditCard, Landmark } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { useOnlineStatus } from "@/hooks/isOnline";
@@ -38,6 +38,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const isOnline = useOnlineStatus();
     const [modoTurbo, setModoTurbo] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const isProcessing = useRef(false);
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -50,16 +51,26 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
             if (mTurbo !== undefined) setModoTurbo(!!mTurbo);
         };
         if (isOpen) {
+            isProcessing.current = false;
             loadSettings();
         }
     }, [isOpen]);
 
     useHotkeys("f1", () => {
-        nuevaVenta(true);
-    }, { enableOnFormTags: true, enabled: isOpen });
+        if (estado === "Inicio" || estado === "Error") {
+            nuevaVenta(true);
+        } else if (estado === "Listo") {
+            reloadVenta();
+        }
+    }, { enableOnFormTags: true, enabled: isOpen && (estado === "Inicio" || estado === "Listo" || estado === "Error") });
+
     useHotkeys("f2", () => {
-        nuevaVenta(false);
-    }, { enableOnFormTags: true, enabled: isOpen });
+        if (estado === "Inicio" || estado === "Error") {
+            nuevaVenta(false);
+        } else if (estado === "Listo") {
+            reloadVenta();
+        }
+    }, { enableOnFormTags: true, enabled: isOpen && (estado === "Inicio" || estado === "Listo" || estado === "Error") });
 
 
     const reloadVenta = async () => {
@@ -90,6 +101,8 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     }, [estado]);
 
     const nuevaVenta = async (isImprimir: boolean) => {
+        if (estado === "Cargando" || estado === "Listo") return;
+
         if (getCarritoActivo()?.productos.length == 0) {
             toast.error('Error en el pago', {
                 description: `No hay productos en el carrito.`,
@@ -116,6 +129,8 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
             return;
         }
 
+        if (isProcessing.current) return; // Bloqueo instantáneo físico
+        isProcessing.current = true;
         setEstado("Cargando");
         try {
 
@@ -252,6 +267,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 console.error("Error del servidor al crear venta:", res);
                 setErrorMessage(res.message || "Error desconocido en el servidor");
                 setEstado("Error");
+                isProcessing.current = false;
                 toast.error("Error al procesar la venta", {
                     description: `${res.message}`,
                 });
@@ -259,6 +275,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
         } catch (error) {
             setErrorMessage(error instanceof Error ? error.message : String(error));
             setEstado("Error");
+            isProcessing.current = false;
             console.error("Error al procesar la venta:", error);
             toast.error("Error al procesar la venta", {
                 description: `${error}`,

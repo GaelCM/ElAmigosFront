@@ -268,8 +268,12 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
               <th className="px-3 py-2">Unidad</th>
               <th className="px-3 py-2">Descripción</th>
               <th className="px-3 py-2">Precio</th>
-              <th className="px-3 py-2">Stock Disponible</th>
-              <th className="px-3 py-2">Stock Piezas</th>
+              {user.id_rol === 1 && (
+                <>
+                  <th className="px-3 py-2">Stock Disponible</th>
+                  <th className="px-3 py-2">Stock Piezas</th>
+                </>
+              )}
               <th className="px-3 py-2">Precio Mayoreo</th>
               <th className="px-3 py-2 text-center">Acción</th>
             </tr>
@@ -305,19 +309,25 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                   <td className="px-3 py-3 align-middle">
                     <div className="text-base font-bold">${p.precio_venta.toFixed(2)}</div>
                   </td>
-                  <td className="px-3 py-3 align-middle">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-base">{p.stock_disponible_presentacion}</span>
-                      {outStock ? (
-                        <Badge variant="destructive">Agotado</Badge>
-                      ) : lowStock ? (
-                        <Badge variant="secondary" className="bg-red-500 text-white">Bajo</Badge>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 align-middle">
-                    <div className="text-base font-bold">{p.stock_piezas}</div>
-                  </td>
+                  {
+                    user.id_rol === 1 && (
+                      <>
+                        <td className="px-3 py-3 align-middle">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-base">{p.stock_disponible_presentacion}</span>
+                            {outStock ? (
+                              <Badge variant="destructive">Agotado</Badge>
+                            ) : lowStock ? (
+                              <Badge variant="secondary" className="bg-red-500 text-white">Bajo</Badge>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 align-middle">
+                          <div className="text-base font-bold">{p.stock_piezas}</div>
+                        </td>
+                      </>
+                    )
+                  }
                   <td className="px-3 py-3 align-middle">
                     <div className="text-base font-bold">${p.precio_mayoreo.toFixed(2)}</div>
                   </td>

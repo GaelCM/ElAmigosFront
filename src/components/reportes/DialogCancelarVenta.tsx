@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog";
-import { Input } from "../../components/ui/input";
+
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
 import { AlertCircle, Lock, Loader2, CheckCircle2 } from "lucide-react";
@@ -9,6 +9,7 @@ import { checkPasswordApi } from "@/api/authApi/authApi";
 import { cancelarVentaApi } from "@/api/ventasApi/ventasApi";
 import { Alert, AlertDescription } from "../../components/ui/alert";
 import { useCurrentUser } from "@/contexts/currentUser";
+import { PasswordInput } from "../../components/ui/PasswordInput";
 
 interface DialogCancelarVentaProps {
     isOpen: boolean;
@@ -92,9 +93,8 @@ export default function DialogCancelarVenta({ isOpen, setIsOpen, idVenta, onSucc
                                 <Label htmlFor="password">Contraseña de Usuario</Label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
+                                    <PasswordInput
                                         id="password"
-                                        type="password"
                                         placeholder="Ingrese su contraseña"
                                         className="pl-9"
                                         value={password}

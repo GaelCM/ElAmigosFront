@@ -15,6 +15,12 @@ import {
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import './dashboardUser.css';
+import { useCurrentUser } from "@/contexts/currentUser";
+import { checkPasswordApi } from "@/api/authApi/authApi";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Lock, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -30,13 +36,44 @@ ChartJS.register(
     Filler
 );
 
+import { PasswordInput } from "@/components/ui/PasswordInput";
+
 export default function DashboardUser({ idTurno }: { idTurno: number }) {
 
+    const { user } = useCurrentUser();
     const [dashboard, setDashboard] = useState<DashboardTurno | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Protección de administrador
+    const [isAuthorized, setIsAuthorized] = useState(user.id_rol === 1);
+    const [adminPassword, setAdminPassword] = useState("");
+    const [isAuthorizing, setIsAuthorizing] = useState(false);
+    const [authError, setAuthError] = useState<string | null>(null);
+
+    const handleAuthorize = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsAuthorizing(true);
+        setAuthError(null);
+
+        try {
+            // Verificar contra usuario administrador (ID 1)
+            const result = await checkPasswordApi(1, adminPassword);
+            if (result.success) {
+                setIsAuthorized(true);
+            } else {
+                setAuthError(result.message || "Contraseña de administrador incorrecta");
+            }
+        } catch (err) {
+            setAuthError("Error al validar la contraseña");
+        } finally {
+            setIsAuthorizing(false);
+        }
+    };
+
     useEffect(() => {
+        if (!isAuthorized) return;
+
         const fetchDashboard = async () => {
             setLoading(true);
             setError(null);
@@ -62,7 +99,76 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
             }
         };
         fetchDashboard();
-    }, [idTurno]);
+    }, [idTurno, isAuthorized]);
+
+    if (!isAuthorized) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 -mt-6 bg-white/50 backdrop-blur-sm dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all duration-300">
+                <div className="relative mb-8">
+                    <div className="w-24 h-24 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center animate-pulse">
+                        <Lock className="w-10 h-10 text-primary" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center">
+                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                    </div>
+                </div>
+
+                <div className="text-center space-y-2 mb-8 max-w-sm">
+                    <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Acceso Restringido</h2>
+                    <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Este apartado requiere autorización de nivel <span className="font-bold text-primary">ADMINISTRADOR</span>.
+                    </p>
+                </div>
+
+                <form onSubmit={handleAuthorize} className="w-full max-w-sm space-y-6">
+                    <div className="space-y-3">
+                        <Label htmlFor="adminPass" className="text-xs uppercase font-bold tracking-wider text-gray-400 ml-1">Pin Administrativo</Label>
+                        <div className="relative">
+                            <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
+                            <PasswordInput
+                                id="adminPass"
+                                value={adminPassword}
+                                onChange={(e) => setAdminPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="h-12 pl-10 bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 
+                                         focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all rounded-xl"
+                                required
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+
+                    {authError && (
+                        <Alert className="py-3 border-red-100 bg-red-50/30 dark:bg-red-900/10 dark:border-red-900/20 text-red-600 dark:text-red-400 rounded-xl">
+                            <AlertDescription className="text-sm flex items-center gap-2 font-medium">
+                                <AlertCircle className="h-4 w-4" />
+                                {authError}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    <Button
+                        type="submit"
+                        className="w-full h-12 gap-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-[0.98]"
+                        disabled={isAuthorizing || !adminPassword}
+                    >
+                        {isAuthorizing ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Verificando Firma...
+                            </>
+                        ) : (
+                            <>
+                                <ShieldCheck className="h-4 w-4" />
+                                Autorizar Acceso
+                            </>
+                        )
+                        }
+                    </Button>
+                </form>
+            </div>
+        );
+    }
 
     if (loading) {
         return (
@@ -175,6 +281,7 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
             currency: 'MXN'
         }).format(amount);
     };
+
 
     return (
         <div className="dashboard-container">

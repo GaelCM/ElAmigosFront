@@ -95,7 +95,10 @@ type ComponenteProductoEspecial = {
     nombre_presentacion: string;
     cantidad: number;
     precio_unitario: number;
+    es_producto_compuesto?: number;
+    factor_conversion_cantidad?: number;
 };
+
 
 export type ProductoEspecialInput = {
     sku_pieza: string;

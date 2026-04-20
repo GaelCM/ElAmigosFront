@@ -18,7 +18,14 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { CarritoPayload } from "@/types/Venta";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { redondearPrecio } from "@/lib/utils";
 
@@ -33,6 +40,7 @@ export default function VentasPendientesLocal() {
     const [loading, setLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
     const [selectedVenta, setSelectedVenta] = useState<VentaPendiente | null>(null);
+    const [vEliminar, setVEliminar] = useState<number | null>(null);
 
     const cargarVentas = async () => {
         setLoading(true);
@@ -59,9 +67,7 @@ export default function VentasPendientesLocal() {
         }, 0));
     };
 
-    const eliminarVenta = async (id: number) => {
-        if (!confirm("¿Estás seguro de eliminar esta venta pendiente? No se sincronizará con el servidor.")) return;
-
+    const eliminarVentaDirecto = async (id: number) => {
         try {
             // @ts-ignore
             const res = await window["electron-api"]?.eliminarVentaSincronizada(id);
@@ -296,7 +302,7 @@ export default function VentasPendientesLocal() {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="text-red-400 hover:text-red-600 hover:bg-red-50 h-9"
-                                                    onClick={() => eliminarVenta(v.id)}
+                                                    onClick={() => setVEliminar(v.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -400,6 +406,42 @@ export default function VentasPendientesLocal() {
                             </div>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de Confirmación de Eliminación */}
+            <Dialog open={vEliminar !== null} onOpenChange={(open) => !open && setVEliminar(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-red-600 uppercase">
+                            <Trash2 className="h-6 w-6" />
+                            Confirmar Eliminación
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-600 font-medium pt-2">
+                            ¿Estás seguro de eliminar esta venta pendiente (ID: {vEliminar})?
+                            <br />
+                            <span className="text-red-500 font-bold">Esta acción no se puede deshacer y la venta no se sincronizará con el servidor.</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setVEliminar(null)}
+                            className="font-bold flex-1"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                if (vEliminar) eliminarVentaDirecto(vEliminar);
+                                setVEliminar(null);
+                            }}
+                            className="font-bold flex-1 bg-red-600 hover:bg-red-700"
+                        >
+                            Eliminar Permanentemente
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

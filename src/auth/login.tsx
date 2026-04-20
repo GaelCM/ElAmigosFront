@@ -23,6 +23,8 @@ const formSchema = z.object({
   }),
 });
 
+import { PasswordInput } from "../components/ui/PasswordInput";
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { addUser } = useCurrentUser();
@@ -78,8 +80,7 @@ export default function LoginPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">Contraseña</label>
-            <Input
-              type="password"
+            <PasswordInput
               placeholder="Ingresa tu contraseña"
               {...register("password")}
               aria-invalid={!!errors.password}
@@ -93,7 +94,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-xs text-center text-muted-foreground">version 4.8.8</p>
+        <p className="text-xs text-center text-muted-foreground">version 4.9.2</p>
       </Card>
     </div>
   );

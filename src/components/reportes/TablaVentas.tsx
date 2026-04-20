@@ -16,7 +16,7 @@ import {
     Eye,
     Search
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import DialogCancelarVenta from "./DialogCancelarVenta";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -241,25 +241,29 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                         </p>
                     </CardContent>
                 </Card>
+                {
+                    user.id_rol === 1 && (
+                        <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Ingresos Reales
+                                </CardTitle>
+                                <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">
+                                    {formatCurrency(totalVentas)}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Excluye {formatCurrency(totalCancelado)} cancelados
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )
+                }
 
-                <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Ingresos Reales
-                        </CardTitle>
-                        <div className="p-2 bg-emerald-500/10 rounded-lg">
-                            <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">
-                            {formatCurrency(totalVentas)}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Excluye {formatCurrency(totalCancelado)} cancelados
-                        </p>
-                    </CardContent>
-                </Card>
 
                 <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -367,7 +371,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                     const isSelected = selectedIndex === index;
 
                                     return (
-                                        <div key={venta.id_venta} className="contents">
+                                        <Fragment key={venta.id_venta}>
                                             <TableRow
                                                 data-index={index}
                                                 className={`cursor-pointer transition-all duration-200 select-none ${isSelected
@@ -582,7 +586,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                     </TableCell>
                                                 </TableRow>
                                             )}
-                                        </div>
+                                        </Fragment>
                                     );
                                 })}
                             </TableBody>

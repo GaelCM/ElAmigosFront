@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import DialogSetGranel from "./components/dialogSetGranel";
 import type { ProductoVenta } from "@/types/Producto";
 import { redondearPrecio } from "@/lib/utils";
+import DialogProductoAgotado from "./Dialogs/agotado";
 
 
 export default function Home() {
@@ -37,6 +38,7 @@ export default function Home() {
     const [error, setError] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
     const [openNuevoProducto, setOpenNuevoProducto] = useState(false);
+    const [openAgotado, setOpenAgotado] = useState(false);
 
     // Estados para Granel
     const [openGranel, setOpenGranel] = useState(false);
@@ -280,6 +282,11 @@ export default function Home() {
     }, [setFocusScanner]);
 
     const procesarProductoEncontrado = (producto: ProductoVenta) => {
+        if (producto.stock_disponible_presentacion == 0) {
+            setOpenAgotado(true);
+            toast.error("Producto agotado");
+            return;
+        }
         if (Boolean(producto.es_granel)) {
             setProductoGranelPendiente(producto);
             setOpenGranel(true);
@@ -326,7 +333,7 @@ export default function Home() {
                             </div>
                             <div className="flex items-center gap-2">
                                 {pendingCount > 0 && (
-                                    <span 
+                                    <span
                                         onClick={() => navigate("/reportes/ventasPendientes")}
                                         className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full animate-pulse font-bold cursor-pointer hover:bg-orange-200 transition-colors"
                                     >
@@ -431,8 +438,8 @@ export default function Home() {
                                                         <Pill className="w-3.5 h-3.5 text-primary" />
                                                     </span>
                                                     <p className="font-bold text-sm truncate uppercase tracking-tight text-slate-700">{producto.product.nombre_producto} {producto.product.nombre_presentacion}</p>
-                                                    <Badge variant="outline" className={`h-4 text-[9px] px-1 font-bold ${producto.product.stock_disponible_presentacion == 0 ? 'border-red-500 text-red-600 bg-red-50/50' : producto.product.stock_disponible_presentacion <= 5 ? 'border-yellow-500 text-yellow-600 bg-yellow-50/50' : 'border-green-500 text-green-600 bg-green-50/50'}`}>
-                                                        {producto.product.stock_disponible_presentacion} STOCK
+                                                    <Badge variant="outline" className={`h-4 text-[9px] px-1 font-bold ${producto.product.stock_disponible_presentacion == 0 ? 'border-red-500 text-red-600 bg-red-50/50' : producto.product.stock_disponible_presentacion <= 5 ? 'border-yellow-500 text-yellow-600 bg-yellow-50/50' : 'border-green-500 text-green-600 bg-green-300'}`}>
+                                                        {user.id_rol === 1 && `${producto.product.stock_disponible_presentacion} STOCK`}
                                                     </Badge>
                                                 </div>
                                             </div>
@@ -651,6 +658,7 @@ export default function Home() {
                 onConfirm={handleConfirmGranel}
                 inputRefMain={inputRef}
             />
+            <DialogProductoAgotado isOpen={openAgotado} setIsOpen={setOpenAgotado} inputRef={inputRef} />
         </div>
     )
 }

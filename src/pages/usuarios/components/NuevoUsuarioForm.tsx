@@ -35,6 +35,8 @@ const formSchema = z.object({
     }),
 });
 
+import { PasswordInput } from "@/components/ui/PasswordInput";
+
 export default function NuevoUsuarioForm() {
     const [loading, setLoading] = useState(false);
     const [sucursales, setSucursales] = useState<Sucursal[]>([]);
@@ -159,7 +161,7 @@ export default function NuevoUsuarioForm() {
                                         <FormControl>
                                             <div className="relative">
                                                 <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                <Input type="password" placeholder="******" className="pl-9" {...field} />
+                                                <PasswordInput placeholder="******" className="pl-9" {...field} />
                                             </div>
                                         </FormControl>
                                         <FormMessage />

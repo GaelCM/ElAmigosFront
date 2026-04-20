@@ -37,8 +37,11 @@ const formSchema = z.object({
       nombre_presentacion: z.string(),
       cantidad: z.number().positive('La cantidad debe ser mayor a 0'),
       precio_unitario: z.number(),
-      stock_disponible: z.number()
+      stock_disponible: z.number(),
+      es_producto_compuesto: z.number().optional(),
+      factor_conversion_cantidad: z.number().optional()
     })
+
   ).min(1, 'Debes agregar al menos un componente al paquete')
 });
 
@@ -88,7 +91,9 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
     const s = searchTerm.toLowerCase();
     return (
       p.nombre_producto.toLowerCase().includes(s) ||
-      p.nombre_presentacion.toLowerCase().includes(s)
+      p.nombre_presentacion.toLowerCase().includes(s) ||
+      p.sku_pieza.toLowerCase().includes(s) ||
+      p.sku_presentacion.toLowerCase().includes(s)
     );
   });
 
@@ -122,7 +127,10 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
   const agregarComponente = (producto: typeof productosDisponibles[0]) => {
     const yaExiste = componentes.find(c => c.id_unidad_venta === producto.id_unidad_venta);
     if (yaExiste) {
-      alert("Este producto ya está agregado al paquete");
+      toast.error("Este producto ya está agregado al paquete", {
+        description: "No se pueden duplicar componentes en el paquete",
+        duration: 3000
+      });
       return;
     }
 
@@ -134,8 +142,11 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
         nombre_presentacion: producto.nombre_presentacion,
         cantidad: 1,
         precio_unitario: producto.precio_venta ?? 0,
-        stock_disponible: producto.stock_disponible_presentacion ?? 0
+        stock_disponible: producto.stock_disponible_presentacion ?? 0,
+        es_producto_compuesto: producto.es_producto_compuesto,
+        factor_conversion_cantidad: producto.factor_conversion_cantidad
       }
+
     ]);
 
     setSearchTerm("");
@@ -320,11 +331,21 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                         </CardHeader>
                         <CardContent className="space-y-2">
                           {componentes.map((comp, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>
-                                {comp.cantidad}x {comp.nombre_producto} ({comp.nombre_presentacion})
-                              </span>
-                              <span className="font-medium">
+                            <div key={index} className="flex justify-between items-center text-sm py-1 border-b last:border-0 border-gray-100">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-700">{comp.cantidad}x</span>
+                                <span className="text-gray-600">{comp.nombre_producto}</span>
+                                <Badge className={`
+                                  ${comp.es_producto_compuesto === 1
+                                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                                    : (comp.factor_conversion_cantidad === 1 || comp.nombre_presentacion.toUpperCase() === 'PIEZA')
+                                      ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-100'
+                                      : 'bg-amber-100 text-amber-700 hover:bg-amber-100'} 
+                                  text-[9px] px-1.5 py-0 h-3.5 rounded-full font-bold uppercase border-none`}>
+                                  {comp.nombre_presentacion}
+                                </Badge>
+                              </div>
+                              <span className="font-semibold text-gray-900">
                                 ${(comp.precio_unitario * comp.cantidad).toFixed(2)}
                               </span>
                             </div>
@@ -520,9 +541,20 @@ export default function NuevoProductoCompuestoForm({ id_sucursal }: { id_sucursa
                               <CardContent className="p-4">
                                 <div className="flex items-center gap-4">
                                   <div className="flex-1">
-                                    <p className="font-medium">{comp.nombre_producto}</p>
-                                    <p className="text-sm text-gray-500">{comp.nombre_presentacion}</p>
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-medium text-gray-900">{comp.nombre_producto}</p>
+                                      <Badge className={`
+                                        ${comp.es_producto_compuesto === 1
+                                          ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                                          : (comp.factor_conversion_cantidad === 1 || comp.nombre_presentacion.toUpperCase() === 'PIEZA')
+                                            ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-100'
+                                            : 'bg-amber-100 text-amber-700 hover:bg-amber-100'} 
+                                        text-[10px] px-2 py-0 h-4 rounded-full font-bold uppercase border-none`}>
+                                        {comp.nombre_presentacion}
+                                      </Badge>
+                                    </div>
                                     <div className="flex items-center gap-2 mt-1">
+
                                       <p className="text-xs text-gray-400">Stock: {comp.stock_disponible}</p>
                                       {comp.stock_disponible === 0 ? (
                                         <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 gap-0.5">

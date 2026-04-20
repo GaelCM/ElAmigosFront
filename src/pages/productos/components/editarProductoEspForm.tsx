@@ -2,7 +2,7 @@
 
 
 import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
-import { actualizarProductoEspApi, getProductos, obtenerProductoEspGeneral } from "@/api/productosApi/productosApi";
+import { actualizarProductoEspApi, getProductosInventario, obtenerProductoEspGeneral } from "@/api/productosApi/productosApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,8 +39,11 @@ const formSchema = z.object({
       nombre_presentacion: z.string(),
       cantidad: z.number().positive('La cantidad debe ser mayor a 0'),
       precio_unitario: z.number(),
-      stock_disponible: z.number()
+      stock_disponible: z.number(),
+      es_producto_compuesto: z.number().optional(),
+      factor_conversion_cantidad: z.number().optional()
     })
+
   ).min(1, 'Debes agregar al menos un componente al paquete')
 });
 
@@ -60,6 +63,8 @@ export default function EditarProductoCompuestoForm() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
 
 
   const form = useForm<FormValues>({
@@ -83,14 +88,47 @@ export default function EditarProductoCompuestoForm() {
     const s = searchTerm.toLowerCase();
     return (
       p.nombre_producto.toLowerCase().includes(s) ||
-      p.nombre_presentacion.toLowerCase().includes(s)
+      p.nombre_presentacion.toLowerCase().includes(s) ||
+      p.sku_pieza.toLowerCase().includes(s) ||
+      p.sku_presentacion.toLowerCase().includes(s)
     );
   });
 
+  // Reset selectedIndex when filter changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchTerm]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSearchResults || productosFiltrados.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % productosFiltrados.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev - 1 + productosFiltrados.length) % productosFiltrados.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      agregarComponente(productosFiltrados[selectedIndex]);
+    }
+  };
+
+  useEffect(() => {
+    const activeElement = document.querySelector(`[data-product-index="${selectedIndex}"]`);
+    if (activeElement) {
+      activeElement.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
+
   const agregarComponente = (producto: typeof productosDisponibles[0]) => {
+
     const yaExiste = componentes.find(c => c.id_unidad_venta === producto.id_unidad_venta);
     if (yaExiste) {
-      alert("Este producto ya está agregado al paquete");
+      toast.error("Este producto ya está agregado al paquete", {
+        description: "No se pueden duplicar componentes en el paquete",
+        duration: 3000
+      });
       return;
     }
 
@@ -102,8 +140,11 @@ export default function EditarProductoCompuestoForm() {
         nombre_presentacion: producto.nombre_presentacion,
         cantidad: 1,
         precio_unitario: producto.precio_venta ?? 0,
-        stock_disponible: producto.stock_disponible_presentacion ?? 0
+        stock_disponible: producto.stock_disponible_presentacion ?? 0,
+        es_producto_compuesto: producto.es_producto_compuesto,
+        factor_conversion_cantidad: producto.factor_conversion_cantidad
       }
+
     ]);
 
     setSearchTerm("");
@@ -134,7 +175,7 @@ export default function EditarProductoCompuestoForm() {
           setCategorias([]);
         }
       }),
-      getProductos(parseInt(id_sucursal)).then(res => {
+      getProductosInventario(parseInt(id_sucursal)).then(res => {
         if (res.success) {
           setProductosDisponibles(res.data);
         } else {
@@ -321,11 +362,21 @@ export default function EditarProductoCompuestoForm() {
                         </CardHeader>
                         <CardContent className="space-y-2">
                           {componentes.map((comp, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>
-                                {comp.cantidad}x {comp.nombre_producto} ({comp.nombre_presentacion})
-                              </span>
-                              <span className="font-medium">
+                            <div key={index} className="flex justify-between items-center text-sm py-1 border-b last:border-0 border-gray-100">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-700">{comp.cantidad}x</span>
+                                <span className="text-gray-600">{comp.nombre_producto}</span>
+                                <Badge className={`
+                                  ${comp.es_producto_compuesto === 1
+                                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                                    : (comp.factor_conversion_cantidad === 1 || comp.nombre_presentacion.toUpperCase() === 'PIEZA')
+                                      ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-100'
+                                      : 'bg-amber-100 text-amber-700 hover:bg-amber-100'} 
+                                  text-[9px] px-1.5 py-0 h-3.5 rounded-full font-bold uppercase border-none`}>
+                                  {comp.nombre_presentacion}
+                                </Badge>
+                              </div>
+                              <span className="font-semibold text-gray-900">
                                 ${(comp.precio_unitario * comp.cantidad).toFixed(2)}
                               </span>
                             </div>
@@ -460,27 +511,47 @@ export default function EditarProductoCompuestoForm() {
                               setShowSearchResults(e.target.value.length > 0);
                             }}
                             onFocus={() => setShowSearchResults(searchTerm.length > 0)}
+                            onKeyDown={handleKeyDown}
                             className="pl-10"
                           />
                         </div>
 
                         {showSearchResults && productosFiltrados.length > 0 && (
-                          <Card className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto">
+                          <Card className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto shadow-xl border-2 border-blue-100">
                             <CardContent className="p-0">
-                              {productosFiltrados.map((producto) => (
+                              {productosFiltrados.map((producto, index) => (
                                 <div
                                   key={producto.id_unidad_venta}
-                                  className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0"
+                                  data-product-index={index}
+                                  className={`p-3 cursor-pointer border-b last:border-0 transition-colors ${index === selectedIndex ? "bg-blue-300" : "hover:bg-blue-50"
+                                    }`}
                                   onClick={() => agregarComponente(producto)}
                                 >
                                   <div className="flex justify-between items-center">
-                                    <div>
-                                      <p className="font-medium">{producto.nombre_producto}</p>
-                                      <p className="text-sm text-gray-500">{producto.nombre_presentacion}</p>
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-medium text-gray-900">{producto.nombre_producto}</p>
+                                        <span className={`
+                                          ${producto.es_producto_compuesto === 1
+                                            ? 'bg-purple-100 text-purple-700'
+                                            : producto.factor_conversion_cantidad === 1
+                                              ? 'bg-blue-100 text-blue-700'
+                                              : 'bg-amber-100 text-amber-700'} 
+                                          text-[10px] px-2 py-0.5 rounded-full font-bold uppercase`}>
+                                          {producto.nombre_presentacion}
+                                        </span>
+                                      </div>
                                     </div>
                                     <div className="text-right">
-                                      <p className="font-medium">${producto.precio_venta.toFixed(2)}</p>
-                                      <p className="text-xs text-gray-500">Stock: {producto.stock_disponible_presentacion}</p>
+                                      <p className="font-bold text-sm text-green-700">
+                                        {producto.precio_venta > 0
+                                          ? `$${producto.precio_venta.toFixed(2)}`
+                                          : <span className="text-orange-500 text-[10px]">Sólo Inventario</span>
+                                        }
+                                      </p>
+                                      <p className={`text-[11px] font-medium ${producto.stock_disponible_presentacion > 0 ? 'text-gray-600' : 'text-red-500'}`}>
+                                        Stock: {producto.stock_disponible_presentacion}
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
@@ -488,6 +559,7 @@ export default function EditarProductoCompuestoForm() {
                             </CardContent>
                           </Card>
                         )}
+
                       </div>
 
                       {/* Lista de componentes */}
@@ -504,9 +576,20 @@ export default function EditarProductoCompuestoForm() {
                               <CardContent className="p-4">
                                 <div className="flex items-center gap-4">
                                   <div className="flex-1">
-                                    <p className="font-medium">{comp.nombre_producto}</p>
-                                    <p className="text-sm text-gray-500">{comp.nombre_presentacion}</p>
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-medium text-gray-900">{comp.nombre_producto}</p>
+                                      <Badge className={`
+                                        ${comp.es_producto_compuesto === 1
+                                          ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                                          : (comp.factor_conversion_cantidad === 1 || comp.nombre_presentacion.toUpperCase() === 'PIEZA')
+                                            ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-100'
+                                            : 'bg-amber-100 text-amber-700 hover:bg-amber-100'} 
+                                        text-[10px] px-2 py-0 h-4 rounded-full font-bold uppercase border-none`}>
+                                        {comp.nombre_presentacion}
+                                      </Badge>
+                                    </div>
                                     <div className="flex items-center gap-2 mt-1">
+
                                       <p className="text-xs text-gray-400">Stock: {comp.stock_disponible}</p>
                                       {comp.stock_disponible === 0 ? (
                                         <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 gap-0.5">

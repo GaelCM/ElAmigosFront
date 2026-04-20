@@ -40,7 +40,9 @@ export default function CerrarCajaPage() {
 
                     if (currentId) {
                         setIdTurno(currentId);
-                        fetchDashboardData(currentId);
+                        if (user?.id_rol === 1) {
+                            fetchDashboardData(currentId);
+                        }
                     }
                 } catch (e) {
                     console.error("Error parsing caja data:", e);
@@ -254,142 +256,144 @@ export default function CerrarCajaPage() {
                 <p className="text-slate-500">Confirma los montos finales para finalizar tu turno de trabajo.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={`grid grid-cols-1 ${user?.id_rol === 1 ? 'lg:grid-cols-3' : ''} gap-6`}>
                 {/* Panel de Resumen (Izquierda/Arriba) */}
-                <div className="lg:col-span-2 space-y-6">
-                    {loadingDashboard ? (
-                        <Card className="h-full flex items-center justify-center p-20">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                                <p className="text-slate-500 font-medium">Obteniendo resumen actual...</p>
-                            </div>
-                        </Card>
-                    ) : dashboard ? (
-                        <div className="grid grid-cols-1 gap-6">
-                            {/* KPIs Rápidos */}
-                            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-                                <Card className=" border-blue-100">
-                                    <CardContent className="p-4 flex flex-col items-center text-center">
-                                        <ShoppingCart className="w-5 h-5 text-blue-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-blue-400">Ventas Totales</span>
-                                        <span className="text-lg font-black text-blue-700">{formatCurrency(dashboard.metricas_principales.total_ventas)}</span>
-                                    </CardContent>
-                                </Card>
-                                <Card className=" border-green-100">
-                                    <CardContent className="p-4 flex flex-col items-center text-center">
-                                        <DollarSign className="w-5 h-5 text-green-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-green-400">Ventas Efectivo</span>
-                                        <span className="text-lg font-black text-green-700">{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</span>
-                                    </CardContent>
-                                </Card>
-                                <Card className=" border-purple-100">
-                                    <CardContent className="p-4 flex flex-col items-center text-center">
-                                        <Wallet className="w-5 h-5 text-purple-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-purple-400">Abonos</span>
-                                        <span className="text-lg font-black text-purple-700">{formatCurrency(dashboard.metricas_principales.abonos_credito)}</span>
-                                    </CardContent>
-                                </Card>
-                                <Card className=" border-orange-100">
-                                    <CardContent className="p-4 flex flex-col items-center text-center">
-                                        <DollarSign className="w-5 h-5 text-orange-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-orange-400">Créditos</span>
-                                        <span className="text-lg font-black text-orange-700">{formatCurrency(dashboard.metricas_principales.ventas_credito)}</span>
-                                    </CardContent>
-                                </Card>
-                                <Card className=" border-red-100">
-                                    <CardContent className="p-4 flex flex-col items-center text-center">
-                                        <ShoppingBag className="w-5 h-5 text-red-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-red-400">Egresos</span>
-                                        <span className="text-lg font-black text-red-700">-{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</span>
-                                    </CardContent>
-                                </Card>
-                                <Card className=" border-blue-600 bg-blue-50">
-                                    <CardContent className="p-4 flex flex-col items-center text-center">
-                                        <CheckCircle2 className="w-5 h-5 text-blue-600 mb-2" />
-                                        <span className="text-[10px] font-black uppercase text-blue-400">Esperado</span>
-                                        <span className="text-lg font-black text-blue-700">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</span>
-                                    </CardContent>
-                                </Card>
-                            </div>
+                {user?.id_rol === 1 && (
+                    <div className="lg:col-span-2 space-y-6">
+                        {loadingDashboard ? (
+                            <Card className="h-full flex items-center justify-center p-20">
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                                    <p className="text-slate-500 font-medium">Obteniendo resumen actual...</p>
+                                </div>
+                            </Card>
+                        ) : dashboard ? (
+                            <div className="grid grid-cols-1 gap-6">
+                                {/* KPIs Rápidos */}
+                                <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                                    <Card className=" border-blue-100">
+                                        <CardContent className="p-4 flex flex-col items-center text-center">
+                                            <ShoppingCart className="w-5 h-5 text-blue-600 mb-2" />
+                                            <span className="text-[10px] font-black uppercase text-blue-400">Ventas Totales</span>
+                                            <span className="text-lg font-black text-blue-700">{formatCurrency(dashboard.metricas_principales.total_ventas)}</span>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className=" border-green-100">
+                                        <CardContent className="p-4 flex flex-col items-center text-center">
+                                            <DollarSign className="w-5 h-5 text-green-600 mb-2" />
+                                            <span className="text-[10px] font-black uppercase text-green-400">Ventas Efectivo</span>
+                                            <span className="text-lg font-black text-green-700">{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</span>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className=" border-purple-100">
+                                        <CardContent className="p-4 flex flex-col items-center text-center">
+                                            <Wallet className="w-5 h-5 text-purple-600 mb-2" />
+                                            <span className="text-[10px] font-black uppercase text-purple-400">Abonos</span>
+                                            <span className="text-lg font-black text-purple-700">{formatCurrency(dashboard.metricas_principales.abonos_credito)}</span>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className=" border-orange-100">
+                                        <CardContent className="p-4 flex flex-col items-center text-center">
+                                            <DollarSign className="w-5 h-5 text-orange-600 mb-2" />
+                                            <span className="text-[10px] font-black uppercase text-orange-400">Créditos</span>
+                                            <span className="text-lg font-black text-orange-700">{formatCurrency(dashboard.metricas_principales.ventas_credito)}</span>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className=" border-red-100">
+                                        <CardContent className="p-4 flex flex-col items-center text-center">
+                                            <ShoppingBag className="w-5 h-5 text-red-600 mb-2" />
+                                            <span className="text-[10px] font-black uppercase text-red-400">Egresos</span>
+                                            <span className="text-lg font-black text-red-700">-{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</span>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className=" border-blue-600 bg-blue-50">
+                                        <CardContent className="p-4 flex flex-col items-center text-center">
+                                            <CheckCircle2 className="w-5 h-5 text-blue-600 mb-2" />
+                                            <span className="text-[10px] font-black uppercase text-blue-400">Esperado</span>
+                                            <span className="text-lg font-black text-blue-700">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</span>
+                                        </CardContent>
+                                    </Card>
+                                </div>
 
-                            {/* Detalles Desglosados */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Card>
-                                    <CardHeader className="py-3 bg-slate-50/50">
-                                        <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Desglose de Efectivo</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-4 space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Efectivo Inicial</span>
-                                            <span className="font-bold">{formatCurrency(dashboard.control_efectivo.efectivo_inicial)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Ventas en Efectivo</span>
-                                            <span className="font-bold text-green-600">+{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Abonos (Cobranza)</span>
-                                            <span className="font-bold text-green-600">+{formatCurrency(dashboard.metricas_principales.abonos_credito)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Depósitos</span>
-                                            <span className="font-bold text-green-600">+{formatCurrency(dashboard.movimientos_caja.depositos)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Retiros</span>
-                                            <span className="font-bold text-red-600">-{formatCurrency(dashboard.movimientos_caja.retiros)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Egresos (Efectivo)</span>
-                                            <span className="font-bold text-red-600">-{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</span>
-                                        </div>
-                                        <div className="pt-3 border-t flex justify-between items-center">
-                                            <span className="text-sm font-black uppercase text-slate-700">Total Esperado</span>
-                                            <span className="text-xl font-black text-blue-600">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                {/* Detalles Desglosados */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Card>
+                                        <CardHeader className="py-3 bg-slate-50/50">
+                                            <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Desglose de Efectivo</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-4 space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Efectivo Inicial</span>
+                                                <span className="font-bold">{formatCurrency(dashboard.control_efectivo.efectivo_inicial)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Ventas en Efectivo</span>
+                                                <span className="font-bold text-green-600">+{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Abonos (Cobranza)</span>
+                                                <span className="font-bold text-green-600">+{formatCurrency(dashboard.metricas_principales.abonos_credito)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Depósitos</span>
+                                                <span className="font-bold text-green-600">+{formatCurrency(dashboard.movimientos_caja.depositos)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Retiros</span>
+                                                <span className="font-bold text-red-600">-{formatCurrency(dashboard.movimientos_caja.retiros)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Egresos (Efectivo)</span>
+                                                <span className="font-bold text-red-600">-{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</span>
+                                            </div>
+                                            <div className="pt-3 border-t flex justify-between items-center">
+                                                <span className="text-sm font-black uppercase text-slate-700">Total Esperado</span>
+                                                <span className="text-xl font-black text-blue-600">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
 
-                                <Card>
-                                    <CardHeader className="py-3 bg-slate-50/50">
-                                        <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Otras Métricas</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-4 space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Ventas con Tarjeta</span>
-                                            <span className="font-bold text-slate-700">{formatCurrency(dashboard.metricas_principales.ventas_tarjeta)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Total transacciones</span>
-                                            <span className="font-bold text-slate-700">{dashboard.metricas_principales.numero_ventas}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Total Compras</span>
-                                            <span className="font-bold text-slate-700">{formatCurrency(dashboard.egresos.total_compras)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Total Gastos</span>
-                                            <span className="font-bold text-slate-700">{formatCurrency(dashboard.egresos.total_gastos)}</span>
-                                        </div>
-                                        <div className="pt-3 border-t flex flex-col gap-1">
-                                            <span className="text-[10px] font-black uppercase text-slate-400">Estado del Turno</span>
-                                            <p className="text-xs font-bold text-blue-600 uppercase tracking-tight">{dashboard.info_turno.estado}</p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                    <Card>
+                                        <CardHeader className="py-3 bg-slate-50/50">
+                                            <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Otras Métricas</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-4 space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Ventas con Tarjeta</span>
+                                                <span className="font-bold text-slate-700">{formatCurrency(dashboard.metricas_principales.ventas_tarjeta)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Total transacciones</span>
+                                                <span className="font-bold text-slate-700">{dashboard.metricas_principales.numero_ventas}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Total Compras</span>
+                                                <span className="font-bold text-slate-700">{formatCurrency(dashboard.egresos.total_compras)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-500">Total Gastos</span>
+                                                <span className="font-bold text-slate-700">{formatCurrency(dashboard.egresos.total_gastos)}</span>
+                                            </div>
+                                            <div className="pt-3 border-t flex flex-col gap-1">
+                                                <span className="text-[10px] font-black uppercase text-slate-400">Estado del Turno</span>
+                                                <p className="text-xs font-bold text-blue-600 uppercase tracking-tight">{dashboard.info_turno.estado}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Información no disponible</AlertTitle>
-                            <AlertDescription>No se pudo cargar el resumen del turno actual.</AlertDescription>
-                        </Alert>
-                    )}
-                </div>
+                        ) : (
+                            <Alert>
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Información no disponible</AlertTitle>
+                                <AlertDescription>No se pudo cargar el resumen del turno actual.</AlertDescription>
+                            </Alert>
+                        )}
+                    </div>
+                )}
 
                 {/* Formulario de Cierre (Derecha) */}
-                <div className="lg:col-span-1">
+                <div className={user?.id_rol === 1 ? "lg:col-span-1" : "lg:col-span-3 max-w-lg mx-auto w-full"}>
                     <Card className="sticky top-6 border-2 border-blue-100 shadow-xl overflow-hidden">
                         <CardHeader className="bg-blue-600 text-white">
                             <CardTitle className="text-xl">Finalizar Turno</CardTitle>
