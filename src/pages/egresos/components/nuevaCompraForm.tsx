@@ -56,7 +56,7 @@ export default function NuevaCompraForm() {
             // @ts-ignore
             const api = window["electron-api"];
             const storeCaja = await api?.getConfig("open_caja");
-            const localCaja = localStorage.getItem("openCaja");
+            const localCaja = localStorage.getItem("open_caja");
             if (storeCaja) setOpenCaja(storeCaja);
             else if (localCaja) setOpenCaja(JSON.parse(localCaja));
         };

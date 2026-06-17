@@ -33,6 +33,13 @@ db.exec(`
         data_venta TEXT,
         fecha TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS offline_clientes (
+        id_cliente INTEGER PRIMARY KEY,
+        nombre_cliente TEXT,
+        direccion TEXT,
+        telefono TEXT
+    );
 `);
 
 console.log("Base de datos lista en: ", dbPath);

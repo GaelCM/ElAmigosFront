@@ -22,7 +22,11 @@ export default function Bienvenida({ onCajaOpened }: BienvenidaProps) {
         if (res.data.existe) {
             // @ts-ignore
             const api = window["electron-api"];
-            await api?.setConfig("open_caja", res.data);
+            if (api) {
+                await api.setConfig("open_caja", res.data);
+            } else {
+                localStorage.setItem("open_caja", JSON.stringify(res.data));
+            }
 
             onCajaOpened();
             toast.success("Caja abierta");

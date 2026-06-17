@@ -57,7 +57,11 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
                 console.log(res.data)
                 // @ts-ignore
                 const api = window["electron-api"];
-                await api?.setConfig("open_caja", res.data);
+                if (api) {
+                    await api.setConfig("open_caja", res.data);
+                } else {
+                    localStorage.setItem("open_caja", JSON.stringify(res.data));
+                }
 
                 toast.success("Turno abierto exitosamente.", {
                     description: "El turno se abrió correctamente.",

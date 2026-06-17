@@ -94,7 +94,7 @@ export default function CrearTransferencia() {
     const term = busqueda.toLowerCase();
     return productosLista.filter((p) => {
       const nombre = (p.nombre_producto || "").toLowerCase();
-      const sku = (p.sku_pieza || "").toLowerCase();
+      const sku = (p.sku_presentacion || "").toLowerCase();
       return nombre.includes(term) || sku.includes(term);
     });
   }, [productosLista, busqueda]);
@@ -206,7 +206,7 @@ export default function CrearTransferencia() {
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nombre o SKU..."
+              placeholder="Buscar por nombre o SKU presentación.."
               className="pl-8"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}

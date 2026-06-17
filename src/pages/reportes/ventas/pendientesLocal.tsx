@@ -62,7 +62,7 @@ export default function VentasPendientesLocal() {
 
     const calcularTotal = (payload: CarritoPayload) => {
         return redondearPrecio(payload.productos.reduce((acc, p) => {
-            const precio = p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta;
+            const precio = p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta;
             return acc + (precio * p.quantity);
         }, 0));
     };
@@ -356,7 +356,7 @@ export default function VentasPendientesLocal() {
                                         </TableHeader>
                                         <TableBody>
                                             {selectedVenta.venta.productos.map((p, idx) => {
-                                                const precio = p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta;
+                                                const precio = p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta;
                                                 return (
                                                     <TableRow key={idx}>
                                                         <TableCell className="font-black text-primary">{p.quantity}</TableCell>

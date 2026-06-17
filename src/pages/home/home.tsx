@@ -18,7 +18,7 @@ export default function Home() {
       setOpenCaja(JSON.stringify(storeCaja));
     } else {
       // Fallback to localStorage if electron-store doesn't have it
-      const localCaja = localStorage.getItem("openCaja");
+      const localCaja = localStorage.getItem("open_caja");
       if (localCaja) {
         setOpenCaja(localCaja);
       } else {

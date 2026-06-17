@@ -184,7 +184,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
           <div className="mt-3 sm:hidden">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
-              <Button variant={"default"} className="px-10 cursor-pointer">Buscar   Producto (F10)</Button>
+              <Button variant={"default"} className="px-10 cursor-pointer w-full" onClick={openDialog}>Buscar Producto (F10)</Button>
             </div>
           </div>
         </header>
@@ -199,7 +199,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
 
       <DialogProducto isOpen={openP} setIsOpen={(open) => {
         setOpenP(open);
-        if (!open) focusScanner(); // 👈 AQUI
+        if (!open) focusScanner();
       }} idSucursal={user.id_sucursal}></DialogProducto>
     </>
   )

@@ -44,7 +44,9 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
         const loadSettings = async () => {
             // @ts-ignore
             const api = window["electron-api"];
-            const tData = await api?.getConfig("open_caja");
+            const tDataStore = await api?.getConfig("open_caja");
+            const tDataLocal = localStorage.getItem("open_caja");
+            const tData = tDataStore || (tDataLocal ? JSON.parse(tDataLocal) : null);
             const mTurbo = await api?.getConfig("modo_turbo");
 
             if (tData) setTurnoData(tData);
@@ -118,7 +120,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
         }
         // Validar que no haya productos con precio 0
         const productosConPrecioCero = getCarritoActivo()?.productos.filter(p => {
-            const precio = p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta;
+            const precio = p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta;
             return precio <= 0;
         });
 
@@ -178,12 +180,12 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                     productos: carritoActual?.productos?.map((p: any) => ({
                                         cantidad: p.quantity,
                                         nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
-                                        importe: (p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
+                                        importe: (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
                                     })) || [],
                                     total: totalVenta,
                                     pagoCon: cambioEfectivo,
                                     cambio: Math.max(0, cambioEfectivo - totalVenta),
-                                    ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
+                                    ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
                                     turno: turnoData?.id_turno || "0",
                                     metodo_pago: metodoPago,
                                     cortar: isCut
@@ -237,12 +239,12 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                 productos: carritoActual?.productos?.map((p: any) => ({
                                     cantidad: p.quantity,
                                     nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
-                                    importe: (p.usarPrecioMayoreo ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
+                                    importe: (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
                                 })) || [],
                                 total: totalVenta,
                                 pagoCon: cambioEfectivo,
                                 cambio: Math.max(0, cambioEfectivo - totalVenta),
-                                ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
+                                ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
                                 turno: turnoData?.id_turno || "0",
                                 metodo_pago: metodoPago,
                                 cortar: isCut

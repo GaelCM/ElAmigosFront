@@ -356,7 +356,7 @@ export const useListaProductos = create(
                 if (!carritoActivo) return 0;
                 return carritoActivo.productos.reduce(
                     (total, item) => {
-                        const precioArr = item.usarPrecioMayoreo ? item.product.precio_mayoreo : item.product.precio_venta;
+                        const precioArr = item.usarPrecioMayoreo && item.product.precio_mayoreo !== 0 ? item.product.precio_mayoreo : item.product.precio_venta;
                         const subtotalExacto = precioArr * item.quantity;
                         return total + subtotalExacto;
                     },

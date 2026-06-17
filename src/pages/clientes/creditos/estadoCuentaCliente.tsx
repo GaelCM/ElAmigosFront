@@ -121,7 +121,7 @@ export default function EstadoCuentaCliente() {
             // @ts-ignore
             const api = window["electron-api"];
             const storeCaja = await api?.getConfig("open_caja");
-            const localCaja = localStorage.getItem("openCaja");
+            const localCaja = localStorage.getItem("open_caja");
             const data = storeCaja || (localCaja ? JSON.parse(localCaja) : null);
             const id_turno = data?.id_turno;
 
@@ -189,7 +189,7 @@ export default function EstadoCuentaCliente() {
             // @ts-ignore
             const api = window["electron-api"];
             const storeCaja = await api?.getConfig("open_caja");
-            const localCaja = localStorage.getItem("openCaja");
+            const localCaja = localStorage.getItem("open_caja");
             const data = storeCaja || (localCaja ? JSON.parse(localCaja) : null);
             const id_turno = data?.id_turno;
 

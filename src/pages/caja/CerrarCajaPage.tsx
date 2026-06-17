@@ -25,7 +25,7 @@ export default function CerrarCajaPage() {
             // @ts-ignore
             const api = window["electron-api"];
             const corteStore = await api?.getConfig("open_caja");
-            const corteStorage = localStorage.getItem("openCaja");
+            const corteStorage = localStorage.getItem("open_caja");
 
             const rawData = corteStore || (corteStorage ? JSON.parse(corteStorage) : null);
 
@@ -98,7 +98,12 @@ export default function CerrarCajaPage() {
             if (response.success) {
                 setResumenData(response.data);
                 // @ts-ignore
-                await window["electron-api"]?.setConfig("open_caja", null);
+                const api = window["electron-api"];
+                if (api) {
+                    await api.setConfig("open_caja", null);
+                } else {
+                    localStorage.removeItem("open_caja");
+                }
             } else {
                 setError(response.message);
             }

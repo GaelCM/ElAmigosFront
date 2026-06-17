@@ -188,7 +188,7 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                                 // @ts-ignore
                                 const api = window["electron-api"];
                                 const storeCaja = await api?.getConfig("open_caja");
-                                const localCaja = localStorage.getItem("openCaja");
+                                const localCaja = localStorage.getItem("open_caja");
 
                                 if (storeCaja != null || localCaja != null) {
                                     // Si hay un turno abierto, primero enviamos a cerrar caja
@@ -197,10 +197,13 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                                 }
 
                                 // Si no hay turno, cerramos sesión directo
-                                await api?.setConfig("open_caja", null);
+                                if (api) {
+                                    await api.setConfig("open_caja", null);
+                                }
+                                localStorage.removeItem("open_caja");
                                 localStorage.removeItem("tkn");
                                 localStorage.removeItem("currentUser");
-                                localStorage.removeItem("openCaja");
+                                localStorage.removeItem("openCaja"); // fallback removal
                                 navigate("/login");
                             }}
                         >

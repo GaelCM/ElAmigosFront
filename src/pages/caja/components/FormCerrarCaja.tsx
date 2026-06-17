@@ -71,10 +71,13 @@ export default function FormCerrarCaja({ onSubmit, isLoading }: FormCerrarCajaPr
             <Button className="w-full cursor-pointer mt-4" size="icon" variant="destructive" onClick={async () => {
                 // @ts-ignore
                 const api = window["electron-api"];
-                await api?.setConfig("open_caja", null);
+                if (api) {
+                    await api.setConfig("open_caja", null);
+                }
                 localStorage.removeItem("tkn");
                 localStorage.removeItem("currentUser");
                 localStorage.removeItem("openCaja");
+                localStorage.removeItem("open_caja");
                 navigate("/login");
             }}>
                 Salir del sistema con turno abierto

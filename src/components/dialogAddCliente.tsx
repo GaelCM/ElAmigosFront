@@ -1,11 +1,11 @@
 import type { Cliente } from "@/types/Cliente";
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Search, UserPlus, Check, Phone, MapPin, Hash, RefreshCcw, Plus } from "lucide-react";
+import { Search, UserPlus, Check, Phone, MapPin, Hash, RefreshCcw, Plus, Trash2 } from "lucide-react";
 import { useCliente } from "@/contexts/globalClient";
-import { getClientes } from "@/api/clientesApi/clientesApi";
+import { getClientes, deleteCliente } from "@/api/clientesApi/clientesApi";
 import { toast } from "sonner";
 import DialogCreateCliente from "./dialogCreateCliente";
 
@@ -23,8 +23,16 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
   const [loading, setLoading] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
 
+  // Paginación
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+
   // Estado para la navegación por teclado
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Estado para la confirmación de eliminación
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Cliente | null>(null);
 
   const fetchClientes = async () => {
     setLoading(true);
@@ -49,6 +57,7 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
       // Resetear búsqueda y selección al abrir
       setSearchTerm("");
       setSelectedIndex(0);
+      setPage(1);
     }
   }, [isOpen]);
 
@@ -59,10 +68,14 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
     c.id_cliente.toString().includes(searchTerm)
   );
 
-  // Resetear selección cuando cambia la búsqueda
+  // Resetear selección y paginación cuando cambia la búsqueda
   useEffect(() => {
     setSelectedIndex(0);
+    setPage(1);
   }, [searchTerm]);
+
+  const paginatedClientes = filteredClientes.slice(0, page * PAGE_SIZE);
+  const hasMore = paginatedClientes.length < filteredClientes.length;
 
   const handleSelect = (cliente: Cliente) => {
     if (onSelect) {
@@ -77,6 +90,31 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
     }, 100);
   };
 
+  const handleDelete = (e: React.MouseEvent, cliente: Cliente) => {
+    e.stopPropagation();
+    setClientToDelete(cliente);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!clientToDelete) return;
+
+    try {
+      const res = await deleteCliente(clientToDelete.id_cliente);
+      if (res.success) {
+        toast.success("Cliente eliminado correctamente");
+        fetchClientes();
+      } else {
+        toast.error("Error al eliminar cliente", { description: res.message });
+      }
+    } catch (error) {
+      toast.error("Error de conexión al eliminar cliente");
+    } finally {
+      setIsConfirmOpen(false);
+      setClientToDelete(null);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Importante: Detener propagación para evitar conflicto con Caja.tsx
     e.stopPropagation();
@@ -85,11 +123,18 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
+
+      if (selectedIndex === paginatedClientes.length - 1 && hasMore) {
+        setPage(p => p + 1);
+      }
+
       setSelectedIndex(prev => Math.min(prev + 1, filteredClientes.length - 1));
 
       // Scroll automático
-      const nextIndex = Math.min(selectedIndex + 1, filteredClientes.length - 1);
-      document.getElementById(`cliente-row-${nextIndex}`)?.scrollIntoView({ block: 'nearest' });
+      setTimeout(() => {
+        const nextIndex = Math.min(selectedIndex + 1, filteredClientes.length - 1);
+        document.getElementById(`cliente-row-${nextIndex}`)?.scrollIntoView({ block: 'nearest' });
+      }, 0);
 
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
@@ -119,7 +164,7 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
           }, 100);
         }
       }}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl border-none">
+        <DialogContent noAnimation className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl border-none">
           <DialogHeader className="p-6 pb-2 bg-gradient-to-r from-primary/10 to-transparent flex flex-row items-center justify-between pr-12">
             <DialogTitle className="text-2xl flex items-center gap-2 font-bold text-primary">
               <UserPlus className="w-6 h-6" />
@@ -180,50 +225,70 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
                     </Button>
                   </div>
                 ) : (
-                  filteredClientes.map((c, index) => (
-                    <button
-                      key={c.id_cliente}
-                      id={`cliente-row-${index}`}
-                      onClick={() => handleSelect(c)}
-                      className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left group
-                        ${index === selectedIndex
-                          ? 'border-primary bg-primary/5 shadow-md ring-1 ring-primary/20'
-                          : 'border-transparent bg-card hover:bg-accent hover:border-primary/30'
-                        }`}
-                    >
-                      <div className="space-y-2 flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className={`font-bold text-lg leading-none transition-colors truncate ${index === selectedIndex ? 'text-primary' : 'group-hover:text-primary'}`}>
-                            {c.nombre_cliente}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-0.5 rounded-md">
-                            <Hash className="w-3.5 h-3.5" />
-                            {c.id_cliente}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5" />
-                            {c.telefono}
-                          </span>
-                        </div>
-
-                        {c.direccion && (
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-accent/50 p-2 rounded-lg mt-1 italic">
-                            <MapPin className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">{c.direccion}</span>
+                  <>
+                    {paginatedClientes.map((c, index) => (
+                      <button
+                        key={c.id_cliente}
+                        id={`cliente-row-${index}`}
+                        onClick={() => handleSelect(c)}
+                        className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left group
+                          ${index === selectedIndex
+                            ? 'border-primary bg-primary/5 shadow-md ring-1 ring-primary/20'
+                            : 'border-transparent bg-card hover:bg-accent hover:border-primary/30'
+                          }`}
+                      >
+                        <div className="space-y-2 flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className={`font-bold text-lg leading-none transition-colors truncate ${index === selectedIndex ? 'text-primary' : 'group-hover:text-primary'}`}>
+                              {c.nombre_cliente}
+                            </p>
                           </div>
-                        )}
-                      </div>
 
-                      <div className={`ml-4 transition-all scale-90 ${index === selectedIndex ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 group-hover:scale-100'}`}>
-                        <div className="bg-primary text-primary-foreground p-2 rounded-full shadow-lg">
-                          <Check className="w-5 h-5" />
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-0.5 rounded-md">
+                              <Hash className="w-3.5 h-3.5" />
+                              {c.id_cliente}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Phone className="w-3.5 h-3.5" />
+                              {c.telefono}
+                            </span>
+                          </div>
+
+                          {c.direccion && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-accent/50 p-2 rounded-lg mt-1 italic">
+                              <MapPin className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{c.direccion}</span>
+                            </div>
+                          )}
                         </div>
+
+                        <div className={`ml-4 flex items-center gap-2 transition-all scale-90 ${index === selectedIndex ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 group-hover:scale-100'}`}>
+                          <button
+                            onClick={(e) => handleDelete(e, c)}
+                            className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors z-10"
+                            title="Eliminar cliente"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                          <div className="bg-primary text-primary-foreground p-2 rounded-full shadow-lg">
+                            <Check className="w-5 h-5" />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                    {hasMore && (
+                      <div className="pt-2 pb-4 text-center">
+                        <Button
+                          variant="outline"
+                          onClick={() => setPage(p => p + 1)}
+                          className="rounded-full shadow-sm"
+                        >
+                          Cargar más clientes
+                        </Button>
                       </div>
-                    </button>
-                  ))
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -238,6 +303,37 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
           fetchClientes();
         }}
       />
+
+      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DialogContent noAnimation className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" />
+              Confirmar Eliminación
+            </DialogTitle>
+            <DialogDescription className="py-3">
+              ¿Estás seguro de que deseas eliminar al cliente <span className="font-bold text-foreground">{clientToDelete?.nombre_cliente}</span>?
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsConfirmOpen(false)}
+              className="rounded-xl"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              className="rounded-xl bg-red-600 hover:bg-red-700"
+            >
+              Eliminar Cliente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -58,7 +58,7 @@ export default function CarritoTabs() {
             // Calcular el total de este carrito específico
             const totalCarrito = carrito.productos.reduce(
               (total, item) => {
-                const precio = item.usarPrecioMayoreo ? item.product.precio_mayoreo : item.product.precio_venta;
+                const precio = item.usarPrecioMayoreo && item.product.precio_mayoreo !== 0 ? item.product.precio_mayoreo : item.product.precio_venta;
                 return total + (precio * item.quantity);
               },
               0

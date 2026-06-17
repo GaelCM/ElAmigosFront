@@ -63,7 +63,7 @@ export default function DialogCreateCliente({ isOpen, onClose, onSuccess }: prop
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
+            <DialogContent noAnimation className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
                 <DialogHeader className="p-8 pb-4 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-inner">

@@ -14,7 +14,7 @@ export default function DashboardPage() {
             // @ts-ignore
             const api = window["electron-api"];
             const storeCaja = await api?.getConfig("open_caja");
-            const turnoDataString = localStorage.getItem("openCaja");
+            const turnoDataString = localStorage.getItem("open_caja");
 
             const data = storeCaja || (turnoDataString ? JSON.parse(turnoDataString) : null);
 

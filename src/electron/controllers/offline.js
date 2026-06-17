@@ -116,6 +116,68 @@ function offlineController() {
             return { success: false, error: error.message };
         }
     });
+
+    // --- Clientes Offline ---
+
+    ipcMain.handle('sincronizar-clientes', (event, clientes) => {
+        try {
+            const deleteStmt = db.prepare('DELETE FROM offline_clientes');
+            const insertStmt = db.prepare(`
+                INSERT INTO offline_clientes (id_cliente, nombre_cliente, direccion, telefono)
+                VALUES (@id_cliente, @nombre_cliente, @direccion, @telefono)
+            `);
+
+            const sync = db.transaction((clis) => {
+                deleteStmt.run();
+                for (const c of clis) {
+                    insertStmt.run(c);
+                }
+            });
+
+            sync(clientes);
+            return { success: true, count: clientes.length };
+        } catch (error) {
+            console.error("Error al sincronizar clientes:", error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('crear-cliente-local', (event, cliente) => {
+        try {
+            const stmt = db.prepare(`
+                INSERT INTO offline_clientes (id_cliente, nombre_cliente, direccion, telefono)
+                VALUES (@id_cliente, @nombre_cliente, @direccion, @telefono)
+            `);
+            stmt.run(cliente);
+            return { success: true };
+        } catch (error) {
+            console.error("Error al crear cliente local:", error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('obtener-clientes-local', (event) => {
+        try {
+            const stmt = db.prepare('SELECT * FROM offline_clientes');
+            const res = stmt.all();
+            return { success: true, data: res };
+        } catch (error) {
+            console.error("Error al obtener clientes locales:", error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('eliminar-cliente-local', (event, id) => {
+        try {
+            const stmt = db.prepare('DELETE FROM offline_clientes WHERE id_cliente = ?');
+            stmt.run(id);
+            return { success: true };
+        } catch (error) {
+            console.error("Error al eliminar cliente local:", error);
+            return { success: false, error: error.message };
+        }
+    });
+
 }
 
 export { offlineController };

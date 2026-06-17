@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld("electron-api", {
     obtenerVentasPendientes: () => ipcRenderer.invoke('obtener-ventas-pendientes'),
     eliminarVentaSincronizada: (id) => ipcRenderer.invoke('eliminar-venta-sincronizada', id),
 
+    sincronizarClientes: (clientes) => ipcRenderer.invoke('sincronizar-clientes', clientes),
+    crearClienteLocal: (cliente) => ipcRenderer.invoke('crear-cliente-local', cliente),
+    obtenerClientesLocal: () => ipcRenderer.invoke('obtener-clientes-local'),
+    eliminarClienteLocal: (id) => ipcRenderer.invoke('eliminar-cliente-local', id),
+
     // Store API
     getConfig: (key) => ipcRenderer.invoke('store-get', key),
     setConfig: (key, value) => ipcRenderer.invoke('store-set', key, value),

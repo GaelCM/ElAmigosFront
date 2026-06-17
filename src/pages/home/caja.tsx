@@ -447,7 +447,7 @@ export default function Home() {
                                                 <div className="flex flex-col">
                                                     <span className="text-[9px] font-bold text-muted-foreground uppercase leading-none">Precio</span>
                                                     <p className="text-sm font-black text-slate-600">
-                                                        ${(producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta).toFixed(2)}
+                                                        ${(producto.usarPrecioMayoreo && producto.product.precio_mayoreo !== 0 ? producto.product.precio_mayoreo : producto.product.precio_venta).toFixed(2)}
                                                     </p>
                                                 </div>
                                                 <div className="flex flex-col">
@@ -459,7 +459,7 @@ export default function Home() {
                                                 <div className="flex flex-col min-w-[60px]">
                                                     <span className="text-[9px] font-bold text-muted-foreground uppercase leading-none">Importe</span>
                                                     <p className="text-sm font-black text-primary">
-                                                        ${((producto.usarPrecioMayoreo ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}
+                                                        ${((producto.usarPrecioMayoreo && producto.product.precio_mayoreo !== 0 ? producto.product.precio_mayoreo : producto.product.precio_venta) * producto.quantity).toFixed(2)}
                                                     </p>
                                                 </div>
                                             </div>
