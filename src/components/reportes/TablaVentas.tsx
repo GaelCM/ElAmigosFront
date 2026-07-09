@@ -196,11 +196,11 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
-                <div className="relative w-16 h-16">
-                    <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
-                    <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="relative w-12 h-12">
+                    <div className="absolute inset-0 border-3 border-primary/20 rounded-full"></div>
+                    <div className="absolute inset-0 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
-                <p className="text-muted-foreground font-medium">Cargando ventas...</p>
+                <p className="text-sm text-muted-foreground font-medium">Cargando ventas...</p>
             </div>
         );
     }
@@ -209,12 +209,12 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         return (
             <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-16 space-y-4">
-                    <div className="rounded-full bg-muted p-6">
-                        <Receipt className="w-12 h-12 text-muted-foreground" />
+                    <div className="rounded-full bg-muted p-5">
+                        <Receipt className="w-10 h-10 text-muted-foreground" />
                     </div>
-                    <div className="text-center space-y-2">
-                        <h3 className="text-xl font-semibold">No hay ventas registradas</h3>
-                        <p className="text-muted-foreground">No se encontraron ventas en el período seleccionado</p>
+                    <div className="text-center space-y-1">
+                        <h3 className="text-lg font-semibold">No hay ventas registradas</h3>
+                        <p className="text-sm text-muted-foreground">No se encontraron ventas en el periodo seleccionado</p>
                     </div>
                 </CardContent>
             </Card>
@@ -222,20 +222,18 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* Estadísticas Resumen */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
+                <Card className="border-l-[3px] border-l-blue-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Ventas Exitosas
                         </CardTitle>
-                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                            <Receipt className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        </div>
+                        <Receipt className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">{ventasExitosas}</div>
+                        <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{ventasExitosas}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {ventasCanceladas > 0 ? `${ventasCanceladas} canceladas (no sumadas)` : "Sin cancelaciones"}
                         </p>
@@ -243,17 +241,15 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                 </Card>
                 {
                     user.id_rol === 1 && (
-                        <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
+                        <Card className="border-l-[3px] border-l-emerald-500">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                     Ingresos Reales
                                 </CardTitle>
-                                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                                </div>
+                                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">
+                                <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
                                     {formatCurrency(totalVentas)}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
@@ -265,34 +261,30 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                 }
 
 
-                <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
+                <Card className="border-l-[3px] border-l-purple-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Productos Vendidos
                         </CardTitle>
-                        <div className="p-2 bg-purple-500/10 rounded-lg">
-                            <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                        </div>
+                        <Package className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-purple-700 dark:text-purple-400">{totalProductos}</div>
+                        <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">{totalProductos}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             En ventas completadas
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-background hover:shadow-lg transition-all duration-300">
+                <Card className="border-l-[3px] border-l-amber-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Ticket Promedio
                         </CardTitle>
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                            <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                        </div>
+                        <DollarSign className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-amber-700 dark:text-amber-400">
+                        <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">
                             {formatCurrency(ventasExitosas > 0 ? totalVentas / ventasExitosas : 0)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -307,12 +299,12 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                 <CardHeader>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-1">
-                            <CardTitle className="flex items-center gap-2">
-                                <Receipt className="h-5 w-5" />
+                            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                                <Receipt className="h-4 w-4" />
                                 Listado de Ventas
                             </CardTitle>
-                            <CardDescription>
-                                Haz clic en una fila para ver más detalles de la venta
+                            <CardDescription className="text-xs">
+                                Haz clic en una fila para ver mas detalles de la venta
                             </CardDescription>
                         </div>
                         <div className="relative w-full md:w-72">
@@ -322,7 +314,7 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 autoFocus
-                                className="pl-9 h-10 bg-background border-primary/20 focus:border-primary focus:ring-primary/20 transition-all"
+                                className="pl-9 h-9"
                             />
                         </div>
                     </div>
@@ -331,37 +323,37 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                     <div className="overflow-x-auto" ref={tableContainerRef}>
                         <Table>
                             <TableHeader>
-                                <TableRow className="bg-muted/50">
-                                    <TableHead className="w-[40px] px-2 py-4"></TableHead>
+                                <TableRow className="bg-muted/40">
+                                    <TableHead className="w-[40px] px-2 py-3"></TableHead>
                                     <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors px-2 py-4"
+                                        className="cursor-pointer hover:bg-muted/80 transition-colors px-2 py-3"
                                         onClick={() => handleSort('id_venta')}
                                     >
-                                        <span className="font-bold text-sm md:text-base">ID</span>
+                                        <span className="font-semibold text-xs uppercase tracking-wider">ID</span>
                                     </TableHead>
                                     <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors px-2 py-4"
+                                        className="cursor-pointer hover:bg-muted/80 transition-colors px-2 py-3"
                                         onClick={() => handleSort('fecha_venta')}
                                     >
-                                        <span className="font-bold text-sm md:text-base">Fecha/Hora</span>
+                                        <span className="font-semibold text-xs uppercase tracking-wider">Fecha/Hora</span>
                                     </TableHead>
                                     <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-right px-2 py-4"
+                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-right px-2 py-3"
                                         onClick={() => handleSort('total_venta')}
                                     >
-                                        <span className="font-bold text-sm md:text-base">Total</span>
+                                        <span className="font-semibold text-xs uppercase tracking-wider">Total</span>
                                     </TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold whitespace-nowrap">Pago</TableHead>
+                                    <TableHead className="px-2 py-3 text-xs uppercase tracking-wider font-semibold whitespace-nowrap">Pago</TableHead>
                                     <TableHead
-                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-center px-2 py-4"
+                                        className="cursor-pointer hover:bg-muted/80 transition-colors text-center px-2 py-3"
                                         onClick={() => handleSort('cantidad_productos')}
                                     >
-                                        <span className="font-bold text-sm md:text-base">Pzas</span>
+                                        <span className="font-semibold text-xs uppercase tracking-wider">Pzas</span>
                                     </TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Estado</TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Usuario</TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold">Cliente</TableHead>
-                                    <TableHead className="px-2 py-4 text-sm md:text-base font-bold text-center">Acciones</TableHead>
+                                    <TableHead className="px-2 py-3 text-xs uppercase tracking-wider font-semibold">Estado</TableHead>
+                                    <TableHead className="px-2 py-3 text-xs uppercase tracking-wider font-semibold">Usuario</TableHead>
+                                    <TableHead className="px-2 py-3 text-xs uppercase tracking-wider font-semibold">Cliente</TableHead>
+                                    <TableHead className="px-2 py-3 text-xs uppercase tracking-wider font-semibold text-center">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -374,8 +366,8 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                         <Fragment key={venta.id_venta}>
                                             <TableRow
                                                 data-index={index}
-                                                className={`cursor-pointer transition-all duration-200 select-none ${isSelected
-                                                    ? 'bg-blue-300 border-l-4 border-l-blue-600 dark:bg-blue-400/20'
+                                                className={`cursor-pointer transition-all duration-150 select-none ${isSelected
+                                                    ? 'bg-blue-300 border-l-2 border-l-primary'
                                                     : 'hover:bg-muted/50'
                                                     }`}
                                                 onClick={() => setSelectedIndex(index)}
@@ -398,74 +390,74 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                         )}
                                                     </Button>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4 font-mono">
-                                                    <span className="text-sm md:text-base font-bold bg-primary/5 px-2 py-1 rounded border border-primary/10">
+                                                <TableCell className="px-2 py-3 font-mono">
+                                                    <span className="text-xl font-semibold">
                                                         #{venta.id_venta}
                                                     </span>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <div className="flex flex-col text-sm md:text-base font-bold leading-tight">
-                                                        <span className="whitespace-nowrap">
+                                                <TableCell className="px-2 py-3">
+                                                    <div className="flex flex-col leading-tight">
+                                                        <span className="text-xl font-medium whitespace-nowrap">
                                                             {formatDate(venta.fecha_venta).split(',')[0]}
                                                         </span>
-                                                        <span className="text-muted-foreground whitespace-nowrap text-xs md:text-sm">
+                                                        <span className="text-md text-muted-foreground whitespace-nowrap">
                                                             {formatTime(venta.fecha_venta)}
                                                         </span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4 text-right">
-                                                    <span className="font-black text-sm md:text-lg text-emerald-600 dark:text-emerald-400">
+                                                <TableCell className="px-2 py-3 text-right">
+                                                    <span className="font-bold text-xl text-emerald-600 dark:text-emerald-400">
                                                         {formatCurrency(venta.total_venta)}
                                                     </span>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <Badge variant="secondary" className="px-2 py-1 text-xs md:text-sm font-bold whitespace-nowrap">
+                                                <TableCell className="px-2 py-3">
+                                                    <Badge variant="secondary" className="text-xs font-medium whitespace-nowrap">
                                                         {venta.metodo_pago_descripcion}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4 text-center">
-                                                    <Badge variant="outline" className="px-2 py-1 text-xs md:text-sm font-bold bg-purple-500/10 text-purple-700 border-purple-500/20">
+                                                <TableCell className="px-2 py-3 text-center">
+                                                    <span className="text-sm font-medium text-muted-foreground">
                                                         {venta.cantidad_productos}
-                                                    </Badge>
+                                                    </span>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <Badge className={`px-2 py-1 text-xs md:text-sm font-bold gap-1 ${getEstadoConfig(venta.estado_venta).className}`}>
-                                                        <EstadoIcon className="h-4 w-4" />
+                                                <TableCell className="px-2 py-3">
+                                                    <Badge className={`text-xs font-medium gap-1 ${getEstadoConfig(venta.estado_venta).className}`}>
+                                                        <EstadoIcon className="h-3 w-3" />
                                                         {getEstadoConfig(venta.estado_venta).label}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <span className="font-bold text-sm md:text-base truncate max-w-[100px] block">{venta.nombre_usuario}</span>
+                                                <TableCell className="px-2 py-3">
+                                                    <span className="text-sm font-medium truncate max-w-[100px] block">{venta.nombre_usuario}</span>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <span className="font-bold text-sm md:text-base truncate max-w-[120px] block">{venta.nombre_cliente}</span>
+                                                <TableCell className="px-2 py-3">
+                                                    <span className="text-md font-medium truncate max-w-[120px] block">{venta.nombre_cliente}</span>
                                                 </TableCell>
-                                                <TableCell className="px-2 py-4">
-                                                    <div className="flex items-center justify-center gap-2">
+                                                <TableCell className="px-2 py-3">
+                                                    <div className="flex items-center justify-center gap-1.5">
                                                         <Button
                                                             variant="default"
                                                             size="sm"
-                                                            className="h-9 gap-2 font-bold"
+                                                            className="h-8 gap-1.5 text-xs font-medium"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`);
                                                             }}
                                                         >
-                                                            <Eye className="h-4 w-4" />
-                                                            Ver Detalles
+                                                            <Eye className="h-3.5 w-3.5" />
+                                                            Ver
                                                         </Button>
                                                         {user?.id_rol === 1 && (
                                                             <Button
                                                                 variant="destructive"
                                                                 size="sm"
-                                                                className="h-9 gap-2 font-bold"
+                                                                className="h-8 gap-1.5 text-xs font-medium"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     cancelarVenta(venta.id_venta);
                                                                 }}
                                                             >
-                                                                <Trash className="h-4 w-4" />
-                                                                Cancelar Venta
+                                                                <Trash className="h-3.5 w-3.5" />
+                                                                Cancelar
                                                             </Button>
                                                         )}
                                                     </div>
@@ -475,54 +467,54 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                             {/* Fila Expandida con Detalles */}
                                             {isExpanded && (
                                                 <TableRow>
-                                                    <TableCell colSpan={9} className="bg-muted/30 p-0">
-                                                        <div className="p-6 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                                                            <div className="flex items-center gap-2 mb-4">
-                                                                <Receipt className="h-5 w-5 text-primary" />
-                                                                <h4 className="font-semibold text-lg">Detalles de Venta #{venta.id_venta}</h4>
+                                                    <TableCell colSpan={10} className="bg-muted/20 p-0">
+                                                        <div className="p-5 space-y-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <Receipt className="h-4 w-4 text-primary" />
+                                                                <h4 className="text-sm font-semibold">Detalles de Venta #{venta.id_venta}</h4>
                                                             </div>
 
                                                             <Separator />
 
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+                                                                <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                         Monto Recibido
                                                                     </label>
-                                                                    <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                                                                    <p className="text-base font-semibold text-blue-600 dark:text-blue-400">
                                                                         {formatCurrency(venta.monto_recibido)}
                                                                     </p>
                                                                 </div>
 
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                         Cambio
                                                                     </label>
-                                                                    <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+                                                                    <p className="text-base font-semibold text-amber-600 dark:text-amber-400">
                                                                         {formatCurrency(venta.cambio)}
                                                                     </p>
                                                                 </div>
 
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                         ID Turno
                                                                     </label>
-                                                                    <p className="text-lg font-semibold font-mono">
+                                                                    <p className="text-base font-semibold font-mono">
                                                                         #{venta.id_turno}
                                                                     </p>
                                                                 </div>
 
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                         Estado Turno
                                                                     </label>
-                                                                    <p className="text-lg font-semibold capitalize">
+                                                                    <p className="text-base font-semibold capitalize">
                                                                         {venta.turno_estado}
                                                                     </p>
                                                                 </div>
 
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                         Apertura Turno
                                                                     </label>
                                                                     <p className="text-sm font-medium">
@@ -535,8 +527,8 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                                 </div>
 
                                                                 {venta.turno_fecha_cierre && (
-                                                                    <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                    <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                             Cierre Turno
                                                                         </label>
                                                                         <p className="text-sm font-medium">
@@ -549,8 +541,8 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                                     </div>
                                                                 )}
 
-                                                                <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                         Email Usuario
                                                                     </label>
                                                                     <p className="text-sm font-medium break-all">
@@ -559,22 +551,22 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                                 </div>
 
                                                                 {venta.id_cliente && (
-                                                                    <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                    <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                             ID Cliente
                                                                         </label>
-                                                                        <p className="text-lg font-semibold font-mono">
+                                                                        <p className="text-base font-semibold font-mono">
                                                                             #{venta.id_cliente}
                                                                         </p>
                                                                     </div>
                                                                 )}
 
                                                                 {venta.nombre_cliente && (
-                                                                    <div className="space-y-1 p-3 rounded-lg bg-background border">
-                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                                    <div className="space-y-1 p-3 rounded-lg bg-card border">
+                                                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                                             Nombre Cliente
                                                                         </label>
-                                                                        <p className="text-lg font-semibold font-mono">
+                                                                        <p className="text-base font-semibold font-mono">
                                                                             {venta.nombre_cliente}
                                                                         </p>
                                                                     </div>

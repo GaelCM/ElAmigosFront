@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -32,6 +33,14 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { redondearPrecio } from "@/lib/utils";
 
 
@@ -172,198 +181,206 @@ export default function DetalleVentaPage() {
                     <Skeleton className="h-10 w-10 rounded-full" />
                     <Skeleton className="h-10 w-64" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <Skeleton className="h-32 rounded-2xl" />
-                    <Skeleton className="h-32 rounded-2xl" />
-                    <Skeleton className="h-32 rounded-2xl" />
-                    <Skeleton className="h-32 rounded-2xl" />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Skeleton className="h-24 rounded-lg" />
+                    <Skeleton className="h-24 rounded-lg" />
+                    <Skeleton className="h-24 rounded-lg" />
+                    <Skeleton className="h-24 rounded-lg" />
                 </div>
-                <Skeleton className="h-[400px] w-full rounded-2xl" />
+                <Skeleton className="h-[400px] w-full rounded-lg" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <div className="p-4 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <Button
                             variant="outline"
                             size="icon"
                             onClick={() => navigate(-1)}
-                            className="rounded-full hover:bg-white dark:hover:bg-slate-900 shadow-sm transition-all duration-300 hover:scale-105 active:scale-95"
+                            className="h-10 w-10 shrink-0"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Button>
                         <div>
-                            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-
+                            <h1 className="text-4xl font-bold tracking-tight text-foreground">
                                 Detalle de Venta
                             </h1>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium">
-                                Registro de transacción #{idVenta}
+                            <p className="text-lg text-muted-foreground">
+                                Registro de transaccion #{idVenta}
                             </p>
                         </div>
-                        <div className="flex gap-2">
-                            <Button className=" text-black bg-yellow-500 hover:bg-yellow-600 hover:text-black cursor-pointer" onClick={reimprimirTicket} >
-                                <Printer className="w-5 h-5 mr-2" />
-                                Reimprimir Ticket
-                            </Button>
-                        </div>
                     </div>
-
                     <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border-none">
-                            <Hash className="w-3 h-3 mr-1" /> ID: {idVenta}
+                        <Badge variant="secondary" className="font-mono text-sm">
+                            <Hash className="w-4 h-4 mr-1" /> ID: {idVenta}
                         </Badge>
-                        <Badge variant="outline" className="px-3 py-1 text-sm border-slate-200 dark:border-slate-800">
-                            <Calendar className="w-3 h-3 mr-1" /> {formatDate(saleInfo?.fecha_venta)}
+                        <Badge variant="outline" className="text-sm">
+                            <Calendar className="w-4 h-4 mr-1" /> {formatDate(saleInfo?.fecha_venta)}
                         </Badge>
+                        <Button
+                            variant="outline"
+                            size="default"
+                            className="gap-2 text-base text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-800 dark:hover:bg-amber-950/30"
+                            onClick={reimprimirTicket}
+                        >
+                            <Printer className="w-5 h-5" />
+                            Reimprimir Ticket
+                        </Button>
                     </div>
                 </div>
 
+                <Separator />
+
                 {/* Info Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Sale General Info */}
-                    <div className="md:col-span-2 bg-white dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl backdrop-blur-xl flex flex-col justify-between">
-                        <div className="flex items-center gap-2 mb-6 text-indigo-500">
-                            <FileText className="w-5 h-5" />
-                            <h2 className="font-bold text-lg text-slate-800 dark:text-slate-100">Información General</h2>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            <div className="space-y-1">
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Vendedor</p>
-                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{saleInfo?.nombre_usuario || "N/A"}</p>
+                    <Card className="md:col-span-2">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-base font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                <FileText className="w-5 h-5" />
+                                Informacion General
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Vendedor</p>
+                                    <p className="text-base font-semibold">{saleInfo?.nombre_usuario || "N/A"}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Sucursal</p>
+                                    <p className="text-base font-semibold">{saleInfo?.nombre_sucursal || "N/A"}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Metodo Pago</p>
+                                    <Badge variant="secondary" className="mt-0.5">
+                                        {saleInfo?.metodo_pago_descripcion || "Efectivo"}
+                                    </Badge>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Cliente</p>
+                                    <p className="text-base font-semibold">#{saleInfo?.id_cliente || "General"}</p>
+                                    <p className="text-base text-muted-foreground">{cliente}</p>
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sucursal</p>
-                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{saleInfo?.nombre_sucursal || "N/A"}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Método Pago</p>
-                                <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-none">
-                                    {saleInfo?.metodo_pago_descripcion || "Efectivo"}
-                                </Badge>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cliente ID</p>
-                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">#{saleInfo?.id_cliente || "General"}</p>
-                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{cliente}</p>
-                            </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
 
                     {/* Payment Status Card */}
-                    <div className={`${saleInfo?.estado_venta === 1 ? "bg-green-700" : "bg-red-700"}  p-6 rounded-3xl shadow-xl shadow-indigo-500/20 flex flex-col justify-between text-white`}>
-                        <div className="flex items-center justify-between">
-                            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
-                                <DollarSign className="w-6 h-6 text-white" />
+                    <Card className={`${saleInfo?.estado_venta === 1 ? "bg-green-700 border-green-700" : "bg-red-700 border-red-700"} text-white`}>
+                        <CardContent className="pt-6 flex flex-col justify-between h-full">
+                            <div className="flex items-center justify-between">
+                                <div className="p-2 bg-white/15 rounded-lg">
+                                    <DollarSign className="w-6 h-6 text-white" />
+                                </div>
+                                <Badge className="bg-white/15 text-white border-none text-sm">
+                                    {saleInfo?.estado_venta === 1 ? "Completada" : "Cancelada"}
+                                </Badge>
                             </div>
-                            <Badge className="bg-white/20 text-white border-none backdrop-blur-md">{saleInfo?.estado_venta === 1 ? "Completada" : "Cancelada"}</Badge>
-                        </div>
-                        <div className="mt-4">
-                            <p className="text-white/60 text-sm font-medium">Total de la Venta</p>
-                            <h3 className="text-3xl font-black">{formatCurrency(totalVenta)}</h3>
-                        </div>
-                    </div>
+                            <div className="mt-4">
+                                <p className="text-white/60 text-sm font-medium uppercase tracking-wider">Total de la Venta</p>
+                                <h3 className="text-4xl font-bold mt-1">{formatCurrency(totalVenta)}</h3>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <CardKpi
-                        title="Subtotal Total"
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard
+                        title="Subtotal"
                         value={formatCurrency(totalVenta)}
-                        icon={<DollarSign className="w-6 h-6 text-emerald-500" />}
-                        description="Monto acumulado de los items"
-                        variant="emerald"
+                        icon={<DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
+                        accent="emerald"
                     />
-                    <CardKpi
-                        title="Cant. Artículos"
+                    <StatCard
+                        title="Articulos"
                         value={totalProductos}
-                        icon={<ShoppingCart className="w-6 h-6 text-blue-500" />}
-                        description="Unidades totales vendidas"
-                        variant="blue"
+                        icon={<ShoppingCart className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+                        accent="blue"
                     />
-                    <CardKpi
+                    <StatCard
                         title="Recibido"
                         value={formatCurrency(saleInfo?.monto_recibido || 0)}
-                        icon={<Tag className="w-6 h-6 text-amber-500" />}
-                        description="Monto entregado por cliente"
-                        variant="amber"
+                        icon={<Tag className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
+                        accent="amber"
                     />
-                    <CardKpi
+                    <StatCard
                         title="Cambio"
                         value={formatCurrency(saleInfo?.cambio || 0)}
-                        icon={<Layers className="w-6 h-6 text-purple-500" />}
-                        description="Monto devuelto al cliente"
-                        variant="purple"
+                        icon={<Layers className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
+                        accent="purple"
                     />
                 </div>
 
                 {/* Table Section */}
-                <div className="bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden backdrop-blur-xl">
-                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/80 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Package className="h-5 w-5 text-indigo-500" />
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Productos en la Venta</h2>
+                <Card className="overflow-hidden">
+                    <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-base font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                <Package className="h-5 w-5" />
+                                Productos en la Venta
+                            </CardTitle>
+                            <span className="text-sm font-medium text-muted-foreground">{items.length} registros</span>
                         </div>
-                        <span className="text-sm font-medium text-slate-500">{items.length} registros</span>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                                    <th className="px-6 py-4 font-semibold text-sm">Producto</th>
-                                    <th className="px-6 py-4 font-semibold text-sm">Categoría</th>
-                                    <th className="px-6 py-4 font-semibold text-sm text-center">Cantidad</th>
-                                    <th className="px-6 py-4 font-semibold text-sm text-right">Precio Unit.</th>
-                                    <th className="px-6 py-4 font-semibold text-sm text-center">Tipo</th>
-                                    <th className="px-6 py-4 font-semibold text-sm text-right">Subtotal</th>
-                                    {saleInfo?.estado_venta !== 0 && <th className="px-6 py-4 font-semibold text-sm text-center">Ajuste</th>}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/40">
+                                    <TableHead className="font-semibold text-sm uppercase tracking-wider">Producto</TableHead>
+                                    <TableHead className="font-semibold text-sm uppercase tracking-wider">Categoria</TableHead>
+                                    <TableHead className="font-semibold text-sm uppercase tracking-wider text-center">Cantidad</TableHead>
+                                    <TableHead className="font-semibold text-sm uppercase tracking-wider text-right">Precio Unit.</TableHead>
+                                    <TableHead className="font-semibold text-sm uppercase tracking-wider text-center">Tipo</TableHead>
+                                    <TableHead className="font-semibold text-sm uppercase tracking-wider text-right">Subtotal</TableHead>
+                                    {saleInfo?.estado_venta !== 0 && <TableHead className="font-semibold text-sm uppercase tracking-wider text-center">Ajuste</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {items.map((item) => (
-                                    <tr
+                                    <TableRow
                                         key={item.id_detalle_venta}
-                                        className="group hover:bg-slate-50/80 dark:hover:bg-indigo-500/5 transition-colors duration-200"
+                                        className="group"
                                     >
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-white dark:group-hover:bg-slate-700 transition-colors shadow-sm">
-                                                    <Package className="w-4 h-4 text-slate-500" />
+                                        <TableCell className="py-3">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="p-1.5 bg-muted rounded-md">
+                                                    <Package className="w-4 h-4 text-muted-foreground" />
                                                 </div>
-                                                <span className="font-semibold text-slate-700 dark:text-slate-200">{item.nombre_producto} {item.nombre_unidad}</span>
+                                                <span className="font-medium text-base">{item.nombre_producto} {item.nombre_unidad}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <Badge variant="outline" className="font-normal text-xs bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700">
+                                        </TableCell>
+                                        <TableCell className="py-3">
+                                            <Badge variant="outline" className="font-normal text-sm">
                                                 {item.nombre_categoria}
                                             </Badge>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="font-medium text-slate-600 dark:text-slate-400">
+                                        </TableCell>
+                                        <TableCell className="py-3 text-center">
+                                            <span className="text-base text-muted-foreground">
                                                 {item.cantidad} {item.nombre_unidad}
                                             </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <span className="text-slate-600 dark:text-slate-400">{formatCurrency(item.precio_unitario)}</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
+                                        </TableCell>
+                                        <TableCell className="py-3 text-right">
+                                            <span className="text-base text-muted-foreground">{formatCurrency(item.precio_unitario)}</span>
+                                        </TableCell>
+                                        <TableCell className="py-3 text-center">
                                             {item.precio_mayoreo ? (
-                                                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none">Mayoreo</Badge>
+                                                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-none text-sm">Mayoreo</Badge>
                                             ) : (
-                                                <Badge variant="outline" className="text-slate-500 dark:text-slate-500">Menudeo</Badge>
+                                                <Badge variant="outline" className="text-sm text-muted-foreground">Menudeo</Badge>
                                             )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.subtotal)}</span>
-                                        </td>
+                                        </TableCell>
+                                        <TableCell className="py-3 text-right">
+                                            <span className="font-semibold text-base">{formatCurrency(item.subtotal)}</span>
+                                        </TableCell>
                                         {saleInfo?.estado_venta !== 0 && (
-                                            <td className="px-6 py-4 text-center">
+                                            <TableCell className="py-3 text-center">
                                                 <Dialog
                                                     open={dialogOpen === item.id_detalle_venta}
                                                     onOpenChange={(open) => {
@@ -378,21 +395,21 @@ export default function DetalleVentaPage() {
                                                     <DialogTrigger asChild>
                                                         <Button
                                                             variant="ghost"
-                                                            size="icon"
-                                                            className="text-red-500 cursor-pointer hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full transition-all duration-200"
+                                                            size="sm"
+                                                            className="text-destructive cursor-pointer hover:text-destructive hover:bg-destructive/10 text-sm gap-1.5"
                                                         >
                                                             REMOVER
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </DialogTrigger>
-                                                    <DialogContent className="rounded-3xl border-slate-200 dark:border-slate-800">
+                                                    <DialogContent>
                                                         <DialogHeader>
-                                                            <div className="flex items-center gap-3 text-red-600 mb-2">
+                                                            <div className="flex items-center gap-2 text-destructive mb-1">
                                                                 <AlertCircle className="h-6 w-6" />
-                                                                <DialogTitle className="text-xl">¿Ajustar Venta?</DialogTitle>
+                                                                <DialogTitle>Ajustar Venta</DialogTitle>
                                                             </div>
-                                                            <DialogDescription className="text-slate-600 dark:text-slate-400 text-base">
-                                                                Estás por devolver/cancelar el producto <span className="font-bold text-slate-900 dark:text-white">"{item.nombre_producto}"</span>.
+                                                            <DialogDescription className="text-base">
+                                                                Estas por devolver/cancelar el producto <span className="font-semibold text-foreground">"{item.nombre_producto}"</span>.
                                                                 <br />
                                                             </DialogDescription>
                                                         </DialogHeader>
@@ -400,7 +417,7 @@ export default function DetalleVentaPage() {
                                                         <div className="py-4 space-y-4">
                                                             {Number(item.cantidad) > 1 ? (
                                                                 <div className="flex flex-col gap-2">
-                                                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                                    <label className="text-base font-medium">
                                                                         Cantidad a devolver (Max: {item.cantidad})
                                                                     </label>
                                                                     <div className="flex items-center gap-4">
@@ -412,7 +429,7 @@ export default function DetalleVentaPage() {
                                                                         >
                                                                             -
                                                                         </Button>
-                                                                        <span className="text-xl font-bold w-12 text-center">{cantidadACancelar}</span>
+                                                                        <span className="text-2xl font-bold w-12 text-center">{cantidadACancelar}</span>
                                                                         <Button
                                                                             variant="outline"
                                                                             size="icon"
@@ -422,117 +439,108 @@ export default function DetalleVentaPage() {
                                                                             +
                                                                         </Button>
                                                                     </div>
-                                                                    <p className="text-xs text-slate-500">
-                                                                        Se restarán <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        Se restaran <span className="font-semibold text-primary">
                                                                             {formatCurrency(Number(item.precio_unitario) * cantidadACancelar)}
                                                                         </span> del total.
                                                                     </p>
                                                                 </div>
                                                             ) : (
-                                                                <p className="text-slate-600 dark:text-slate-400">
-                                                                    Se regresará el stock y se restará <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatCurrency(item.subtotal)}</span> del total.
+                                                                <p className="text-base text-muted-foreground">
+                                                                    Se regresara el stock y se restara <span className="font-semibold text-primary">{formatCurrency(item.subtotal)}</span> del total.
                                                                 </p>
                                                             )}
                                                         </div>
 
                                                         <DialogFooter className="gap-2">
-                                                            <Button variant="outline" onClick={() => setDialogOpen(null)} className="rounded-xl border-slate-200 dark:border-slate-800">Cancelar</Button>
+                                                            <Button variant="outline" onClick={() => setDialogOpen(null)}>Cancelar</Button>
                                                             <Button
                                                                 onClick={() => handleCancelarProducto(item.id_detalle_venta, item.nombre_producto)}
-                                                                className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                                                                variant="destructive"
                                                             >
-                                                                Confirmar Devolución
+                                                                Confirmar Devolucion
                                                             </Button>
                                                         </DialogFooter>
                                                     </DialogContent>
                                                 </Dialog>
-                                            </td>
+                                            </TableCell>
                                         )}
-                                    </tr>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
 
-                    {items.length === 0 && (
-                        <div className="p-12 text-center">
-                            <div className="inline-flex p-4 bg-slate-100 dark:bg-slate-800 rounded-full mb-4">
-                                <FileText className="w-8 h-8 text-slate-400" />
+                        {items.length === 0 && (
+                            <div className="p-12 text-center">
+                                <div className="inline-flex p-3 bg-muted rounded-full mb-3">
+                                    <FileText className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                                <p className="text-base text-muted-foreground">No se encontraron productos para esta venta.</p>
                             </div>
-                            <p className="text-slate-500 dark:text-slate-400">No se encontraron productos para esta venta.</p>
-                        </div>
-                    )}
+                        )}
 
-                    <div className="p-8 bg-slate-50/50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                        <div className="w-full md:w-80 space-y-4">
-                            <div className="flex justify-between text-slate-500 dark:text-slate-400 text-sm">
-                                <span>Subtotal</span>
-                                <span className="font-medium">{formatCurrency(totalVenta)}</span>
-                            </div>
-                            <div className="flex justify-between text-slate-500 dark:text-slate-400 text-sm">
-                                <span>Artículos totales</span>
-                                <span className="font-medium">{totalProductos}</span>
-                            </div>
-                            <Separator className="bg-slate-200 dark:bg-slate-700" />
-                            <div className="flex justify-between items-center">
-                                <span className="text-lg font-bold text-primary dark:text-white">Total</span>
-                                <span className="text-3xl font-black text-primary dark:text-indigo-400">
-                                    {formatCurrency(totalVenta)}
-                                </span>
-                            </div>
-                            <div className="pt-4 space-y-2">
-                                <div className="flex justify-between text-xs font-semibold text-slate-400 uppercase">
-                                    <span>Entrega</span>
-                                    <span>Cambio</span>
+                        <Separator />
+
+                        <div className="p-6 flex justify-end">
+                            <div className="w-full md:w-80 space-y-3">
+                                <div className="flex justify-between text-base text-muted-foreground">
+                                    <span>Subtotal</span>
+                                    <span className="font-medium">{formatCurrency(totalVenta)}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(saleInfo?.monto_recibido || 0)}</span>
-                                    <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(Math.max(0, saleInfo?.cambio || 0))}</span>
+                                <div className="flex justify-between text-base text-muted-foreground">
+                                    <span>Articulos totales</span>
+                                    <span className="font-medium">{totalProductos}</span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-center">
+                                    <span className="text-base font-semibold text-foreground">Total</span>
+                                    <span className="text-3xl font-bold text-primary">
+                                        {formatCurrency(totalVenta)}
+                                    </span>
+                                </div>
+                                <div className="pt-2 space-y-1.5">
+                                    <div className="flex justify-between text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                                        <span>Entrega</span>
+                                        <span>Cambio</span>
+                                    </div>
+                                    <div className="flex justify-between text-base">
+                                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(saleInfo?.monto_recibido || 0)}</span>
+                                        <span className="font-semibold text-amber-600 dark:text-amber-400">{formatCurrency(Math.max(0, saleInfo?.cambio || 0))}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
 }
 
-interface CardKpiProps {
+interface StatCardProps {
     title: string;
     value: string | number;
     icon: React.ReactNode;
-    description: string;
-    variant: 'emerald' | 'blue' | 'amber' | 'purple';
+    accent: 'emerald' | 'blue' | 'amber' | 'purple';
 }
 
-function CardKpi({ title, value, icon, description, variant }: CardKpiProps) {
-    const borders = {
-        emerald: "border-emerald-100 dark:border-emerald-900/20",
-        blue: "border-blue-100 dark:border-blue-900/20",
-        amber: "border-amber-100 dark:border-amber-900/20",
-        purple: "border-purple-100 dark:border-purple-900/20",
-    };
-
-    const shadows = {
-        emerald: "shadow-emerald-500/5",
-        blue: "shadow-blue-500/5",
-        amber: "shadow-amber-500/5",
-        purple: "shadow-purple-500/5",
+function StatCard({ title, value, icon, accent }: StatCardProps) {
+    const accentBorder = {
+        emerald: "border-l-emerald-500",
+        blue: "border-l-blue-500",
+        amber: "border-l-amber-500",
+        purple: "border-l-purple-500",
     };
 
     return (
-        <div className={`bg-white dark:bg-slate-900/50 p-6 rounded-3xl border ${borders[variant]} shadow-lg ${shadows[variant]} backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}>
-            <div className="flex items-start justify-between mb-4">
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+        <Card className={`border-l-[3px] ${accentBorder[accent]}`}>
+            <CardContent className="pt-5 pb-4">
+                <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
                     {icon}
                 </div>
-            </div>
-            <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{title}</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{value}</h3>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 line-clamp-1">{description}</p>
-            </div>
-        </div>
+                <h3 className="text-2xl font-bold">{value}</h3>
+            </CardContent>
+        </Card>
     );
 }

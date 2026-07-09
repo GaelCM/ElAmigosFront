@@ -14,13 +14,17 @@ import {
     Filler
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
-import './dashboardUser.css';
 import { useCurrentUser } from "@/contexts/currentUser";
 import { checkPasswordApi } from "@/api/authApi/authApi";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Lock, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
+import { Lock, AlertCircle, Loader2, ShieldCheck, DollarSign, CreditCard, Banknote, Package, Activity, TrendingUp, BarChart3, PieChart, Tags, HandCoins, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -36,7 +40,6 @@ ChartJS.register(
     Filler
 );
 
-import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export default function DashboardUser({ idTurno }: { idTurno: number }) {
 
@@ -103,88 +106,86 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
 
     if (!isAuthorized) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 -mt-6 bg-white/50 backdrop-blur-sm dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all duration-300">
-                <div className="relative mb-8">
-                    <div className="w-24 h-24 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center animate-pulse">
-                        <Lock className="w-10 h-10 text-primary" />
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center">
-                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                    </div>
-                </div>
-
-                <div className="text-center space-y-2 mb-8 max-w-sm">
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Acceso Restringido</h2>
-                    <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                        Este apartado requiere autorización de nivel <span className="font-bold text-primary">ADMINISTRADOR</span>.
-                    </p>
-                </div>
-
-                <form onSubmit={handleAuthorize} className="w-full max-w-sm space-y-6">
-                    <div className="space-y-3">
-                        <Label htmlFor="adminPass" className="text-xs uppercase font-bold tracking-wider text-gray-400 ml-1">Pin Administrativo</Label>
-                        <div className="relative">
-                            <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
-                            <PasswordInput
-                                id="adminPass"
-                                value={adminPassword}
-                                onChange={(e) => setAdminPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="h-12 pl-10 bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 
-                                         focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all rounded-xl"
-                                required
-                                autoFocus
-                            />
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 -mt-6">
+                <Card className="w-full max-w-md shadow-lg border-muted">
+                    <CardHeader className="text-center pb-4">
+                        <div className="mx-auto mb-4 w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center animate-pulse">
+                            <Lock className="w-10 h-10 text-primary" />
                         </div>
-                    </div>
+                        <CardTitle className="text-3xl font-black text-foreground tracking-tight">Acceso Restringido</CardTitle>
+                        <p className="text-lg text-muted-foreground mt-2">
+                            Este apartado requiere autorización de nivel <span className="font-bold text-primary">ADMINISTRADOR</span>.
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleAuthorize} className="space-y-6">
+                            <div className="space-y-3">
+                                <Label htmlFor="adminPass" className="text-sm uppercase font-bold tracking-wider text-muted-foreground ml-1">Pin Administrativo</Label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
+                                    <PasswordInput
+                                        id="adminPass"
+                                        value={adminPassword}
+                                        onChange={(e) => setAdminPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className="h-12 pl-10 text-lg"
+                                        required
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
 
-                    {authError && (
-                        <Alert className="py-3 border-red-100 bg-red-50/30 dark:bg-red-900/10 dark:border-red-900/20 text-red-600 dark:text-red-400 rounded-xl">
-                            <AlertDescription className="text-sm flex items-center gap-2 font-medium">
-                                <AlertCircle className="h-4 w-4" />
-                                {authError}
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                            {authError && (
+                                <Alert variant="destructive">
+                                    <AlertDescription className="text-base flex items-center gap-2 font-medium">
+                                        <AlertCircle className="h-5 w-5" />
+                                        {authError}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                    <Button
-                        type="submit"
-                        className="w-full h-12 gap-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-[0.98]"
-                        disabled={isAuthorizing || !adminPassword}
-                    >
-                        {isAuthorizing ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Verificando Firma...
-                            </>
-                        ) : (
-                            <>
-                                <ShieldCheck className="h-4 w-4" />
-                                Autorizar Acceso
-                            </>
-                        )
-                        }
-                    </Button>
-                </form>
+                            <Button
+                                type="submit"
+                                className="w-full h-12 gap-2 text-lg font-bold"
+                                disabled={isAuthorizing || !adminPassword}
+                            >
+                                {isAuthorizing ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        Verificando Firma...
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldCheck className="h-5 w-5" />
+                                        Autorizar Acceso
+                                    </>
+                                )}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
 
     if (loading) {
         return (
-            <div className="dashboard-loading">
-                <div className="spinner"></div>
-                <p>Cargando dashboard...</p>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-lg font-medium text-muted-foreground">Cargando dashboard...</p>
             </div>
         );
     }
 
     if (error || !dashboard) {
         return (
-            <div className="dashboard-error">
-                <div className="error-icon">⚠️</div>
-                <h2>Error al cargar el dashboard</h2>
-                <p>{error || "No se pudo obtener la información"}</p>
+            <div className="container mx-auto p-8">
+                <Alert variant="destructive" className="max-w-2xl mx-auto">
+                    <AlertCircle className="h-5 w-5" />
+                    <AlertDescription className="text-lg ml-2">
+                        {error || "No se pudo obtener la información"}
+                    </AlertDescription>
+                </Alert>
             </div>
         );
     }
@@ -196,8 +197,8 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
             {
                 label: 'Ventas',
                 data: dashboard.graficas.ventas_por_hora.map(v => v.total),
-                backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                borderColor: 'rgba(99, 102, 241, 1)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: 'rgba(59, 130, 246, 1)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -212,18 +213,18 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                 label: 'Cantidad Vendida',
                 data: dashboard.graficas.productos_mas_vendidos.map(p => p.cantidad),
                 backgroundColor: [
-                    'rgba(99, 102, 241, 0.8)',
-                    'rgba(139, 92, 246, 0.8)',
-                    'rgba(236, 72, 153, 0.8)',
-                    'rgba(251, 146, 60, 0.8)',
-                    'rgba(34, 197, 94, 0.8)',
+                    'rgba(59, 130, 246, 0.8)', // blue
+                    'rgba(16, 185, 129, 0.8)', // emerald
+                    'rgba(245, 158, 11, 0.8)', // amber
+                    'rgba(139, 92, 246, 0.8)', // purple
+                    'rgba(239, 68, 68, 0.8)',  // red
                 ],
                 borderColor: [
-                    'rgba(99, 102, 241, 1)',
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)',
                     'rgba(139, 92, 246, 1)',
-                    'rgba(236, 72, 153, 1)',
-                    'rgba(251, 146, 60, 1)',
-                    'rgba(34, 197, 94, 1)',
+                    'rgba(239, 68, 68, 1)',
                 ],
                 borderWidth: 2,
             }
@@ -236,14 +237,14 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
             {
                 data: dashboard.graficas.metodos_pago.map(m => m.monto),
                 backgroundColor: [
-                    'rgba(99, 102, 241, 0.8)',
-                    'rgba(236, 72, 153, 0.8)',
-                    'rgba(251, 146, 60, 0.8)',
+                    'rgba(16, 185, 129, 0.8)', // efectivo - emerald
+                    'rgba(59, 130, 246, 0.8)', // tarjeta - blue
+                    'rgba(239, 68, 68, 0.8)', // credito - red
                 ],
                 borderColor: [
-                    'rgba(99, 102, 241, 1)',
-                    'rgba(236, 72, 153, 1)',
-                    'rgba(251, 146, 60, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(239, 68, 68, 1)',
                 ],
                 borderWidth: 2,
             }
@@ -257,17 +258,17 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                 label: 'Ingresos',
                 data: dashboard.graficas.categorias_mas_vendidas.map(c => c.ingresos),
                 backgroundColor: [
-                    'rgba(34, 197, 94, 0.8)',
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(168, 85, 247, 0.8)',
-                    'rgba(251, 191, 36, 0.8)',
-                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(139, 92, 246, 0.8)', // purple
+                    'rgba(59, 130, 246, 0.8)', // blue
+                    'rgba(16, 185, 129, 0.8)', // emerald
+                    'rgba(245, 158, 11, 0.8)', // amber
+                    'rgba(239, 68, 68, 0.8)',  // red
                 ],
                 borderColor: [
-                    'rgba(34, 197, 94, 1)',
+                    'rgba(139, 92, 246, 1)',
                     'rgba(59, 130, 246, 1)',
-                    'rgba(168, 85, 247, 1)',
-                    'rgba(251, 191, 36, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)',
                     'rgba(239, 68, 68, 1)',
                 ],
                 borderWidth: 2,
@@ -284,12 +285,12 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
 
 
     return (
-        <div className="dashboard-container">
+        <div className="container mx-auto py-8 px-4 space-y-8">
             {/* Header */}
-            <div className="dashboard-header">
-                <div>
-                    <h1 className="text-primary text-2xl font-bold">Dashboard de Ventas</h1>
-                    <p className="dashboard-subtitle">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <h1 className="text-5xl text-primary font-bold tracking-tight">Dashboard de Ventas</h1>
+                    <p className="text-lg text-muted-foreground">
                         Turno #{idTurno} • {new Date(dashboard.info_turno.fecha_apertura).toLocaleDateString('es-MX', {
                             weekday: 'long',
                             year: 'numeric',
@@ -298,338 +299,421 @@ export default function DashboardUser({ idTurno }: { idTurno: number }) {
                         })}
                     </p>
                 </div>
-                <div className="status-badge">
-                    {dashboard.info_turno.estado === "abierto" ? '🟢 Activo' : '🔴 Cerrado'}
+                <div>
+                    {dashboard.info_turno.estado === "abierto" ? (
+                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-lg px-4 py-1">
+                            Activo
+                        </Badge>
+                    ) : (
+                        <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 text-lg px-4 py-1">
+                            Cerrado
+                        </Badge>
+                    )}
                 </div>
             </div>
 
+            <Separator />
+
             {/* KPIs Principales */}
-            <div className="kpi-grid">
-                <div className="kpi-card kpi-primary">
-                    <div className="kpi-icon">💰</div>
-                    <div className="kpi-content">
-                        <p className="kpi-label">Total Ventas</p>
-                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.total_ventas)}</h2>
-                        <p className="kpi-detail">{dashboard.metricas_principales.numero_ventas} transacciones</p>
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="hover:border-primary/50 transition-colors bg-gradient-to-br from-card to-primary/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Total Ventas</CardTitle>
+                        <DollarSign className="h-6 w-6 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-4xl font-bold">{formatCurrency(dashboard.metricas_principales.total_ventas)}</div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            {dashboard.metricas_principales.numero_ventas} transacciones
+                        </p>
+                    </CardContent>
+                </Card>
 
-                <div className="kpi-card kpi-success">
-                    <div className="kpi-icon">📊</div>
-                    <div className="kpi-content">
-                        <p className="kpi-label">Ticket Promedio</p>
-                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.ticket_promedio)}</h2>
-                        <p className="kpi-detail">Por transacción</p>
-                    </div>
-                </div>
+                <Card className="hover:border-emerald-500/50 transition-colors bg-gradient-to-br from-card to-emerald-500/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Ticket Promedio</CardTitle>
+                        <Activity className="h-6 w-6 text-emerald-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-4xl font-bold">{formatCurrency(dashboard.metricas_principales.ticket_promedio)}</div>
+                        <p className="text-sm text-muted-foreground mt-1">Por transacción</p>
+                    </CardContent>
+                </Card>
 
-                <div className="kpi-card kpi-info">
-                    <div className="kpi-icon">💵</div>
-                    <div className="kpi-content">
-                        <p className="kpi-label">Efectivo</p>
-                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</h2>
-                        <p className="kpi-detail">Ventas en efectivo</p>
-                    </div>
-                </div>
+                <Card className="hover:border-blue-500/50 transition-colors bg-gradient-to-br from-card to-blue-500/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Efectivo</CardTitle>
+                        <Banknote className="h-6 w-6 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-4xl font-bold">{formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</div>
+                        <p className="text-sm text-muted-foreground mt-1">Ventas en efectivo</p>
+                    </CardContent>
+                </Card>
 
-                <div className="kpi-card kpi-warning">
-                    <div className="kpi-icon">💳</div>
-                    <div className="kpi-content">
-                        <p className="kpi-label">Tarjeta</p>
-                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.ventas_tarjeta)}</h2>
-                        <p className="kpi-detail">Ventas con tarjeta</p>
-                    </div>
-                </div>
+                <Card className="hover:border-amber-500/50 transition-colors bg-gradient-to-br from-card to-amber-500/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tarjeta</CardTitle>
+                        <CreditCard className="h-6 w-6 text-amber-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-4xl font-bold">{formatCurrency(dashboard.metricas_principales.ventas_tarjeta)}</div>
+                        <p className="text-sm text-muted-foreground mt-1">Ventas con tarjeta</p>
+                    </CardContent>
+                </Card>
 
-                <div className="kpi-card kpi-danger">
-                    <div className="kpi-icon">📝</div>
-                    <div className="kpi-content">
-                        <p className="kpi-label">Crédito</p>
-                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.ventas_credito)}</h2>
-                        <p className="kpi-detail">Ventas por cobrar</p>
-                    </div>
-                </div>
+                <Card className="hover:border-red-500/50 transition-colors bg-gradient-to-br from-card to-red-500/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Crédito</CardTitle>
+                        <Package className="h-6 w-6 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-4xl font-bold">{formatCurrency(dashboard.metricas_principales.ventas_credito)}</div>
+                        <p className="text-sm text-muted-foreground mt-1">Ventas por cobrar</p>
+                    </CardContent>
+                </Card>
 
-                <div className="kpi-card kpi-success">
-                    <div className="kpi-icon">🤝</div>
-                    <div className="kpi-content">
-                        <p className="kpi-label">Abonos</p>
-                        <h2 className="kpi-value">{formatCurrency(dashboard.metricas_principales.abonos_credito)}</h2>
-                        <p className="kpi-detail">Cobranza recibida</p>
-                    </div>
-                </div>
+                <Card className="hover:border-emerald-500/50 transition-colors bg-gradient-to-br from-card to-emerald-500/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Abonos</CardTitle>
+                        <HandCoins className="h-6 w-6 text-emerald-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-4xl font-bold">{formatCurrency(dashboard.metricas_principales.abonos_credito)}</div>
+                        <p className="text-sm text-muted-foreground mt-1">Cobranza recibida</p>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Control de Efectivo y Egresos */}
-            <div className="info-grid">
-                <div className="info-card">
-                    <h3 className="info-card-title">💼 Control de Efectivo</h3>
-                    <div className="info-rows">
-                        <div className="info-row">
-                            <span>Efectivo Inicial:</span>
-                            <strong>{formatCurrency(dashboard.control_efectivo.efectivo_inicial)}</strong>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card>
+                    <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <Banknote className="h-5 w-5 text-primary" />
+                            Control de Efectivo
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-3">
+                        <div className="flex justify-between items-center py-2 border-b border-muted">
+                            <span className="text-muted-foreground text-lg">Efectivo Inicial:</span>
+                            <strong className="text-lg">{formatCurrency(dashboard.control_efectivo.efectivo_inicial)}</strong>
                         </div>
-                        <div className="info-row">
-                            <span>Ventas Efectivo:</span>
-                            <strong>+ {formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</strong>
+                        <div className="flex justify-between items-center py-2 border-b border-muted">
+                            <span className="text-muted-foreground text-lg">Ventas Efectivo:</span>
+                            <strong className="text-lg">+ {formatCurrency(dashboard.metricas_principales.ventas_efectivo)}</strong>
                         </div>
-                        <div className="info-row">
-                            <span>Abonos Recibidos:</span>
-                            <strong>+ {formatCurrency(dashboard.metricas_principales.abonos_credito)}</strong>
+                        <div className="flex justify-between items-center py-2 border-b border-muted">
+                            <span className="text-muted-foreground text-lg">Abonos Recibidos:</span>
+                            <strong className="text-lg">+ {formatCurrency(dashboard.metricas_principales.abonos_credito)}</strong>
                         </div>
-                        <div className="info-row highlight-blue">
-                            <span>Efectivo Esperado:</span>
-                            <strong>{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</strong>
+                        <div className="flex justify-between items-center py-3 bg-primary/5 rounded-lg px-3">
+                            <span className="text-primary font-medium text-lg">Efectivo Esperado:</span>
+                            <strong className="text-primary text-xl">{formatCurrency(dashboard.control_efectivo.efectivo_esperado)}</strong>
                         </div>
                         {dashboard.control_efectivo.efectivo_contado !== null && (
                             <>
-                                <div className="info-row">
-                                    <span>Efectivo Contado:</span>
-                                    <strong>{formatCurrency(dashboard.control_efectivo.efectivo_contado)}</strong>
+                                <div className="flex justify-between items-center py-2 border-b border-muted">
+                                    <span className="text-muted-foreground text-lg">Efectivo Contado:</span>
+                                    <strong className="text-lg">{formatCurrency(dashboard.control_efectivo.efectivo_contado)}</strong>
                                 </div>
-                                <div className="info-row highlight">
-                                    <span>Diferencia:</span>
-                                    <strong className={dashboard.control_efectivo.diferencia! >= 0 ? 'positive' : 'negative'}>
+                                <div className="flex justify-between items-center py-3 bg-muted/30 rounded-lg px-3 mt-2">
+                                    <span className="font-medium text-lg">Diferencia:</span>
+                                    <strong className={`text-xl ${dashboard.control_efectivo.diferencia! >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                         {formatCurrency(dashboard.control_efectivo.diferencia!)}
                                     </strong>
                                 </div>
                             </>
                         )}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
 
-                <div className="info-card">
-                    <h3 className="info-card-title">📉 Egresos</h3>
-                    <div className="info-rows">
-                        <div className="info-row">
-                            <span>Compras:</span>
-                            <strong>{formatCurrency(dashboard.egresos.total_compras)} <small className="text-gray-500">({formatCurrency(dashboard.egresos.compras_efectivo)} efec.)</small></strong>
+                <Card>
+                    <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5 text-red-500" />
+                            Egresos
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-3">
+                        <div className="flex justify-between items-center py-2 border-b border-muted">
+                            <span className="text-muted-foreground text-lg">Compras:</span>
+                            <strong className="text-lg text-right">
+                                {formatCurrency(dashboard.egresos.total_compras)}
+                                <div className="text-sm text-muted-foreground font-normal">({formatCurrency(dashboard.egresos.compras_efectivo)} efec.)</div>
+                            </strong>
                         </div>
-                        <div className="info-row">
-                            <span>Gastos:</span>
-                            <strong>{formatCurrency(dashboard.egresos.total_gastos)} <small className="text-gray-500">({formatCurrency(dashboard.egresos.gastos_efectivo)} efec.)</small></strong>
+                        <div className="flex justify-between items-center py-2 border-b border-muted">
+                            <span className="text-muted-foreground text-lg">Gastos:</span>
+                            <strong className="text-lg text-right">
+                                {formatCurrency(dashboard.egresos.total_gastos)}
+                                <div className="text-sm text-muted-foreground font-normal">({formatCurrency(dashboard.egresos.gastos_efectivo)} efec.)</div>
+                            </strong>
                         </div>
-                        <div className="info-row highlight">
-                            <span>Total Egresos (Efectivo):</span>
-                            <strong className="negative">{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</strong>
+                        <div className="flex justify-between items-center py-3 bg-red-50 dark:bg-red-950/20 rounded-lg px-3">
+                            <span className="text-red-700 dark:text-red-400 font-medium text-lg">Total Egresos (Efectivo):</span>
+                            <strong className="text-red-700 dark:text-red-400 text-xl">{formatCurrency(dashboard.egresos.total_egresos_efectivo)}</strong>
                         </div>
-                        <div className="info-row">
-                            <span>Total General:</span>
-                            <span className="font-semibold">{formatCurrency(dashboard.egresos.total_egresos)}</span>
+                        <div className="flex justify-between items-center py-3">
+                            <span className="font-medium text-lg text-muted-foreground">Total General:</span>
+                            <strong className="text-xl">{formatCurrency(dashboard.egresos.total_egresos)}</strong>
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
 
-                <div className="info-card">
-                    <h3 className="info-card-title">🔄 Movimientos de Caja</h3>
-                    <div className="info-rows">
-                        <div className="info-row">
-                            <span>Retiros:</span>
-                            <strong className="negative">{formatCurrency(dashboard.movimientos_caja.retiros)}</strong>
+                <Card>
+                    <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <RefreshCw className="h-5 w-5 text-blue-500" />
+                            Movimientos de Caja
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-3">
+                        <div className="flex justify-between items-center py-3 border-b border-muted">
+                            <span className="text-muted-foreground text-lg">Retiros:</span>
+                            <strong className="text-red-500 text-xl">{formatCurrency(dashboard.movimientos_caja.retiros)}</strong>
                         </div>
-                        <div className="info-row">
-                            <span>Depósitos:</span>
-                            <strong className="positive">{formatCurrency(dashboard.movimientos_caja.depositos)}</strong>
+                        <div className="flex justify-between items-center py-3 border-b border-muted">
+                            <span className="text-muted-foreground text-lg">Depósitos:</span>
+                            <strong className="text-emerald-500 text-xl">{formatCurrency(dashboard.movimientos_caja.depositos)}</strong>
                         </div>
-                        <div className="info-row highlight">
-                            <span>Neto:</span>
-                            <strong className={dashboard.movimientos_caja.neto >= 0 ? 'positive' : 'negative'}>
+                        <div className="flex justify-between items-center py-4 bg-muted/30 rounded-lg px-3 mt-4">
+                            <span className="font-medium text-lg">Neto:</span>
+                            <strong className={`text-2xl ${dashboard.movimientos_caja.neto >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                 {formatCurrency(dashboard.movimientos_caja.neto)}
                             </strong>
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Gráficas */}
-            <div className="charts-grid">
-                <div className="chart-card chart-large">
-                    <h3 className="chart-title">📈 Ventas por Hora</h3>
-                    <div className="chart-wrapper">
-                        <Line
-                            data={ventasPorHoraData}
-                            options={{
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        display: false
-                                    },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        padding: 12,
-                                        titleFont: { size: 14 },
-                                        bodyFont: { size: 13 },
-                                        callbacks: {
-                                            label: (context) => `Ventas: ${formatCurrency(context.parsed.y ?? 0)}`
-                                        }
-                                    }
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            callback: (value) => formatCurrency(Number(value))
-                                        }
-                                    }
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
-
-                <div className="chart-card">
-                    <h3 className="chart-title">🏆 Productos Más Vendidos</h3>
-                    <div className="chart-wrapper">
-                        <Bar
-                            data={productosMasVendidosData}
-                            options={{
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                indexAxis: 'y',
-                                plugins: {
-                                    legend: {
-                                        display: false
-                                    },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        padding: 12,
-                                        callbacks: {
-                                            label: (context) => `Cantidad: ${context.parsed.x} unidades`
-                                        }
-                                    }
-                                },
-                                scales: {
-                                    x: {
-                                        beginAtZero: true
-                                    }
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
-
-                <div className="chart-card">
-                    <h3 className="chart-title">💳 Métodos de Pago</h3>
-                    <div className="chart-wrapper">
-                        <Doughnut
-                            data={metodosPagoData}
-                            options={{
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom',
-                                        labels: {
-                                            padding: 15,
-                                            font: { size: 12 }
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <Card className="xl:col-span-2">
+                    <CardHeader className="pb-2 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <Activity className="h-5 w-5 text-blue-500" />
+                            Ventas por Hora
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="h-[350px] w-full">
+                            <Line
+                                data={ventasPorHoraData}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            padding: 12,
+                                            titleFont: { size: 14 },
+                                            bodyFont: { size: 13 },
+                                            callbacks: {
+                                                label: (context) => `Ventas: ${formatCurrency(context.parsed.y ?? 0)}`
+                                            }
                                         }
                                     },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        padding: 12,
-                                        callbacks: {
-                                            label: (context) => {
-                                                const label = context.label || '';
-                                                const value = formatCurrency(Number(context.parsed));
-                                                const percentage = dashboard.graficas.metodos_pago[context.dataIndex].porcentaje;
-                                                return `${label}: ${value} (${percentage.toFixed(1)}%)`;
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                callback: (value) => formatCurrency(Number(value))
                                             }
                                         }
                                     }
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
+                                }}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
 
-                <div className="chart-card">
-                    <h3 className="chart-title">📦 Categorías Más Vendidas</h3>
-                    <div className="chart-wrapper">
-                        <Doughnut
-                            data={categoriasMasVendidasData}
-                            options={{
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom',
-                                        labels: {
-                                            padding: 15,
-                                            font: { size: 12 }
+                <Card>
+                    <CardHeader className="pb-2 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-emerald-500" />
+                            Productos Más Vendidos
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="h-[300px] w-full">
+                            <Bar
+                                data={productosMasVendidosData}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    indexAxis: 'y',
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            padding: 12,
+                                            callbacks: {
+                                                label: (context) => `Cantidad: ${context.parsed.x} unidades`
+                                            }
                                         }
                                     },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        padding: 12,
-                                        callbacks: {
-                                            label: (context) => {
-                                                const label = context.label || '';
-                                                const value = formatCurrency(Number(context.parsed));
-                                                return `${label}: ${value}`;
+                                    scales: {
+                                        x: {
+                                            beginAtZero: true
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="pb-2 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <PieChart className="h-5 w-5 text-amber-500" />
+                            Métodos de Pago
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="h-[300px] w-full">
+                            <Doughnut
+                                data={metodosPagoData}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                padding: 15,
+                                                font: { size: 12 }
+                                            }
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            padding: 12,
+                                            callbacks: {
+                                                label: (context) => {
+                                                    const label = context.label || '';
+                                                    const value = formatCurrency(Number(context.parsed));
+                                                    const percentage = dashboard.graficas.metodos_pago[context.dataIndex].porcentaje;
+                                                    return `${label}: ${value} (${percentage.toFixed(1)}%)`;
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
+                                }}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="xl:col-span-2">
+                    <CardHeader className="pb-2 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <Tags className="h-5 w-5 text-purple-500" />
+                            Categorías Más Vendidas
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="h-[300px] w-full">
+                            <Doughnut
+                                data={categoriasMasVendidasData}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                padding: 15,
+                                                font: { size: 12 }
+                                            }
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            padding: 12,
+                                            callbacks: {
+                                                label: (context) => {
+                                                    const label = context.label || '';
+                                                    const value = formatCurrency(Number(context.parsed));
+                                                    return `${label}: ${value}`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Tablas de Detalles */}
-            <div className="tables-grid">
-                <div className="table-card">
-                    <h3 className="table-title">🏆 Top Productos</h3>
-                    <div className="table-wrapper">
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Ingresos</th>
-                                    <th>Transacciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5 text-primary" />
+                            Top Productos
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 p-0">
+                        <Table>
+                            <TableHeader className="bg-muted/50">
+                                <TableRow>
+                                    <TableHead className="text-base font-bold text-foreground">Producto</TableHead>
+                                    <TableHead className="text-base font-bold text-foreground text-right">Cantidad</TableHead>
+                                    <TableHead className="text-base font-bold text-foreground text-right">Ingresos</TableHead>
+                                    <TableHead className="text-base font-bold text-foreground text-center">Transacciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {dashboard.graficas.productos_mas_vendidos.map((producto, index) => (
-                                    <tr key={index}>
-                                        <td className="product-name">{producto.producto}</td>
-                                        <td>{producto.cantidad}</td>
-                                        <td className="amount">{formatCurrency(producto.ingresos)}</td>
-                                        <td>{producto.transacciones}</td>
-                                    </tr>
+                                    <TableRow key={index} className="hover:bg-muted/30">
+                                        <TableCell className="font-medium text-base">{producto.producto}</TableCell>
+                                        <TableCell className="text-base text-right">{producto.cantidad}</TableCell>
+                                        <TableCell className="text-base text-right text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(producto.ingresos)}</TableCell>
+                                        <TableCell className="text-base text-center">{producto.transacciones}</TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
 
-                <div className="table-card">
-                    <h3 className="table-title">📦 Top Categorías</h3>
-                    <div className="table-wrapper">
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Categoría</th>
-                                    <th>Cantidad</th>
-                                    <th>Ingresos</th>
-                                    <th>Ventas</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                <Card>
+                    <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <Package className="h-5 w-5 text-amber-500" />
+                            Top Categorías
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 p-0">
+                        <Table>
+                            <TableHeader className="bg-muted/50">
+                                <TableRow>
+                                    <TableHead className="text-base font-bold text-foreground">Categoría</TableHead>
+                                    <TableHead className="text-base font-bold text-foreground text-right">Cantidad</TableHead>
+                                    <TableHead className="text-base font-bold text-foreground text-right">Ingresos</TableHead>
+                                    <TableHead className="text-base font-bold text-foreground text-center">Ventas</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {dashboard.graficas.categorias_mas_vendidas.map((categoria, index) => (
-                                    <tr key={index}>
-                                        <td className="category-name">{categoria.categoria}</td>
-                                        <td>{categoria.cantidad}</td>
-                                        <td className="amount">{formatCurrency(categoria.ingresos)}</td>
-                                        <td>{categoria.ventas}</td>
-                                    </tr>
+                                    <TableRow key={index} className="hover:bg-muted/30">
+                                        <TableCell className="font-medium text-base">{categoria.categoria}</TableCell>
+                                        <TableCell className="text-base text-right">{categoria.cantidad}</TableCell>
+                                        <TableCell className="text-base text-right text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(categoria.ingresos)}</TableCell>
+                                        <TableCell className="text-base text-center">{categoria.ventas}</TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

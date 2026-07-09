@@ -5,13 +5,14 @@ import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { useEffect, useState } from "react";
 import TablaVentas from "@/components/reportes/TablaVentas";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, RefreshCw, LayoutList } from "lucide-react";
+import { RefreshCw, LayoutList } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 
 export default function MisVentasReport() {
     const timeZone = 'America/Mexico_City';
@@ -86,9 +87,8 @@ export default function MisVentasReport() {
     return (
         <div className="container mx-auto py-8 px-4 space-y-6">
             {/* Header */}
-            <div className="space-y-2">
-                <h1 className="text-4xl text-primary font-bold tracking-tight flex items-center gap-3">
-
+            <div className="space-y-1">
+                <h1 className="text-5xl text-primary font-bold tracking-tight">
                     Mis Ventas
                 </h1>
                 <p className="text-muted-foreground text-lg">
@@ -96,21 +96,19 @@ export default function MisVentasReport() {
                 </p>
             </div>
 
+            <Separator />
+
             {/* Filtros de Fecha */}
-            <Card className="shadow-lg border-2">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
-                        Filtros de Búsqueda
+            <Card>
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-base font-medium text-muted-foreground uppercase tracking-wider">
+                        Filtros de Busqueda
                     </CardTitle>
-                    <CardDescription>
-                        Selecciona el rango de fechas para consultar las ventas
-                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col md:flex-row gap-6 items-end">
-                        <div className="flex-1 space-y-2 w-full">
-                            <Label htmlFor="fecha-desde" className="text-sm font-semibold">
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="flex-1 space-y-1.5 w-full">
+                            <Label htmlFor="fecha-desde" className="text-sm font-medium text-muted-foreground">
                                 Fecha Desde
                             </Label>
                             <Input
@@ -123,11 +121,11 @@ export default function MisVentasReport() {
                         </div>
 
                         <div className="hidden md:flex items-center pb-2">
-                            <div className="h-px w-8 bg-border"></div>
+                            <div className="h-px w-6 bg-border"></div>
                         </div>
 
-                        <div className="flex-1 space-y-2 w-full">
-                            <Label htmlFor="fecha-hasta" className="text-sm font-semibold">
+                        <div className="flex-1 space-y-1.5 w-full">
+                            <Label htmlFor="fecha-hasta" className="text-sm font-medium text-muted-foreground">
                                 Fecha Hasta
                             </Label>
                             <Input
@@ -140,7 +138,7 @@ export default function MisVentasReport() {
                         </div>
 
                         {hasOpenCaja && (
-                            <div className="flex items-center space-x-3 pb-3 bg-secondary/30 p-3 rounded-lg border border-primary/20 transition-all hover:bg-secondary/50">
+                            <div className="flex items-center space-x-3 p-3 rounded-lg border bg-muted/30">
                                 <Switch
                                     id="solo-turno"
                                     checked={soloTurnoActual}
@@ -148,9 +146,9 @@ export default function MisVentasReport() {
                                 />
                                 <Label
                                     htmlFor="solo-turno"
-                                    className="text-sm font-medium cursor-pointer flex items-center gap-2 whitespace-nowrap"
+                                    className="text-base font-medium cursor-pointer flex items-center gap-2 whitespace-nowrap"
                                 >
-                                    <LayoutList className="h-4 w-4 text-primary" />
+                                    <LayoutList className="h-5 w-5 text-primary" />
                                     Solo mi turno actual
                                 </Label>
                             </div>
@@ -159,10 +157,10 @@ export default function MisVentasReport() {
                         <Button
                             onClick={obtenerMisVentas}
                             disabled={loading}
-                            className="gap-2 shadow-md hover:shadow-lg transition-all"
+                            className="gap-2 text-base"
                             size="lg"
                         >
-                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
                             Actualizar
                         </Button>
                     </div>
