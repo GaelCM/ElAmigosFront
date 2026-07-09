@@ -1,7 +1,7 @@
 {
   "name": "hermes-pos",
   "private": true,
-  "version": "4.9.9",
+  "version": "5.0.1",
   "type": "module",
   "main": "src/electron/main.js",
   "scripts": {
@@ -36,6 +36,7 @@
     "electron-store": "^11.0.2",
     "lucide-react": "^0.552.0",
     "node-thermal-printer": "^4.5.0",
+    "radix-ui": "^1.6.0",
     "react": "^19.2.3",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.3",

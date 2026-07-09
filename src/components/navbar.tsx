@@ -32,6 +32,9 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
   const verMisVentas = () => {
     navigate("/reportes/misVentas")
   }
+  const verPedidos = () => {
+    navigate("/pedidos")
+  }
 
 
   useHotkeys('F10', () => {
@@ -89,6 +92,11 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
 
               <div className="relative hidden sm:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
+                <Button variant={"default"} className="px-10 cursor-pointer" onClick={verPedidos}>Ver pedidos</Button>
+              </div>
+
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
                 <Button variant={"default"} className="px-10 cursor-pointer" onClick={openDialog}>Buscar Producto (F10)</Button>
               </div>
 
@@ -101,19 +109,26 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
               </div>
 
               {user.id_rol === 1 && (
-                <div className="hidden lg:flex items-center gap-4">
-                  {/* Dropdown de Reportes */}
+                <div className="flex items-center">
+                  {/* Dropdown de Reportes — visible en todos los tamaños */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="gap-2 bg-transparent">
+                      {/* En móvil: solo ícono. En desktop: ícono + texto + flecha */}
+                      <Button variant="outline" className="gap-2 bg-transparent px-2 sm:px-3">
                         <FileText className="w-4 h-4" />
-                        Reportes
-                        <ChevronDown className="w-4 h-4" />
+                        <span className="hidden sm:inline">Reportes</span>
+                        <ChevronDown className="hidden sm:inline w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>Reportes de Ventas</DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem className="gap-2">
+                        <Link to={"reportes/misVentas"} className="flex items-center gap-2 w-full h-full">
+                          <FileText className="w-4 h-4" />
+                          Mis Ventas de hoy
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem className="gap-2">
                         <Link to={"reportes/ventasGeneral"} className="flex items-center gap-2 w-full h-full">
                           <Calendar className="w-4 h-4" />
@@ -126,13 +141,13 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                           Por Mes
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2" >
+                      <DropdownMenuItem className="gap-2">
                         <Package className="w-4 h-4" />
                         Por Productos
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Reportes de Egresos</DropdownMenuLabel>
+                      <DropdownMenuLabel>Egresos y Cortes</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="gap-2">
                         <Link to={"reportes/misEgresos"} className="flex items-center gap-2 w-full h-full">
@@ -140,26 +155,24 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                           Mis Egresos
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2">
+                        <Link to={"reportes/misCortes"} className="flex items-center gap-2 w-full h-full">
+                          <TrendingUp className="w-4 h-4" />
+                          Cortes
+                        </Link>
+                      </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Reportes</DropdownMenuLabel>
+                      <DropdownMenuLabel>Inventario</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="gap-2">
                         <Link to={"reportes/stockBajo"} className="flex items-center gap-2 w-full h-full">
                           <TrendingUp className="w-4 h-4" />
                           Stock Bajo
                         </Link>
-
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem className="gap-2">
-                        <Link to={"reportes/misCortes"} className="flex items-center gap-2 w-full h-full">
-                          <TrendingUp className="w-4 h-4" />
-                          Cortes
-                        </Link>
-
-                      </DropdownMenuItem>
-
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem className="gap-2">
                         <Link to={"/creditos"} className="flex items-center gap-2 w-full h-full">
                           <TrendingUp className="w-4 h-4" />
@@ -167,7 +180,6 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                         </Link>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
-
                   </DropdownMenu>
                 </div>
               )}

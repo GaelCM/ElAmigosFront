@@ -40,7 +40,6 @@ export default function DetalleVentaPage() {
     const navigate = useNavigate();
     const idVenta = searchParams.get("id");
     const cliente = searchParams.get("cliente");
-    console.log(cliente);
 
     const [loading, setLoading] = useState(true);
     const [items, setItems] = useState<DetalleVentaItem[]>([]);
@@ -488,7 +487,7 @@ export default function DetalleVentaPage() {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(saleInfo?.monto_recibido || 0)}</span>
-                                    <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(saleInfo?.cambio || 0)}</span>
+                                    <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(Math.max(0, saleInfo?.cambio || 0))}</span>
                                 </div>
                             </div>
                         </div>

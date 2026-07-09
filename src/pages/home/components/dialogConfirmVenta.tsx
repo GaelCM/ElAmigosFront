@@ -33,7 +33,8 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const { user } = useCurrentUser()
     const carritoActual = getCarritoActivo();
     const totalVenta = redondearPrecio(getTotalPrice());
-    const [cambioEfectivo, setCambioEfectivo] = useState(0); // Estado para manejar el cambio
+    const [montoRecibido, setMontoRecibido] = useState(""); // String para el input controlado
+    const cambioEfectivo = montoRecibido === "" ? 0 : Number(montoRecibido);
     const [turnoData, setTurnoData] = useState<any>({});
     const isOnline = useOnlineStatus();
     const [modoTurbo, setModoTurbo] = useState(false);
@@ -76,7 +77,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
 
     const reloadVenta = async () => {
-        setCambioEfectivo(0);
+        setMontoRecibido("");
         setEstado("Inicio");
 
         setErrorMessage("");
@@ -288,11 +289,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
     useEffect(() => {
         if (isOpen) {
-            if (metodoPago !== 0) {
-                setCambioEfectivo(totalVenta);
-            } else {
-                setCambioEfectivo(0);
-            }
+            setMontoRecibido(""); // Siempre limpiar al abrir
         }
     }, [isOpen, metodoPago]);
 
@@ -396,7 +393,8 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                                 className="text-7xl text-center font-black w-full py-6 px-12 bg-slate-50 border-4 border-slate-200 rounded-3xl focus:border-primary focus:ring-0 transition-all outline-none tabular-nums"
                                                 placeholder="0.00"
                                                 autoFocus
-                                                onChange={(e) => setCambioEfectivo(Number(e.target.value))}
+                                                value={montoRecibido}
+                                                onChange={(e) => setMontoRecibido(e.target.value)}
                                             />
                                         </div>
                                     ) : (

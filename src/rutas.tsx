@@ -40,6 +40,9 @@ import EstadoCuentaCliente from "./pages/clientes/creditos/estadoCuentaCliente"
 import MisCortesPage from "./pages/reportes/cortes/misCortes";
 import DetalleCortePage from "./pages/reportes/cortes/detalleCorte";
 import VentasPendientesLocal from "./pages/reportes/ventas/pendientesLocal";
+import PedidosPage from "./pages/pedidos/pedidosPage";
+import NuevoPedidoPage from "./pages/pedidos/nuevoPedidoPage";
+
 
 export const rutas = createHashRouter([
     {
@@ -202,7 +205,19 @@ export const rutas = createHashRouter([
                     {
                         path: "/creditos/estado-cuenta/:id_cliente",
                         element: <EstadoCuentaCliente />
-                    }
+                    },
+                    {
+                        path: "/pedidos",
+                        element: <PedidosPage />
+                    },
+                    {
+                        path: "/pedidos/nuevo",
+                        element: <NuevoPedidoPage />
+                    },
+                    {
+                        path: "/pedidos/editar/:id",
+                        element: <NuevoPedidoPage />
+                    },
                 ]
             }
         ]

@@ -1,6 +1,6 @@
 
 import * as LucideIcons from "lucide-react";
-import { Plus, X, Lock, LogOut } from "lucide-react"; // Import some specific ones needed locally in JSX
+import { Plus, X, Lock, LogOut, Package } from "lucide-react"; // Import some specific ones needed locally in JSX
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router"
 import { useHotkeys } from "react-hotkeys-hook";
@@ -120,19 +120,19 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                             <Link to={"/"} className="flex w-full justify-start items-center gap-2 text-sm lg:text-base">
                                 <Plus className="w-4 h-4" />
                                 <span className="hidden sm:inline">Nueva Venta (F1)</span>
-                                <span className="sm:hidden">Venta</span>
+                                <span className="sm:hidden">Nueva Venta</span>
                             </Link>
                         </Button>
-                        {/*<Button
-                            variant="outline"
-                            className="w-full justify-start gap-2 bg-transparent text-sm lg:text-base"
+                        <Button
+                            variant="default"
+                            className="w-full justify-start gap-2  text-sm lg:text-base"
                             size="sm"
-                            onClick={() => { setOpen(true) }}
+                            onClick={() => { navigate("/pedidos") }}
                         >
-                            <UserPlus className="w-4 h-4" />
-                            <span className="hidden sm:inline">Nuevo Cliente</span>
-                            <span className="sm:hidden">Cliente</span>
-                        </Button>*/}
+                            <Package className="w-4 h-4" />
+                            <span className="hidden sm:inline">Nuevo Pedido</span>
+                            <span className="sm:hidden">Pedidos</span>
+                        </Button>
                     </div>
 
                     <nav className="space-y-1 lg:space-y-2">
@@ -142,9 +142,7 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                                 <Link
                                     key={item.id}
                                     to={item.ruta}
-                                    onClick={() => {
-                                        setSidebarOpen(false); // Cerrar sidebar en móvil al seleccionar
-                                    }}
+                                    onClick={() => setSidebarOpen(false)}
                                     className={`w-full flex items-center gap-2 lg:gap-3 px-2 lg:px-3 py-2 rounded-lg text-left transition-colors text-sm lg:text-base ${rutaActual === item.ruta
                                         ? "bg-primary text-sidebar-primary-foreground"
                                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

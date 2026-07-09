@@ -157,7 +157,7 @@ export default function EstadoCuentaCliente() {
                         cliente: credito?.nombre_cliente || "N/A",
                         fecha: new Date(),
                         monto: monto,
-                        saldoAnterior: credito?.saldo_actual || 0,
+                        saldoAnterior: res.data.saldo_nuevo + monto,
                         saldoNuevo: res.data.saldo_nuevo,
                         concepto: conceptoAbono || "Abono a cuenta",
                         tipo: "ABONO",
@@ -273,9 +273,9 @@ export default function EstadoCuentaCliente() {
     const pct = limite > 0 ? Math.min((saldo / limite) * 100, 100) : null;
     const ultimoPago = historial.find((m) => m.tipo_movimiento === "abono" || m.tipo_movimiento === "liquidado");
     const diasSinPago = ultimoPago
-        ? differenceInDays(new Date(), parseISO(ultimoPago.fecha_movimiento.replace('Z', '')))
+        ? differenceInDays(new Date(), parseISO(ultimoPago.fecha_movimiento))
         : historial.length > 0
-            ? differenceInDays(new Date(), parseISO(historial[historial.length - 1].fecha_movimiento.replace('Z', '')))
+            ? differenceInDays(new Date(), parseISO(historial[historial.length - 1].fecha_movimiento))
             : null;
 
     if (loading) {
@@ -392,7 +392,7 @@ export default function EstadoCuentaCliente() {
                         {ultimoPago && (
                             <p className="text-xs text-muted-foreground mt-1">
                                 Último:{" "}
-                                {format(parseISO(ultimoPago.fecha_movimiento.replace('Z', '')), "dd MMM yyyy", { locale: es })}
+                                {format(parseISO(ultimoPago.fecha_movimiento), "dd MMM yyyy", { locale: es })}
                             </p>
                         )}
                     </CardContent>
@@ -446,7 +446,7 @@ export default function EstadoCuentaCliente() {
                         <h3 className="font-semibold flex items-center gap-2">
                             <Receipt className="h-5 w-5" /> Movimientos Recientes
                         </h3>
-                        <span className="text-xs text-muted-foreground">{historial.length} registros found</span>
+                        <span className="text-xs text-muted-foreground">{historial.length} registros</span>
                     </div>
                     <CardContent className="p-0">
                         {historial.length === 0 ? (
@@ -474,7 +474,7 @@ export default function EstadoCuentaCliente() {
                                                 className={`cursor-pointer transition-all hover:bg-primary/5 ${selectedMov?.id_movimiento === mov.id_movimiento ? "bg-primary/10 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"}`}
                                             >
                                                 <td className="px-4 py-3 whitespace-nowrap">
-                                                    {format(parseISO(mov.fecha_movimiento.replace('Z', '')), "dd/MMM HH:mm", { locale: es })}
+                                                    {format(parseISO(mov.fecha_movimiento), "dd/MMM HH:mm", { locale: es })}
                                                 </td>
                                                 <td className="px-4 py-3 text-center text-muted-foreground font-mono">
                                                     {mov.id_venta ?? "—"}
@@ -531,7 +531,7 @@ export default function EstadoCuentaCliente() {
                                     </div>
                                     <div className="flex justify-between items-center text-sm pt-2">
                                         <span className="text-muted-foreground italic">
-                                            {format(parseISO(selectedMov.fecha_movimiento.replace('Z', '')), "PPP p", { locale: es })}
+                                            {format(parseISO(selectedMov.fecha_movimiento), "PPP p", { locale: es })}
                                         </span>
                                     </div>
                                 </div>
