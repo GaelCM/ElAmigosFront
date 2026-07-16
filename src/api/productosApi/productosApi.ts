@@ -122,6 +122,32 @@ export const eliminarProductoApi = async (idProducto: number) => {
     return data as { success: boolean, message: string, details?: string };
 }
 
+export const obtenerSucursalesProductoApi = async (idProducto: number) => {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/sucursalesProducto/${idProducto}`, {
+        method: "get",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
+            'Content-Type': 'application/json',
+        }
+    });
+    const data = await res.json();
+    return data as { success: boolean, message: string, data: { id_sucursal: number; nombre: string }[] };
+}
+
+export const eliminarProductoDeSucursalesApi = async (idProducto: number, idSucursales: number[]) => {
+    const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/eliminarProductoSucursales/${idProducto}`, {
+        method: "delete",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tkn')}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idSucursales })
+    });
+    const data = await res.json();
+    return data as { success: boolean, message: string, data: { eliminado_completo: boolean } };
+}
+
+
 export const getProductosInventario = async (idSucursal: number) => {
     const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/getProductosInventario/${idSucursal}`, {
         method: "get",

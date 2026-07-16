@@ -69,6 +69,17 @@ export default function NuevoPedidoPage() {
     const [notas, setNotas] = useState("");
     const [carritoAbierto, setCarritoAbierto] = useState(false);
     const [datosCargados, setDatosCargados] = useState(false);
+    // Conjunto de id_unidad_venta que usan precio mayoreo (por producto)
+    const [mayoreoItems, setMayoreoItems] = useState<Set<number>>(new Set());
+
+    const isMayoreo = (id: number) => mayoreoItems.has(id);
+    const toggleMayoreo = (id: number) =>
+        setMayoreoItems((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
 
     // ── Clientes filtrados + renderizado parcial (max 50) ─────
     const MAX_CLIENTES_VISIBLES = 50;
@@ -114,7 +125,7 @@ export default function NuevoPedidoPage() {
                 getProductos(user.id_sucursal),
                 getClientes()
             ]);
-            
+
             let loadedProducts: ProductoVenta[] = [];
             if (resProd.success) {
                 setProductos(resProd.data);
@@ -128,15 +139,15 @@ export default function NuevoPedidoPage() {
                     const p = resPedido.data;
                     setNotas(p.notas || "");
                     if (p.id_cliente) setSelectedCliente(String(p.id_cliente));
-                    
+
                     crearCarrito(`Pedido #${id}`);
                     clearCart();
-                    
+
                     if (p.detalle) {
                         p.detalle.forEach(d => {
                             const prod = loadedProducts.find(lp => lp.id_unidad_venta === d.id_unidad_venta);
                             if (prod) {
-                                for(let i=0; i<d.cantidad; i++) {
+                                for (let i = 0; i < d.cantidad; i++) {
                                     addProduct(prod);
                                 }
                             }
@@ -197,7 +208,12 @@ export default function NuevoPedidoPage() {
 
     const totalItems = productosEnCarrito.reduce((s, i) => s + i.quantity, 0);
     const totalPedido = productosEnCarrito.reduce(
-        (sum, item) => sum + item.product.precio_venta * item.quantity,
+        (sum, item) =>
+            sum +
+            (isMayoreo(item.product.id_unidad_venta)
+                ? item.product.precio_mayoreo
+                : item.product.precio_venta) *
+            item.quantity,
         0
     );
 
@@ -213,15 +229,20 @@ export default function NuevoPedidoPage() {
                 id_sucursal: user.id_sucursal,
                 id_cliente: selectedCliente !== "none" ? Number(selectedCliente) : null,
                 notas: notas.trim() || null,
-                productos: productosEnCarrito.map((item) => ({
-                    id_unidad_venta: item.product.id_unidad_venta,
-                    id_producto: item.product.id_producto,
-                    nombre_producto: item.product.nombre_producto,
-                    cantidad: item.quantity,
-                    precio_unitario: item.product.precio_venta,
-                    precio_mayoreo: false,
-                    sku_pieza: item.product.sku_presentacion,
-                })),
+                productos: productosEnCarrito.map((item) => {
+                    const usaMayoreo = isMayoreo(item.product.id_unidad_venta);
+                    return {
+                        id_unidad_venta: item.product.id_unidad_venta,
+                        id_producto: item.product.id_producto,
+                        nombre_producto: item.product.nombre_producto,
+                        cantidad: item.quantity,
+                        precio_unitario: usaMayoreo
+                            ? item.product.precio_mayoreo
+                            : item.product.precio_venta,
+                        precio_mayoreo: usaMayoreo,
+                        sku_pieza: item.product.sku_presentacion,
+                    };
+                }),
             };
 
             let res;
@@ -291,13 +312,12 @@ export default function NuevoPedidoPage() {
                             return (
                                 <div
                                     key={p.id_unidad_venta}
-                                    className={`flex items-center gap-3 px-4 py-4 transition-colors ${
-                                        sinStock
-                                            ? "opacity-40"
-                                            : enCarrito > 0
+                                    className={`flex items-center gap-3 px-4 py-4 transition-colors ${sinStock
+                                        ? "opacity-40"
+                                        : enCarrito > 0
                                             ? "bg-blue-50"
                                             : ""
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
@@ -310,8 +330,14 @@ export default function NuevoPedidoPage() {
                                         </div>
 
                                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                            <span className="text-sm font-bold text-gray-700">
-                                                ${p.precio_venta.toFixed(2)}
+                                            <span className={`text-sm font-bold ${enCarrito > 0 && isMayoreo(p.id_unidad_venta)
+                                                ? "text-yellow-700"
+                                                : "text-gray-700"
+                                                }`}>
+                                                ${(enCarrito > 0 && isMayoreo(p.id_unidad_venta)
+                                                    ? p.precio_mayoreo
+                                                    : p.precio_venta
+                                                ).toFixed(2)}
                                             </span>
                                             {sinStock ? (
                                                 <Badge variant="destructive" className="text-xs h-5 px-1.5">
@@ -330,6 +356,32 @@ export default function NuevoPedidoPage() {
                                                 </span>
                                             )}
                                         </div>
+
+                                        {/* Toggle venta/mayoreo — solo visible cuando está en carrito */}
+                                        {enCarrito > 0 && (
+                                            <div className="flex mt-1.5 rounded-lg overflow-hidden border border-gray-200 w-fit text-xs font-medium">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => isMayoreo(p.id_unidad_venta) && toggleMayoreo(p.id_unidad_venta)}
+                                                    className={`px-2.5 py-1 transition-colors ${!isMayoreo(p.id_unidad_venta)
+                                                        ? "bg-blue-600 text-white"
+                                                        : "bg-white text-gray-500 hover:bg-gray-50"
+                                                        }`}
+                                                >
+                                                    Venta
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => !isMayoreo(p.id_unidad_venta) && toggleMayoreo(p.id_unidad_venta)}
+                                                    className={`px-2.5 py-1 transition-colors ${isMayoreo(p.id_unidad_venta)
+                                                        ? "bg-yellow-600 text-white"
+                                                        : "bg-white text-gray-500 hover:bg-gray-50"
+                                                        }`}
+                                                >
+                                                    Mayoreo
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex items-center gap-1.5 shrink-0">
@@ -466,14 +518,29 @@ export default function NuevoPedidoPage() {
                                         <p className="font-medium text-gray-900 text-sm leading-tight truncate">
                                             {item.product.nombre_producto} <span className="text-blue-600">{item.product.nombre_presentacion}</span>
                                         </p>
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                            ${item.product.precio_venta.toFixed(2)} c/u
+                                        <p className={`text-xs mt-0.5 ${isMayoreo(item.product.id_unidad_venta)
+                                            ? "yellow-600 font-medium"
+                                            : "text-gray-500"
+                                            }`}>
+                                            ${(isMayoreo(item.product.id_unidad_venta)
+                                                ? item.product.precio_mayoreo
+                                                : item.product.precio_venta
+                                            ).toFixed(2)} c/u
+                                            {isMayoreo(item.product.id_unidad_venta) && (
+                                                <span className="ml-1 text-yellow-400">· mayoreo</span>
+                                            )}
                                         </p>
                                     </div>
 
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <span className="font-bold text-sm text-gray-900">
-                                            ${(item.product.precio_venta * item.quantity).toFixed(2)}
+                                        <span className={`font-bold text-sm ${isMayoreo(item.product.id_unidad_venta)
+                                            ? "text-yellow-700"
+                                            : "text-gray-900"
+                                            }`}>
+                                            ${((isMayoreo(item.product.id_unidad_venta)
+                                                ? item.product.precio_mayoreo
+                                                : item.product.precio_venta
+                                            ) * item.quantity).toFixed(2)}
                                         </span>
                                         <Button
                                             variant="ghost"
@@ -553,11 +620,10 @@ export default function NuevoPedidoPage() {
                                                 <button
                                                     key={c.id_cliente}
                                                     type="button"
-                                                    className={`w-full px-3 py-2 text-sm text-left transition-colors ${
-                                                        String(c.id_cliente) === selectedCliente
-                                                            ? "bg-blue-50 text-blue-700 font-semibold"
-                                                            : "hover:bg-gray-50 text-gray-800"
-                                                    }`}
+                                                    className={`w-full px-3 py-2 text-sm text-left transition-colors ${String(c.id_cliente) === selectedCliente
+                                                        ? "bg-blue-50 text-blue-700 font-semibold"
+                                                        : "hover:bg-gray-50 text-gray-800"
+                                                        }`}
                                                     onClick={() => {
                                                         setSelectedCliente(String(c.id_cliente));
                                                         setClienteDropdownAbierto(false);

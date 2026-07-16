@@ -11,7 +11,9 @@ import { toast } from "sonner"
 import { Link } from "react-router"
 import { useCurrentUser } from "@/contexts/currentUser"
 import DialogSetGranel from "@/pages/home/components/dialogSetGranel"
-import { eliminarProductoApi } from "@/api/productosApi/productosApi"
+import { eliminarProductoApi, obtenerSucursalesProductoApi, eliminarProductoDeSucursalesApi } from "@/api/productosApi/productosApi"
+import { Checkbox } from "./ui/checkbox"
+import { Label } from "./ui/label"
 import {
   Dialog,
   DialogContent,
@@ -52,6 +54,27 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<ProductoVenta | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [productBranches, setProductBranches] = useState<{ id_sucursal: number; nombre: string }[]>([]);
+  const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
+  const [isDeletingEverywhere, setIsDeletingEverywhere] = useState(false);
+
+  const fetchProductBranches = async (idProducto: number) => {
+    try {
+      const res = await obtenerSucursalesProductoApi(idProducto);
+      if (res.success && res.data) {
+        setProductBranches(res.data);
+        // By default, select only the current branch if the product is there
+        const inCurrentBranch = res.data.some(b => b.id_sucursal === idSucursal);
+        if (inCurrentBranch) {
+          setSelectedBranches([idSucursal]);
+        } else {
+          setSelectedBranches([]);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching branches:", err);
+    }
+  };
 
   const addProductFn = onAddProduct || addProductVenta;
 
@@ -85,11 +108,22 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
   const handleDelete = async () => {
     if (!productToDelete) return;
 
+    if (!isDeletingEverywhere && selectedBranches.length === 0) {
+      toast.error("Debe seleccionar al menos una sucursal para eliminar");
+      return;
+    }
+
     setIsDeleting(true);
     try {
-      const res = await eliminarProductoApi(productToDelete.id_producto);
+      let res;
+      if (isDeletingEverywhere) {
+        res = await eliminarProductoApi(productToDelete.id_producto);
+      } else {
+        res = await eliminarProductoDeSucursalesApi(productToDelete.id_producto, selectedBranches) as any;
+      }
+
       if (res.success) {
-        toast.success("Producto eliminado correctamente");
+        toast.success(res.message || "Producto eliminado correctamente");
         setIsDeleteDialogOpen(false);
         loadProducts(true); // Recargar lista
       } else {
@@ -373,6 +407,8 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                         onClick={(e) => {
                           e.stopPropagation();
                           setProductToDelete(p);
+                          setIsDeletingEverywhere(false);
+                          fetchProductBranches(p.id_producto);
                           setIsDeleteDialogOpen(true);
                         }}
                       >
@@ -465,16 +501,64 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
               <AlertTriangle className="h-5 w-5" />
               Confirmar eliminación de producto
             </DialogTitle>
-            <DialogDescription className="py-4">
-              ¿Estás seguro de que deseas eliminar permanentemente <b>{productToDelete?.nombre_producto}</b>?
-              <br /><br />
-              <span className="font-bold text-foreground block mb-2">Repercusiones importantes:</span>
-              <ul className="list-disc pl-5 space-y-1 text-sm">
-                <li>Se eliminará todo el <b>inventario</b> actual de este producto en todas las sucursales.</li>
-                <li>Se borrarán todos los <b>precios y variantes</b> asociados.</li>
-                <li>Si es un componente de un <b>producto compuesto</b>, éste se verá afectado.</li>
-                <li>Los registros de <b>ventas antiguas</b> mostrarán el nombre pero ya no estarán vinculados a este SKU.</li>
-              </ul>
+            <DialogDescription className="py-4 space-y-4">
+              <p>
+                ¿Estás seguro de que deseas eliminar <b>{productToDelete?.nombre_producto}</b>?
+              </p>
+
+              <div className="bg-slate-50 p-4 rounded-md border space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="delete-all"
+                    checked={isDeletingEverywhere}
+                    onCheckedChange={(checked) => setIsDeletingEverywhere(!!checked)}
+                  />
+                  <Label htmlFor="delete-all" className="font-semibold text-red-600 cursor-pointer">
+                    Eliminar de TODAS las sucursales (Borrar el producto base completo)
+                  </Label>
+                </div>
+
+                {!isDeletingEverywhere && productBranches.length > 0 && (
+                  <div className="space-y-3 pt-2 border-t">
+                    <Label className="font-semibold">O selecciona de qué sucursales eliminarlo:</Label>
+                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2">
+                      {productBranches.map((branch) => (
+                        <div key={branch.id_sucursal} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`branch-${branch.id_sucursal}`}
+                            checked={selectedBranches.includes(branch.id_sucursal)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedBranches([...selectedBranches, branch.id_sucursal]);
+                              } else {
+                                setSelectedBranches(selectedBranches.filter(id => id !== branch.id_sucursal));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`branch-${branch.id_sucursal}`} className="cursor-pointer">
+                            {branch.nombre} {branch.id_sucursal === idSucursal && "(Actual)"}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!isDeletingEverywhere && productBranches.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">Cargando sucursales disponibles...</p>
+                )}
+              </div>
+
+              <div className="text-sm text-muted-foreground mt-4">
+                <span className="font-bold text-foreground block mb-1">Repercusiones importantes:</span>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Se eliminará el <b>inventario</b> actual y los <b>precios/variantes</b> de las sucursales seleccionadas.</li>
+                  {isDeletingEverywhere && (
+                    <li>Al eliminar de todas, si es un componente de un <b>producto compuesto</b>, éste se verá afectado.</li>
+                  )}
+                  <li>El historial de ventas y movimientos se conservará intacto.</li>
+                </ul>
+              </div>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -488,9 +572,9 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={isDeleting || (!isDeletingEverywhere && selectedBranches.length === 0)}
             >
-              {isDeleting ? "Eliminando..." : "Sí, eliminar producto"}
+              {isDeleting ? "Eliminando..." : "Sí, eliminar"}
             </Button>
           </DialogFooter>
         </DialogContent>
