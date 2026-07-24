@@ -225,6 +225,8 @@ export default function Home() {
         syncProducts();
     }, [isOnline, user.id_sucursal]);
 
+    const isSyncingRef = useRef(false);
+
     useEffect(() => {
         const updatePendingCount = async () => {
             // @ts-ignore
@@ -237,26 +239,31 @@ export default function Home() {
         if (isOnline) {
             const syncPendingSales = async () => {
                 // Si el diálogo de confirmación está abierto, pausamos la sincronización para priorizar la red
-                if (isOpen) return;
+                if (isOpen || isSyncingRef.current) return;
+                isSyncingRef.current = true;
 
-                // @ts-ignore
-                const pendingSales = await window["electron-api"]?.obtenerVentasPendientes();
-                if (pendingSales && pendingSales.length > 0) {
-                    toast.info(`Sincronizando ${pendingSales.length} ventas pendientes...`);
-                    const { nuevaVentaApi } = await import("@/api/ventasApi/ventasApi");
+                try {
+                    // @ts-ignore
+                    const pendingSales = await window["electron-api"]?.obtenerVentasPendientes();
+                    if (pendingSales && pendingSales.length > 0) {
+                        toast.info(`Sincronizando ${pendingSales.length} ventas pendientes...`);
+                        const { nuevaVentaApi } = await import("@/api/ventasApi/ventasApi");
 
-                    for (const s of pendingSales) {
-                        try {
-                            const res = await nuevaVentaApi(s.venta);
-                            if (res?.success) {
-                                // @ts-ignore
-                                await window["electron-api"]?.eliminarVentaSincronizada(s.id);
+                        for (const s of pendingSales) {
+                            try {
+                                const res = await nuevaVentaApi(s.venta);
+                                if (res?.success) {
+                                    // @ts-ignore
+                                    await window["electron-api"]?.eliminarVentaSincronizada(s.id);
+                                }
+                            } catch (err) {
+                                console.error("Error sincronizando venta individual:", err);
                             }
-                        } catch (err) {
-                            console.error("Error sincronizando venta individual:", err);
                         }
+                        updatePendingCount();
                     }
-                    updatePendingCount();
+                } finally {
+                    isSyncingRef.current = false;
                 }
             };
 

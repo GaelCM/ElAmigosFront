@@ -42,6 +42,7 @@ import DetalleCortePage from "./pages/reportes/cortes/detalleCorte";
 import VentasPendientesLocal from "./pages/reportes/ventas/pendientesLocal";
 import PedidosPage from "./pages/pedidos/pedidosPage";
 import NuevoPedidoPage from "./pages/pedidos/nuevoPedidoPage";
+import WhatsappPage from "./pages/whatsappChat/whatsappPage"
 
 
 export const rutas = createHashRouter([
@@ -217,6 +218,10 @@ export const rutas = createHashRouter([
                     {
                         path: "/pedidos/editar/:id",
                         element: <NuevoPedidoPage />
+                    },
+                    {
+                        path: "/whatsappChat",
+                        element: <WhatsappPage />
                     },
                 ]
             }

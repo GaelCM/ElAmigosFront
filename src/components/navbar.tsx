@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, DollarSign, FileText, Menu, Package, Search, Settings, TrendingUp, Wifi } from "lucide-react";
+import { Calendar, ChevronDown, DollarSign, FileText, Menu, Package, Search, Settings, TrendingUp, Wifi, MessageCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
@@ -183,6 +183,18 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
                   </DropdownMenu>
                 </div>
               )}
+
+              {/* Botón de Chat Rápido Moderno */}
+              {user.id_rol === 1 && (
+                <Button variant="ghost" size="icon" asChild className="relative rounded-full hover:bg-sidebar-accent cursor-pointer">
+                  <Link to="/whatsappChat">
+                    <MessageCircle className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+                    {/* Puntito indicador de mensajes, estilo enterprise */}
+                    <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-card animate-pulse"></span>
+                  </Link>
+                </Button>
+              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Link to={"/configuraciones"} className="gap-2 bg-transparent">
