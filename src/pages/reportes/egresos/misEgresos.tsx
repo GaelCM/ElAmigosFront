@@ -4,7 +4,7 @@ import type { ReporteEgresoItem } from "@/types/Egresos";
 import type { Sucursal } from "@/types/Sucursal";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -58,15 +58,86 @@ export default function MisEgresos() {
     const zonedDate = toZonedTime(now, timeZone);
     const fechaFormateada = format(zonedDate, 'yyyy-MM-dd');
 
-    const [fechaDesde, setFechaDesde] = useState(fechaFormateada);
-    const [fechaHasta, setFechaHasta] = useState(fechaFormateada);
+    const [fechaDesde, setFechaDesde] = useState(() => sessionStorage.getItem("misEgresos_fechaDesde") || fechaFormateada);
+    const [fechaHasta, setFechaHasta] = useState(() => sessionStorage.getItem("misEgresos_fechaHasta") || fechaFormateada);
     const [sucursales, setSucursales] = useState<Sucursal[]>([]);
-    const [sucursalSelected, setSucursalSelected] = useState<number | undefined>(undefined);
+    const [sucursalSelected, setSucursalSelected] = useState<number | undefined>(() => {
+        const saved = sessionStorage.getItem("misEgresos_sucursalSelected");
+        return saved && saved !== "all" ? parseInt(saved, 10) : undefined;
+    });
     const [egresos, setEgresos] = useState<ReporteEgresoItem[]>([]);
     const [loading, setLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem("misEgresos_searchTerm") || "");
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const hasRestoredScroll = useRef(false);
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+        sessionStorage.setItem("misEgresos_fechaDesde", fechaDesde);
+    }, [fechaDesde]);
+
+    useEffect(() => {
+        sessionStorage.setItem("misEgresos_fechaHasta", fechaHasta);
+    }, [fechaHasta]);
+
+    useEffect(() => {
+        sessionStorage.setItem("misEgresos_sucursalSelected", sucursalSelected ? sucursalSelected.toString() : "all");
+    }, [sucursalSelected]);
+
+    useEffect(() => {
+        sessionStorage.setItem("misEgresos_searchTerm", searchTerm);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+            if (mainEl) {
+                sessionStorage.setItem("misEgresos_mainScrollTop", mainEl.scrollTop.toString());
+            }
+        };
+
+        const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+        if (mainEl) {
+            mainEl.addEventListener('scroll', handleScroll, { passive: true });
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            if (mainEl) {
+                mainEl.removeEventListener('scroll', handleScroll);
+            }
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (egresos.length > 0 && !hasRestoredScroll.current) {
+            const savedScrollTop = sessionStorage.getItem("misEgresos_mainScrollTop");
+            if (savedScrollTop) {
+                hasRestoredScroll.current = true;
+
+                const restore = () => {
+                    const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+                    if (mainEl) {
+                        mainEl.scrollTop = parseInt(savedScrollTop, 10);
+                    }
+                };
+
+                restore();
+                const t1 = setTimeout(restore, 50);
+                const t2 = setTimeout(restore, 150);
+                const t3 = setTimeout(restore, 300);
+
+                return () => {
+                    clearTimeout(t1);
+                    clearTimeout(t2);
+                    clearTimeout(t3);
+                };
+            }
+        }
+    }, [egresos.length]);
     const cargarDatos = async () => {
         setLoading(true);
         try {
@@ -185,7 +256,7 @@ export default function MisEgresos() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/50 p-4 md:p-8">
+        <div className="min-h-screen bg-slate-50/50 p-4 md:p-8" ref={containerRef}>
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -467,7 +538,13 @@ export default function MisEgresos() {
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                onClick={() => navigate(`/egresos/detalle-compra/${item.id}`)}
+                                                                onClick={() => {
+                                                                    const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+                                                                    if (mainEl) {
+                                                                        sessionStorage.setItem("misEgresos_mainScrollTop", mainEl.scrollTop.toString());
+                                                                    }
+                                                                    navigate(`/egresos/detalle-compra/${item.id}`);
+                                                                }}
                                                                 className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                                                             >
                                                                 <Eye className="w-4 h-4 mr-1" />

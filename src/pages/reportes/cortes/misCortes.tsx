@@ -2,7 +2,7 @@ import { obtenerReporteCortesApi } from "@/api/cortesApi/cortesApi";
 import { obtenerSucursalesApi } from "@/api/sucursalApi/sucursalApi";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -74,9 +74,73 @@ export default function MisCortesPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [fechaDesde, setFechaDesde] = useState(fechaFormateada);
-    const [fechaHasta, setFechaHasta] = useState(fechaFormateada);
-    const [idSucursal, setIdSucursal] = useState<string>("0"); // "0" para todas
+    const [fechaDesde, setFechaDesde] = useState(() => sessionStorage.getItem("misCortes_fechaDesde") || fechaFormateada);
+    const [fechaHasta, setFechaHasta] = useState(() => sessionStorage.getItem("misCortes_fechaHasta") || fechaFormateada);
+    const [idSucursal, setIdSucursal] = useState<string>(() => sessionStorage.getItem("misCortes_idSucursal") || "0"); // "0" para todas
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const hasRestoredScroll = useRef(false);
+
+    useEffect(() => {
+        sessionStorage.setItem("misCortes_fechaDesde", fechaDesde);
+    }, [fechaDesde]);
+
+    useEffect(() => {
+        sessionStorage.setItem("misCortes_fechaHasta", fechaHasta);
+    }, [fechaHasta]);
+
+    useEffect(() => {
+        sessionStorage.setItem("misCortes_idSucursal", idSucursal);
+    }, [idSucursal]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+            if (mainEl) {
+                sessionStorage.setItem("misCortes_mainScrollTop", mainEl.scrollTop.toString());
+            }
+        };
+
+        const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+        if (mainEl) {
+            mainEl.addEventListener('scroll', handleScroll, { passive: true });
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            if (mainEl) {
+                mainEl.removeEventListener('scroll', handleScroll);
+            }
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (cortes.length > 0 && !hasRestoredScroll.current) {
+            const savedScrollTop = sessionStorage.getItem("misCortes_mainScrollTop");
+            if (savedScrollTop) {
+                hasRestoredScroll.current = true;
+
+                const restore = () => {
+                    const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+                    if (mainEl) {
+                        mainEl.scrollTop = parseInt(savedScrollTop, 10);
+                    }
+                };
+
+                restore();
+                const t1 = setTimeout(restore, 50);
+                const t2 = setTimeout(restore, 150);
+                const t3 = setTimeout(restore, 300);
+
+                return () => {
+                    clearTimeout(t1);
+                    clearTimeout(t2);
+                    clearTimeout(t3);
+                };
+            }
+        }
+    }, [cortes.length]);
 
 
     const fetchSucursales = useCallback(async () => {
@@ -133,7 +197,7 @@ export default function MisCortesPage() {
     };
 
     return (
-        <div className="container mx-auto py-8 px-4 space-y-8 animate-in fade-in duration-500">
+        <div className="container mx-auto py-8 px-4 space-y-8 animate-in fade-in duration-500" ref={containerRef}>
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-2">
@@ -178,7 +242,10 @@ export default function MisCortesPage() {
                                 id="fecha-desde"
                                 type="date"
                                 value={fechaDesde}
-                                onChange={(e) => setFechaDesde(e.target.value)}
+                                onChange={(e) => {
+                                    sessionStorage.removeItem("misCortes_mainScrollTop");
+                                    setFechaDesde(e.target.value);
+                                }}
                                 className="border-primary/20 focus:border-primary transition-colors"
                             />
                         </div>
@@ -192,7 +259,10 @@ export default function MisCortesPage() {
                                 id="fecha-hasta"
                                 type="date"
                                 value={fechaHasta}
-                                onChange={(e) => setFechaHasta(e.target.value)}
+                                onChange={(e) => {
+                                    sessionStorage.removeItem("misCortes_mainScrollTop");
+                                    setFechaHasta(e.target.value);
+                                }}
                                 className="border-primary/20 focus:border-primary transition-colors"
                             />
                         </div>
@@ -202,7 +272,10 @@ export default function MisCortesPage() {
                                 <Store className="h-4 w-4 text-primary" />
                                 Sucursal
                             </Label>
-                            <Select value={idSucursal} onValueChange={setIdSucursal}>
+                            <Select value={idSucursal} onValueChange={(val) => {
+                                sessionStorage.removeItem("misCortes_mainScrollTop");
+                                setIdSucursal(val);
+                            }}>
                                 <SelectTrigger className="border-primary/20 focus:border-primary">
                                     <SelectValue placeholder="Todas las sucursales" />
                                 </SelectTrigger>
@@ -276,7 +349,17 @@ export default function MisCortesPage() {
                                     </TableRow>
                                 ) : (
                                     cortes.map((c) => (
-                                        <TableRow key={c.id_turno} className="hover:bg-muted/30 transition-colors group">
+                                        <TableRow
+                                            key={c.id_turno}
+                                            className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                                            onClick={() => {
+                                                const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+                                                if (mainEl) {
+                                                    sessionStorage.setItem("misCortes_mainScrollTop", mainEl.scrollTop.toString());
+                                                }
+                                                navigate(`/reportes/cortes/${c.id_turno}`);
+                                            }}
+                                        >
                                             <TableCell>
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-primary flex items-center gap-1">
@@ -338,7 +421,14 @@ export default function MisCortesPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() => navigate(`/reportes/cortes/${c.id_turno}`)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+                                                        if (mainEl) {
+                                                            sessionStorage.setItem("misCortes_mainScrollTop", mainEl.scrollTop.toString());
+                                                        }
+                                                        navigate(`/reportes/cortes/${c.id_turno}`);
+                                                    }}
                                                     className="group-hover:bg-primary group-hover:text-primary-foreground transition-all rounded-full"
                                                 >
                                                     <ArrowRight className="h-4 w-4" />

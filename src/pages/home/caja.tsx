@@ -44,6 +44,8 @@ export default function Home() {
     const [openGranel, setOpenGranel] = useState(false);
     const [productoGranelPendiente, setProductoGranelPendiente] = useState<ProductoVenta | null>(null);
 
+    const isAnyDialogOpen = isOpen || openCliente || openNuevoProducto || openGranel || error || openAgotado;
+
     const { clearCart, removeProduct, decrementQuantity, incrementQuantity, getTotalPrice, addProduct, getCarritoActivo, crearCarrito, carritoActivo, togglePrecioMayoreo, asignarClienteCarrito, desasignarClienteCarrito } = useListaProductos();
     const { setFocusScanner } = useOutletContext<{ setFocusScanner: (fn: () => void) => void }>();
 
@@ -60,32 +62,37 @@ export default function Home() {
     useHotkeys('alt+m', () => {
         setOpenCliente(true);
     }, {
-        enableOnFormTags: true
-    }, [setOpenCliente]);
+        enableOnFormTags: true,
+        enabled: !isAnyDialogOpen
+    }, [setOpenCliente, isAnyDialogOpen]);
 
     useHotkeys('ctrl+p', () => {
         setOpenNuevoProducto(true);
     }, {
-        enableOnFormTags: true
-    }, [setOpenNuevoProducto]);
+        enableOnFormTags: true,
+        enabled: !isAnyDialogOpen
+    }, [setOpenNuevoProducto, isAnyDialogOpen]);
 
     useHotkeys('alt+0', () => {
         setMetodoPago(0);
     }, {
-        enableOnFormTags: true
-    }, [setMetodoPago]);
+        enableOnFormTags: true,
+        enabled: !isAnyDialogOpen
+    }, [setMetodoPago, isAnyDialogOpen]);
 
     useHotkeys('alt+1', () => {
         setMetodoPago(1);
     }, {
-        enableOnFormTags: true
-    }, [setMetodoPago]);
+        enableOnFormTags: true,
+        enabled: !isAnyDialogOpen
+    }, [setMetodoPago, isAnyDialogOpen]);
 
     useHotkeys('f12', () => {
         setIsOpen(true);
     }, {
-        enableOnFormTags: true
-    }, [setIsOpen]);
+        enableOnFormTags: true,
+        enabled: !isAnyDialogOpen
+    }, [setIsOpen, isAnyDialogOpen]);
 
 
     // --- Accessibility & Keyboard Navigation Logic ---
@@ -125,12 +132,12 @@ export default function Home() {
     useHotkeys('up', (e) => {
         e.preventDefault();
         setSelectedIndex(prev => Math.max(0, prev - 1));
-    }, { enableOnFormTags: true });
+    }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [isAnyDialogOpen]);
 
     useHotkeys('down', (e) => {
         e.preventDefault();
         setSelectedIndex(prev => Math.min((carritoActual?.productos?.length ?? 0) - 1, prev + 1));
-    }, { enableOnFormTags: true }, [carritoActual?.productos?.length]);
+    }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [carritoActual?.productos?.length, isAnyDialogOpen]);
 
     // Action Hotkeys
     useHotkeys('+, right', (e) => {
@@ -139,7 +146,7 @@ export default function Home() {
         if (!carritoActual?.productos?.length) return;
         const prod = carritoActual.productos[selectedIndex];
         if (prod) incrementQuantity(prod.product.id_unidad_venta);
-    }, { enableOnFormTags: true }, [selectedIndex, carritoActual, idProducto]);
+    }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [selectedIndex, carritoActual, idProducto, isAnyDialogOpen]);
 
     useHotkeys('-, left', (e) => {
         if (idProducto) return;
@@ -147,14 +154,14 @@ export default function Home() {
         if (!carritoActual?.productos?.length) return;
         const prod = carritoActual.productos[selectedIndex];
         if (prod) decrementQuantity(prod.product.id_unidad_venta);
-    }, { enableOnFormTags: true }, [selectedIndex, carritoActual, idProducto]);
+    }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [selectedIndex, carritoActual, idProducto, isAnyDialogOpen]);
 
     useHotkeys('f11', (e) => {
         e.preventDefault();
         if (!carritoActual?.productos?.length) return;
         const prod = carritoActual.productos[selectedIndex];
         if (prod) togglePrecioMayoreo(prod.product.id_unidad_venta);
-    }, { enableOnFormTags: true }, [selectedIndex, carritoActual]);
+    }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [selectedIndex, carritoActual, isAnyDialogOpen]);
     // ------------------------------------------------
 
 

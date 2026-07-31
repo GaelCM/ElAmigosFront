@@ -16,7 +16,7 @@ import type { Categoria } from "@/types/Categoria";
 import type { ProductoFormFinal } from "@/types/Producto";
 import type { Sucursal } from "@/types/Sucursal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, Package, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, ClipboardCheck, Loader2, Package, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -311,6 +311,37 @@ export default function EditarProductoForm() {
     }
   };
 
+  const handleDirectStockAdjustment = (idSucursal: number, rawValue: string) => {
+    const initial = initialQuantities[idSucursal] || 0;
+
+    // Encontrar variante base (factor 1 o index 0)
+    const baseIndex = variantes.findIndex(v => v.factor_conversion_cantidad === 1);
+    const targetBaseIdx = baseIndex !== -1 ? baseIndex : 0;
+
+    if (rawValue === "" || isNaN(parseFloat(rawValue))) {
+      handleVariantAdjustment(idSucursal, targetBaseIdx, undefined);
+      return;
+    }
+
+    const targetStock = parseFloat(rawValue);
+
+    // Sumar piezas de otras variantes (diferentes a la base)
+    let nonBasePiezas = 0;
+    const branchAdjusts = adjustments[idSucursal] || {};
+    Object.keys(branchAdjusts).forEach(vIdx => {
+      const vIndex = parseInt(vIdx);
+      if (vIndex !== targetBaseIdx) {
+        const factor = variantes[vIndex]?.factor_conversion_cantidad || 1;
+        const valInput = branchAdjusts[vIndex];
+        const cant = (valInput === undefined || isNaN(valInput as number)) ? 0 : (valInput as number);
+        nonBasePiezas += (cant * factor);
+      }
+    });
+
+    const neededBaseAdj = targetStock - initial - nonBasePiezas;
+    handleVariantAdjustment(idSucursal, targetBaseIdx, parseFloat(neededBaseAdj.toFixed(2)));
+  };
+
 
 
   /* ----------------------- STEP 1 --------------------------- */
@@ -577,6 +608,38 @@ export default function EditarProductoForm() {
                           <p className="text-lg font-black text-green-400">
                             {form.watch(`sucursales_inventario.${invIndex}.cantidad_actual`)}
                           </p>
+                        </div>
+                      </div>
+
+                      {/* Ajuste Directo por Conteo Físico Real (Inventario) */}
+                      <div className="bg-blue-50 border border-blue-400 p-3 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-black text-blue-900 uppercase tracking-tight flex items-center gap-1">
+                            <ClipboardCheck className="w-3.5 h-3.5 text-blue-600" />
+                            Ajuste Directo (Conteo Físico)
+                          </Label>
+                          {(() => {
+                            const initial = initialQuantities[s.id_sucursal] || 0;
+                            const finalStock = form.watch(`sucursales_inventario.${invIndex}.cantidad_actual`) ?? initial;
+                            const diff = parseFloat((finalStock - initial).toFixed(2));
+                            if (diff === 0) return null;
+                            return (
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${diff > 0 ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                                {diff > 0 ? `+${diff}` : diff} pzas
+                              </span>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            placeholder={`Ej. ${initialQuantities[s.id_sucursal] || 0}`}
+                            className="h-8 text-sm font-bold bg-white border-blue-300 focus:border-blue-500 text-slate-900"
+                            value={form.watch(`sucursales_inventario.${invIndex}.cantidad_actual`) ?? ""}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => handleDirectStockAdjustment(s.id_sucursal, e.target.value)}
+                          />
                         </div>
                       </div>
 

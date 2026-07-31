@@ -386,11 +386,11 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                     </h1>
                                     {metodoPago === 0 ? (
                                         <div className="relative max-w-md mx-auto">
-                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-5xl font-black text-slate-400">$</span>
+                                            <span className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-4xl md:text-5xl font-black text-slate-400">$</span>
                                             <input
                                                 type="number"
                                                 step="any"
-                                                className="text-7xl text-center font-black w-full py-6 px-12 bg-slate-50 border-4 border-slate-200 rounded-3xl focus:border-primary focus:ring-0 transition-all outline-none tabular-nums"
+                                                className="text-5xl md:text-7xl text-center font-black w-full py-4 md:py-6 px-8 md:px-12 bg-slate-50 border-4 border-slate-200 rounded-3xl focus:border-primary focus:ring-0 transition-all outline-none tabular-nums"
                                                 placeholder="0.00"
                                                 autoFocus
                                                 value={montoRecibido}
@@ -398,8 +398,8 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                             />
                                         </div>
                                     ) : (
-                                        <div className="py-8 px-12 bg-muted/30 border-4 border-dashed border-muted rounded-3xl max-w-md mx-auto text-center">
-                                            <span className="text-7xl font-black tabular-nums text-slate-600">
+                                        <div className="py-6 md:py-8 px-8 md:px-12 bg-muted/30 border-4 border-dashed border-muted rounded-3xl max-w-md mx-auto text-center">
+                                            <span className="text-5xl md:text-7xl font-black tabular-nums text-slate-600">
                                                 ${totalVenta.toFixed(2)}
                                             </span>
                                         </div>
@@ -415,7 +415,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                             <span className="text-sm font-black uppercase tracking-widest opacity-70">
                                                 {cambioEfectivo >= totalVenta ? 'Su Cambio es de:' : 'Faltan:'}
                                             </span>
-                                            <span className="text-6xl font-black tabular-nums">
+                                            <span className="text-4xl md:text-6xl font-black tabular-nums">
                                                 $ {Math.abs(cambioEfectivo - totalVenta).toFixed(2)}
                                             </span>
                                         </div>

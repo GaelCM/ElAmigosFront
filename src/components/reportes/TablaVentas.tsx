@@ -31,28 +31,86 @@ interface TablaVentasProps {
     ventas: ReporteVentaDetallado[];
     loading?: boolean;
     onVentaCancelada?: () => void;
+    storageKey?: string;
 }
 
 type SortField = 'fecha_venta' | 'total_venta' | 'id_venta' | 'cantidad_productos';
 type SortDirection = 'asc' | 'desc';
 
-export default function TablaVentas({ ventas, loading = false, onVentaCancelada }: TablaVentasProps) {
-    const [sortField, setSortField] = useState<SortField>('fecha_venta');
-    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+export default function TablaVentas({ ventas, loading = false, onVentaCancelada, storageKey }: TablaVentasProps) {
+    const [sortField, setSortField] = useState<SortField>(() => {
+        if (storageKey) {
+            const saved = sessionStorage.getItem(`${storageKey}_sortField`);
+            if (saved) return saved as SortField;
+        }
+        return 'fecha_venta';
+    });
+    const [sortDirection, setSortDirection] = useState<SortDirection>(() => {
+        if (storageKey) {
+            const saved = sessionStorage.getItem(`${storageKey}_sortDirection`);
+            if (saved) return saved as SortDirection;
+        }
+        return 'desc';
+    });
     const [expandedVenta, setExpandedVenta] = useState<number | null>(null);
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
     const [ventaToCancel, setVentaToCancel] = useState<number | null>(null);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedIndex, setSelectedIndex] = useState<number>(0);
+    const [searchTerm, setSearchTerm] = useState(() => {
+        if (storageKey) {
+            const saved = sessionStorage.getItem(`${storageKey}_searchTerm`);
+            if (saved) return saved;
+        }
+        return "";
+    });
+    const [selectedIndex, setSelectedIndex] = useState<number>(() => {
+        if (storageKey) {
+            const saved = sessionStorage.getItem(`${storageKey}_selectedIndex`);
+            if (saved) {
+                const parsed = parseInt(saved, 10);
+                return isNaN(parsed) ? 0 : parsed;
+            }
+        }
+        return 0;
+    });
     const tableContainerRef = useRef<HTMLDivElement>(null);
+    const isFirstRender = useRef(true);
+    const hasRestoredScroll = useRef(false);
     const { user } = useCurrentUser();
     const navigate = useNavigate();
 
+    // Persistir estado en sessionStorage
+    useEffect(() => {
+        if (storageKey) {
+            sessionStorage.setItem(`${storageKey}_sortField`, sortField);
+        }
+    }, [sortField, storageKey]);
+
+    useEffect(() => {
+        if (storageKey) {
+            sessionStorage.setItem(`${storageKey}_sortDirection`, sortDirection);
+        }
+    }, [sortDirection, storageKey]);
+
+    useEffect(() => {
+        if (storageKey) {
+            sessionStorage.setItem(`${storageKey}_searchTerm`, searchTerm);
+        }
+    }, [searchTerm, storageKey]);
+
+    useEffect(() => {
+        if (storageKey) {
+            sessionStorage.setItem(`${storageKey}_selectedIndex`, selectedIndex.toString());
+        }
+    }, [selectedIndex, storageKey]);
+
     // Reset selection when search or sorting changes
     useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
         setSelectedIndex(0);
     }, [searchTerm, sortField, sortDirection]);
-
     const handleSort = (field: SortField) => {
         if (sortField === field) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -86,6 +144,8 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
         }
     });
 
+    const isKeyboardNavigating = useRef(false);
+
     // Keyboard navigation
     useEffect(() => {
         if (sortedVentas.length === 0) return;
@@ -104,16 +164,22 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
             switch (e.key) {
                 case 'ArrowUp':
                     e.preventDefault();
+                    isKeyboardNavigating.current = true;
                     setSelectedIndex(prev => (prev > 0 ? prev - 1 : sortedVentas.length - 1));
                     break;
                 case 'ArrowDown':
                     e.preventDefault();
+                    isKeyboardNavigating.current = true;
                     setSelectedIndex(prev => (prev < sortedVentas.length - 1 ? prev + 1 : 0));
                     break;
                 case 'Enter':
                     e.preventDefault();
                     const selectedVenta = sortedVentas[selectedIndex];
                     if (selectedVenta) {
+                        const mainEl = tableContainerRef.current?.closest('main') || document.querySelector('main');
+                        if (mainEl && storageKey) {
+                            sessionStorage.setItem(`${storageKey}_mainScrollTop`, mainEl.scrollTop.toString());
+                        }
                         navigate(`/reportes/detalleVenta?id=${selectedVenta.id_venta}&cliente=${selectedVenta.nombre_cliente}`);
                     }
                     break;
@@ -122,17 +188,87 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [sortedVentas, selectedIndex, navigate]);
+    }, [sortedVentas, selectedIndex, navigate, isCancelDialogOpen, storageKey]);
 
-    // Automatic scroll to selected row
+    // Automatic scroll to selected row ONLY during active keyboard navigation
     useEffect(() => {
+        if (!isKeyboardNavigating.current) return;
         if (tableContainerRef.current && sortedVentas.length > 0) {
             const selectedRow = tableContainerRef.current.querySelector(`[data-index="${selectedIndex}"]`);
             if (selectedRow) {
                 selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
+            isKeyboardNavigating.current = false;
         }
-    }, [selectedIndex, sortedVentas]);
+    }, [selectedIndex, sortedVentas.length]);
+
+    // Registrar posición del scroll del contenedor principal <main> y tabla en sessionStorage
+    useEffect(() => {
+        if (!storageKey) return;
+
+        const handleScroll = () => {
+            const mainEl = tableContainerRef.current?.closest('main') || document.querySelector('main');
+            if (mainEl) {
+                sessionStorage.setItem(`${storageKey}_mainScrollTop`, mainEl.scrollTop.toString());
+            }
+            if (tableContainerRef.current) {
+                sessionStorage.setItem(`${storageKey}_scrollTop`, tableContainerRef.current.scrollTop.toString());
+            }
+        };
+
+        const mainEl = tableContainerRef.current?.closest('main') || document.querySelector('main');
+        if (mainEl) {
+            mainEl.addEventListener('scroll', handleScroll, { passive: true });
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        const container = tableContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', handleScroll, { passive: true });
+        }
+
+        return () => {
+            if (mainEl) {
+                mainEl.removeEventListener('scroll', handleScroll);
+            }
+            window.removeEventListener('scroll', handleScroll);
+            if (container) {
+                container.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, [storageKey]);
+
+    // Restaurar posición del scroll una sola vez cuando los datos se cargan
+    useEffect(() => {
+        if (ventas.length > 0 && storageKey && !hasRestoredScroll.current) {
+            const savedMainScrollTop = sessionStorage.getItem(`${storageKey}_mainScrollTop`);
+            const savedScrollTop = sessionStorage.getItem(`${storageKey}_scrollTop`);
+
+            if (savedMainScrollTop || savedScrollTop) {
+                hasRestoredScroll.current = true;
+
+                const restoreScroll = () => {
+                    const mainEl = tableContainerRef.current?.closest('main') || document.querySelector('main');
+                    if (savedMainScrollTop && mainEl) {
+                        mainEl.scrollTop = parseInt(savedMainScrollTop, 10);
+                    }
+                    if (savedScrollTop && tableContainerRef.current) {
+                        tableContainerRef.current.scrollTop = parseInt(savedScrollTop, 10);
+                    }
+                };
+
+                restoreScroll();
+                const t1 = setTimeout(restoreScroll, 50);
+                const t2 = setTimeout(restoreScroll, 150);
+                const t3 = setTimeout(restoreScroll, 300);
+
+                return () => {
+                    clearTimeout(t1);
+                    clearTimeout(t2);
+                    clearTimeout(t3);
+                };
+            }
+        }
+    }, [ventas.length, storageKey]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-MX', {
@@ -371,7 +507,17 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                     : 'hover:bg-muted/50'
                                                     }`}
                                                 onClick={() => setSelectedIndex(index)}
-                                                onDoubleClick={() => navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`)}
+                                                onDoubleClick={() => {
+                                                    setSelectedIndex(index);
+                                                    if (storageKey) {
+                                                        sessionStorage.setItem(`${storageKey}_selectedIndex`, index.toString());
+                                                        const mainEl = tableContainerRef.current?.closest('main') || document.querySelector('main');
+                                                        if (mainEl) {
+                                                            sessionStorage.setItem(`${storageKey}_mainScrollTop`, mainEl.scrollTop.toString());
+                                                        }
+                                                    }
+                                                    navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`);
+                                                }}
                                             >
                                                 <TableCell>
                                                     <Button
@@ -440,6 +586,14 @@ export default function TablaVentas({ ventas, loading = false, onVentaCancelada 
                                                             className="h-8 gap-1.5 text-xs font-medium"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
+                                                                setSelectedIndex(index);
+                                                                if (storageKey) {
+                                                                    sessionStorage.setItem(`${storageKey}_selectedIndex`, index.toString());
+                                                                    const mainEl = tableContainerRef.current?.closest('main') || document.querySelector('main');
+                                                                    if (mainEl) {
+                                                                        sessionStorage.setItem(`${storageKey}_mainScrollTop`, mainEl.scrollTop.toString());
+                                                                    }
+                                                                }
                                                                 navigate(`/reportes/detalleVenta?id=${venta.id_venta}&cliente=${venta.nombre_cliente}`);
                                                             }}
                                                         >

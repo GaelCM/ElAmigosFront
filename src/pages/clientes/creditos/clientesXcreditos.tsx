@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getTodosCreditos, getResumenCartera } from "@/api/creditosApi/creditosApi";
 import type { CreditoClienteCompleto, ResumenCartera } from "@/types/Creditos";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +27,62 @@ export default function ClientesXCreditos() {
     const [resumen, setResumen] = useState<ResumenCartera | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [busqueda, setBusqueda] = useState("");
+    const [busqueda, setBusqueda] = useState(() => sessionStorage.getItem("creditos_busqueda") || "");
+    const containerRef = useRef<HTMLDivElement>(null);
+    const hasRestoredScroll = useRef(false);
+
+    useEffect(() => {
+        sessionStorage.setItem("creditos_busqueda", busqueda);
+    }, [busqueda]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+            if (mainEl) {
+                sessionStorage.setItem("creditos_mainScrollTop", mainEl.scrollTop.toString());
+            }
+        };
+
+        const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+        if (mainEl) {
+            mainEl.addEventListener('scroll', handleScroll, { passive: true });
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            if (mainEl) {
+                mainEl.removeEventListener('scroll', handleScroll);
+            }
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (clientes.length > 0 && !hasRestoredScroll.current) {
+            const savedScrollTop = sessionStorage.getItem("creditos_mainScrollTop");
+            if (savedScrollTop) {
+                hasRestoredScroll.current = true;
+
+                const restore = () => {
+                    const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+                    if (mainEl) {
+                        mainEl.scrollTop = parseInt(savedScrollTop, 10);
+                    }
+                };
+
+                restore();
+                const t1 = setTimeout(restore, 50);
+                const t2 = setTimeout(restore, 150);
+                const t3 = setTimeout(restore, 300);
+
+                return () => {
+                    clearTimeout(t1);
+                    clearTimeout(t2);
+                    clearTimeout(t3);
+                };
+            }
+        }
+    }, [clientes.length]);
 
     const cargarDatos = async () => {
         setLoading(true);
@@ -95,7 +150,7 @@ export default function ClientesXCreditos() {
     }).length;
 
     return (
-        <div className="container mx-auto py-8 px-4 space-y-6">
+        <div className="container mx-auto py-8 px-4 space-y-6" ref={containerRef}>
             {/* Header */}
             <div className="space-y-1">
                 <h1 className="text-4xl text-primary font-bold tracking-tight flex items-center gap-3">
@@ -165,7 +220,10 @@ export default function ClientesXCreditos() {
                     <Input
                         placeholder="Buscar cliente..."
                         value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
+                        onChange={(e) => {
+                            sessionStorage.removeItem("creditos_mainScrollTop");
+                            setBusqueda(e.target.value);
+                        }}
                         className="pl-9"
                     />
                 </div>
@@ -218,7 +276,13 @@ export default function ClientesXCreditos() {
                                             <tr
                                                 key={cliente.id_credito}
                                                 className="hover:bg-muted/30 transition-colors cursor-pointer"
-                                                onClick={() => navigate(`/creditos/estado-cuenta/${cliente.id_cliente}`)}
+                                                onClick={() => {
+                                                    const mainEl = containerRef.current?.closest('main') || document.querySelector('main');
+                                                    if (mainEl) {
+                                                        sessionStorage.setItem("creditos_mainScrollTop", mainEl.scrollTop.toString());
+                                                    }
+                                                    navigate(`/creditos/estado-cuenta/${cliente.id_cliente}`);
+                                                }}
                                             >
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">

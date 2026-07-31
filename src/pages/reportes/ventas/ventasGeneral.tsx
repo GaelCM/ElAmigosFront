@@ -31,10 +31,26 @@ export default function VentasGeneralPage() {
     const [error, setError] = useState<string | null>(null);
 
     // Filtros
-    const [fechaDesde, setFechaDesde] = useState(fechaFormateada);
-    const [fechaHasta, setFechaHasta] = useState(fechaFormateada);
-    const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<string>("all");
-    const [sucursalSeleccionada, setSucursalSeleccionada] = useState<string>("all");
+    const [fechaDesde, setFechaDesde] = useState(() => sessionStorage.getItem("ventasGeneral_fechaDesde") || fechaFormateada);
+    const [fechaHasta, setFechaHasta] = useState(() => sessionStorage.getItem("ventasGeneral_fechaHasta") || fechaFormateada);
+    const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<string>(() => sessionStorage.getItem("ventasGeneral_usuarioSeleccionado") || "all");
+    const [sucursalSeleccionada, setSucursalSeleccionada] = useState<string>(() => sessionStorage.getItem("ventasGeneral_sucursalSeleccionada") || "all");
+
+    useEffect(() => {
+        sessionStorage.setItem("ventasGeneral_fechaDesde", fechaDesde);
+    }, [fechaDesde]);
+
+    useEffect(() => {
+        sessionStorage.setItem("ventasGeneral_fechaHasta", fechaHasta);
+    }, [fechaHasta]);
+
+    useEffect(() => {
+        sessionStorage.setItem("ventasGeneral_usuarioSeleccionado", usuarioSeleccionado);
+    }, [usuarioSeleccionado]);
+
+    useEffect(() => {
+        sessionStorage.setItem("ventasGeneral_sucursalSeleccionada", sucursalSeleccionada);
+    }, [sucursalSeleccionada]);
 
     const cargarFiltros = async () => {
         loadingFilters
@@ -232,6 +248,7 @@ export default function VentasGeneralPage() {
                             ventas={ventas}
                             loading={loading}
                             onVentaCancelada={consultarReporte}
+                            storageKey="ventasGeneral"
                         />
                     </CardContent>
                 </Card>

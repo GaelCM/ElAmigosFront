@@ -22,10 +22,22 @@ export default function MisVentasReport() {
     const [ventas, setVentas] = useState<ReporteVentaDetallado[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [fechaDesde, setFechaDesde] = useState(fechaFormateada);
-    const [fechaHasta, setFechaHasta] = useState(fechaFormateada);
-    const [soloTurnoActual, setSoloTurnoActual] = useState(false);
+    const [fechaDesde, setFechaDesde] = useState(() => sessionStorage.getItem("misVentas_fechaDesde") || fechaFormateada);
+    const [fechaHasta, setFechaHasta] = useState(() => sessionStorage.getItem("misVentas_fechaHasta") || fechaFormateada);
+    const [soloTurnoActual, setSoloTurnoActual] = useState(() => sessionStorage.getItem("misVentas_soloTurnoActual") === "true");
     const { user } = useCurrentUser();
+
+    useEffect(() => {
+        sessionStorage.setItem("misVentas_fechaDesde", fechaDesde);
+    }, [fechaDesde]);
+
+    useEffect(() => {
+        sessionStorage.setItem("misVentas_fechaHasta", fechaHasta);
+    }, [fechaHasta]);
+
+    useEffect(() => {
+        sessionStorage.setItem("misVentas_soloTurnoActual", soloTurnoActual ? "true" : "false");
+    }, [soloTurnoActual]);
 
     const [hasOpenCaja, setHasOpenCaja] = useState(false);
 
@@ -115,7 +127,12 @@ export default function MisVentasReport() {
                                 id="fecha-desde"
                                 type="date"
                                 value={fechaDesde}
-                                onChange={(e) => setFechaDesde(e.target.value)}
+                                onChange={(e) => {
+                                    sessionStorage.removeItem("misVentas_mainScrollTop");
+                                    sessionStorage.removeItem("misVentas_scrollTop");
+                                    sessionStorage.removeItem("misVentas_selectedIndex");
+                                    setFechaDesde(e.target.value);
+                                }}
                                 className="w-full"
                             />
                         </div>
@@ -132,7 +149,12 @@ export default function MisVentasReport() {
                                 id="fecha-hasta"
                                 type="date"
                                 value={fechaHasta}
-                                onChange={(e) => setFechaHasta(e.target.value)}
+                                onChange={(e) => {
+                                    sessionStorage.removeItem("misVentas_mainScrollTop");
+                                    sessionStorage.removeItem("misVentas_scrollTop");
+                                    sessionStorage.removeItem("misVentas_selectedIndex");
+                                    setFechaHasta(e.target.value);
+                                }}
                                 className="w-full"
                             />
                         </div>
@@ -142,7 +164,12 @@ export default function MisVentasReport() {
                                 <Switch
                                     id="solo-turno"
                                     checked={soloTurnoActual}
-                                    onCheckedChange={setSoloTurnoActual}
+                                    onCheckedChange={(checked) => {
+                                        sessionStorage.removeItem("misVentas_mainScrollTop");
+                                        sessionStorage.removeItem("misVentas_scrollTop");
+                                        sessionStorage.removeItem("misVentas_selectedIndex");
+                                        setSoloTurnoActual(checked);
+                                    }}
                                 />
                                 <Label
                                     htmlFor="solo-turno"
@@ -175,7 +202,7 @@ export default function MisVentasReport() {
             )}
 
             {/* Tabla de Ventas */}
-            <TablaVentas ventas={ventas} loading={loading} onVentaCancelada={obtenerMisVentas} />
+            <TablaVentas ventas={ventas} loading={loading} onVentaCancelada={obtenerMisVentas} storageKey="misVentas" />
         </div>
     )
 }
