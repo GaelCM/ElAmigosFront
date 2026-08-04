@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2, DollarSign, ArrowUp, ShoppingCart, ShoppingBag, Wallet } from "lucide-react"
 import type { DashboardTurno, DashboardTurnoResponse } from "@/types/Dashboard";
+import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
 
 export default function CerrarCajaPage() {
     const { user } = useCurrentUser();
@@ -217,22 +218,23 @@ export default function CerrarCajaPage() {
                                 const api = window["electron-api"];
                                 const printerName = await api?.getConfig("printer_device");
 
+                                const ticketData = {
+                                    sucursal: "Sucursal " + (user?.sucursal || ""),
+                                    usuario: user?.usuario || "",
+                                    fecha: new Date(),
+                                    id_turno: idTurno,
+                                    ventas: resumen.ventas,
+                                    egresos: resumen.egresos,
+                                    movimientos: resumen.movimientos,
+                                    efectivo: resumen.efectivo,
+                                    abonos_recibidos: resumen.creditos?.abonos_recibidos || 0,
+                                };
+
                                 if (printerName) {
                                     const isCut = (await api?.getConfig("printer_cut")) !== false;
-                                    const ticketData = {
-                                        printerName,
-                                        sucursal: "Sucursal " + (user?.sucursal || ""),
-                                        usuario: user?.usuario || "",
-                                        fecha: new Date(),
-                                        id_turno: idTurno,
-                                        ventas: resumen.ventas,
-                                        egresos: resumen.egresos,
-                                        movimientos: resumen.movimientos,
-                                        efectivo: resumen.efectivo,
-                                        abonos_recibidos: resumen.creditos?.abonos_recibidos || 0,
-                                        cortar: isCut
-                                    };
-                                    await api?.printTicketCorteEscPos(ticketData);
+                                    await api?.printTicketCorteEscPos({ ...ticketData, cortar: isCut });
+                                } else if (isWebPlatform()) {
+                                    await printWebTicket({ kind: "corte", data: ticketData });
                                 }
                             } catch (e) {
                                 console.error("Error al imprimir corte:", e);

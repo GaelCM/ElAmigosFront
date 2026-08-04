@@ -15,6 +15,7 @@ import type { Pedido } from "@/types/Pedido";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Check, Printer, Loader2, AlertCircle } from "lucide-react";
+import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
 
 type Props = {
     pedido: Pedido | null;
@@ -80,42 +81,46 @@ export function DialogCobrarPedido({ pedido, isOpen, onClose, onSuccess }: Props
             const api = window["electron-api"];
             const printerName = await api?.getConfig("printer_device");
 
-            if (!printerName) {
-                toast.error("No se ha configurado una impresora en ajustes.");
+            const buildData = () => ({
+                sucursal: "Sucursal " + user.sucursal,
+                id_sucursal: user.id_sucursal,
+                direccion_sucursal: user.direccion_sucursal,
+                telefono_sucursal: user.telefono_sucursal,
+                usuario: user.usuario,
+                cliente: pedido?.nombre_cliente || "Público General",
+                folio,
+                fecha: new Date(),
+                productos: (pedido?.detalle ?? []).map((d) => ({
+                    cantidad: d.cantidad,
+                    nombre: `${d.nombre_producto}${d.nombre_presentacion ? " " + d.nombre_presentacion : ""}`,
+                    importe: d.subtotal,
+                })),
+                total,
+                pagoCon: metodoPago === "0" ? montoNum : total,
+                cambio: metodoPago === "0" ? Math.max(0, cambio) : 0,
+                ahorro: 0,
+                turno: turnoData?.id_turno || "0",
+                metodo_pago: Number(metodoPago),
+            });
+
+            if (printerName) {
+                if (isImprimir || Number(metodoPago) === 2) {
+                    const isCut = (await api?.getConfig("printer_cut")) !== false;
+                    await api?.printTicketVentaEscPos({ ...buildData(), cortar: isCut });
+                    toast.success("Ticket enviado a imprimir");
+                } else {
+                    await api?.openCashDrawer(printerName);
+                }
                 return;
             }
 
-            if (isImprimir || Number(metodoPago) === 2) {
-                const isCut = (await api?.getConfig("printer_cut")) !== false;
-                const ticketData = {
-                    printerName,
-                    sucursal: "Sucursal " + user.sucursal,
-                    id_sucursal: user.id_sucursal,
-                    direccion_sucursal: user.direccion_sucursal,
-                    telefono_sucursal: user.telefono_sucursal,
-                    usuario: user.usuario,
-                    cliente: pedido?.nombre_cliente || "Público General",
-                    folio: folio,
-                    fecha: new Date(),
-                    productos: (pedido?.detalle ?? []).map((d) => ({
-                        cantidad: d.cantidad,
-                        nombre: `${d.nombre_producto}${d.nombre_presentacion ? " " + d.nombre_presentacion : ""}`,
-                        importe: d.subtotal,
-                    })),
-                    total: total,
-                    pagoCon: metodoPago === "0" ? montoNum : total,
-                    cambio: metodoPago === "0" ? Math.max(0, cambio) : 0,
-                    ahorro: 0,
-                    turno: turnoData?.id_turno || "0",
-                    metodo_pago: Number(metodoPago),
-                    cortar: isCut,
-                };
-
-                await api?.printTicketVentaEscPos(ticketData);
+            if (isWebPlatform()) {
+                await printWebTicket({ kind: "venta", data: buildData() });
                 toast.success("Ticket enviado a imprimir");
-            } else {
-                await api?.openCashDrawer(printerName);
+                return;
             }
+
+            toast.error("No se ha configurado una impresora en ajustes.");
         } catch (e) {
             console.error("Error al imprimir ticket:", e);
             toast.error("No se pudo imprimir el ticket", { duration: 2000 });

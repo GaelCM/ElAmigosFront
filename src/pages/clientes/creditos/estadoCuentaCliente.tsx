@@ -8,6 +8,7 @@ import {
     configurarCredito,
 } from "@/api/creditosApi/creditosApi";
 import type { CreditoCliente, MovimientoCredito } from "@/types/Creditos";
+import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -148,22 +149,23 @@ export default function EstadoCuentaCliente() {
                 const api = window["electron-api"];
                 const printerName = await api?.getConfig("printer_device");
 
+                const ticketData = {
+                    sucursal: "Sucursal " + user.sucursal,
+                    usuario: user.usuario,
+                    cliente: credito?.nombre_cliente || "N/A",
+                    fecha: new Date(),
+                    monto: monto,
+                    saldoAnterior: res.data.saldo_nuevo + monto,
+                    saldoNuevo: res.data.saldo_nuevo,
+                    concepto: conceptoAbono || "Abono a cuenta",
+                    tipo: "ABONO",
+                };
+
                 if (printerName) {
                     const isCut = (await api?.getConfig("printer_cut")) !== false;
-                    const ticketData = {
-                        printerName,
-                        sucursal: "Sucursal " + user.sucursal,
-                        usuario: user.usuario,
-                        cliente: credito?.nombre_cliente || "N/A",
-                        fecha: new Date(),
-                        monto: monto,
-                        saldoAnterior: res.data.saldo_nuevo + monto,
-                        saldoNuevo: res.data.saldo_nuevo,
-                        concepto: conceptoAbono || "Abono a cuenta",
-                        tipo: "ABONO",
-                        cortar: isCut
-                    };
-                    await api?.printTicketAbonoEscPos(ticketData);
+                    await api?.printTicketAbonoEscPos({ ...ticketData, cortar: isCut });
+                } else if (isWebPlatform()) {
+                    await printWebTicket({ kind: "abono", data: ticketData });
                 }
             } catch (printError) {
                 console.error("Error al imprimir ticket de abono:", printError);
@@ -214,22 +216,23 @@ export default function EstadoCuentaCliente() {
                 const api = window["electron-api"];
                 const printerName = await api?.getConfig("printer_device");
 
+                const ticketData = {
+                    sucursal: "Sucursal " + user.sucursal,
+                    usuario: user.usuario,
+                    cliente: credito?.nombre_cliente || "N/A",
+                    fecha: new Date(),
+                    monto: res.data.monto_liquidado,
+                    saldoAnterior: res.data.monto_liquidado, // Liquidamos el total
+                    saldoNuevo: 0,
+                    concepto: "LIQUIDACION TOTAL DE DEUDA",
+                    tipo: "LIQUIDACION",
+                };
+
                 if (printerName) {
                     const isCut = (await api?.getConfig("printer_cut")) !== false;
-                    const ticketData = {
-                        printerName,
-                        sucursal: "Sucursal " + user.sucursal,
-                        usuario: user.usuario,
-                        cliente: credito?.nombre_cliente || "N/A",
-                        fecha: new Date(),
-                        monto: res.data.monto_liquidado,
-                        saldoAnterior: res.data.monto_liquidado, // Liquidamos el total
-                        saldoNuevo: 0,
-                        concepto: "LIQUIDACION TOTAL DE DEUDA",
-                        tipo: "LIQUIDACION",
-                        cortar: isCut
-                    };
-                    await api?.printTicketAbonoEscPos(ticketData);
+                    await api?.printTicketAbonoEscPos({ ...ticketData, cortar: isCut });
+                } else if (isWebPlatform()) {
+                    await printWebTicket({ kind: "abono", data: ticketData });
                 }
             } catch (printError) {
                 console.error("Error al imprimir ticket de liquidación:", printError);

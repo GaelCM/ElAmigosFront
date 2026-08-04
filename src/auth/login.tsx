@@ -94,7 +94,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-xs text-center text-muted-foreground">version 5.1.1</p>
+        <p className="text-xs text-center text-muted-foreground">version 5.2.0</p>
       </Card>
     </div>
   );

@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Zap } from "lucide-react";
 import { redondearPrecio } from "@/lib/utils";
+import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
 
 
 type dialogProps = {
@@ -135,6 +136,59 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
         if (isProcessing.current) return; // Bloqueo instantáneo físico
         isProcessing.current = true;
         setEstado("Cargando");
+
+        const imprimirVenta = async (folio: number | string, fecha: Date) => {
+            // @ts-ignore
+            const api = window["electron-api"];
+            const printerName = await api?.getConfig("printer_device");
+
+            const buildData = () => ({
+                sucursal: "Sucursal " + user.sucursal,
+                id_sucursal: user.id_sucursal,
+                direccion_sucursal: user.direccion_sucursal,
+                telefono_sucursal: user.telefono_sucursal,
+                usuario: user.usuario,
+                cliente: carritoActual?.cliente?.nombre_cliente || "Público General",
+                folio,
+                fecha,
+                productos: carritoActual?.productos?.map((p: any) => ({
+                    cantidad: p.quantity,
+                    nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
+                    importe: (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
+                })) || [],
+                total: totalVenta,
+                pagoCon: cambioEfectivo,
+                cambio: Math.max(0, cambioEfectivo - totalVenta),
+                ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
+                turno: turnoData?.id_turno || "0",
+                metodo_pago: metodoPago
+            });
+
+            if (printerName) {
+                if (isImprimir || metodoPago === 2) {
+                    const isCut = (await api?.getConfig("printer_cut")) !== false;
+                    await api?.printTicketVentaEscPos({ ...buildData(), cortar: isCut });
+                    toast.success("Ticket enviado a imprimir");
+                } else {
+                    await api?.openCashDrawer(printerName);
+                    toast.success("Venta finalizada (Sin ticket)");
+                }
+                return;
+            }
+
+            if (isWebPlatform()) {
+                if (isImprimir || metodoPago === 2) {
+                    await printWebTicket({ kind: "venta", data: buildData() });
+                    toast.success("Ticket enviado a imprimir");
+                } else {
+                    toast.success("Venta finalizada (Sin ticket)");
+                }
+                return;
+            }
+
+            toast.error("No se ha configurado una impresora en ajustes");
+        };
+
         try {
 
             const ventaFinal = {
@@ -159,47 +213,9 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                         description: `La venta se sincronizará automáticamente al detectar internet.`,
                     });
 
-                    // Lógica de impresión (ESC/POS Offline)
+                    // Lógica de impresión (ESC/POS o Web Bluetooth)
                     try {
-                        // @ts-ignore
-                        const api = window["electron-api"];
-                        const printerName = await api?.getConfig("printer_device");
-
-                        if (printerName) {
-                            if (isImprimir || metodoPago === 2) {
-                                const isCut = (await api?.getConfig("printer_cut")) !== false;
-                                const ticketData = {
-                                    printerName,
-                                    sucursal: "Sucursal " + user.sucursal,
-                                    id_sucursal: user.id_sucursal,
-                                    direccion_sucursal: user.direccion_sucursal,
-                                    telefono_sucursal: user.telefono_sucursal,
-                                    usuario: user.usuario,
-                                    cliente: carritoActual?.cliente?.nombre_cliente || "Público General",
-                                    folio: "OFL-" + offlineRes.id,
-                                    fecha: new Date(),
-                                    productos: carritoActual?.productos?.map((p: any) => ({
-                                        cantidad: p.quantity,
-                                        nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
-                                        importe: (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
-                                    })) || [],
-                                    total: totalVenta,
-                                    pagoCon: cambioEfectivo,
-                                    cambio: Math.max(0, cambioEfectivo - totalVenta),
-                                    ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
-                                    turno: turnoData?.id_turno || "0",
-                                    metodo_pago: metodoPago,
-                                    cortar: isCut
-                                };
-
-                                await api?.printTicketVentaEscPos(ticketData);
-                                toast.success("Ticket enviado a imprimir");
-                            } else {
-                                await api?.openCashDrawer(printerName);
-                            }
-                        } else {
-                            toast.error("No se ha configurado una impresora en ajustes");
-                        }
+                        await imprimirVenta("OFL-" + offlineRes.id, new Date());
                     } catch (e) {
                         console.error("Error al imprimir ticket offline:", e);
                     }
@@ -218,48 +234,11 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                     description: `La venta se ha generado correctamente, FOLIO ${res.data}`,
                 });
 
-                // --- INICIO LÓGICA DE IMPRESIÓN (ESC/POS) ---
+                // --- INICIO LÓGICA DE IMPRESIÓN ---
                 try {
-                    // @ts-ignore
-                    const api = window["electron-api"];
-                    const printerName = await api?.getConfig("printer_device");
-
-                    if (printerName) {
-                        if (isImprimir || metodoPago === 2) {
-                            const isCut = (await api?.getConfig("printer_cut")) !== false;
-                            const ticketData = {
-                                printerName,
-                                sucursal: "Sucursal " + user.sucursal,
-                                id_sucursal: user.id_sucursal,
-                                direccion_sucursal: user.direccion_sucursal,
-                                telefono_sucursal: user.telefono_sucursal,
-                                usuario: user.usuario,
-                                cliente: carritoActual?.cliente?.nombre_cliente || "Público General",
-                                folio: res.data || "S/N",
-                                fecha: new Date(),
-                                productos: carritoActual?.productos?.map((p: any) => ({
-                                    cantidad: p.quantity,
-                                    nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
-                                    importe: (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
-                                })) || [],
-                                total: totalVenta,
-                                pagoCon: cambioEfectivo,
-                                cambio: Math.max(0, cambioEfectivo - totalVenta),
-                                ahorro: redondearPrecio(carritoActual?.productos?.reduce((acc: number, p: any) => acc + (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? (p.product.precio_venta - p.product.precio_mayoreo) * p.quantity : 0), 0) || 0),
-                                turno: turnoData?.id_turno || "0",
-                                metodo_pago: metodoPago,
-                                cortar: isCut
-                            };
-
-                            await api?.printTicketVentaEscPos(ticketData);
-                            toast.success("Ticket enviado a imprimir");
-                        } else {
-                            await api?.openCashDrawer(printerName);
-                            toast.success("Venta finalizada (Sin ticket)");
-                        }
-                    }
+                    await imprimirVenta(res.data || "S/N", new Date());
                 } catch (printError) {
-                    console.error("Error al imprimir ticket ESC/POS:", printError);
+                    console.error("Error al imprimir ticket:", printError);
                     toast.error("No se pudo imprimir el ticket", { duration: 2000 });
                 }
                 // --- FIN LÓGICA DE IMPRESIÓN ---

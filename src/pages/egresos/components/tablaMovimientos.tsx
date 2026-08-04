@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { actualizarMovimiento, crearMovimiento, obtenerMovimientos } from "@/api/egresosApi/movimientos";
 import { toast } from "sonner";
+import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
 
 
 
@@ -92,23 +93,29 @@ export default function TablaMovimientos({ turnoId }: { turnoId: number | null }
                 if (res.success) {
                     toast.success("Movimiento creado exitosamente");
 
-                    // --- INICIO LÓGICA DE IMPRESIÓN ESC/POS ---
+                    // --- INICIO LÓGICA DE IMPRESIÓN ---
                     try {
                         // @ts-ignore
                         const api = window["electron-api"];
                         const printerName = await api?.getConfig("printer_device");
 
+                        const ticketData = {
+                            sucursal: "Sucursal " + user.sucursal,
+                            usuario: user.usuario,
+                            fecha: new Date(),
+                            monto: payload.monto,
+                            concepto: payload.concepto,
+                            tipo: payload.tipo_movimiento === 0 ? "RETIRO" : "DEPÓSITO",
+                        };
+
                         if (printerName) {
                             await api?.printTicketMovimientoEscPos({
+                                ...ticketData,
                                 printerName,
-                                sucursal: "Sucursal " + user.sucursal,
-                                usuario: user.usuario,
-                                fecha: new Date(),
-                                monto: payload.monto,
-                                concepto: payload.concepto,
-                                tipo: payload.tipo_movimiento === 0 ? "RETIRO" : "DEPÓSITO",
                                 abrirCajon: true
                             });
+                        } else if (isWebPlatform()) {
+                            await printWebTicket({ kind: "movimiento", data: ticketData });
                         }
                     } catch (printError) {
                         console.error("Error al imprimir comprobante de movimiento:", printError);

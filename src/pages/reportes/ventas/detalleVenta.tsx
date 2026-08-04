@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -120,35 +121,36 @@ export default function DetalleVentaPage() {
             const api = window["electron-api"];
             const printerName = await api?.getConfig("printer_device");
 
+            const buildData = () => ({
+                sucursal: saleInfo.nombre_sucursal ? "Sucursal " + saleInfo.nombre_sucursal : "Sucursal",
+                id_sucursal: user.id_sucursal,
+                direccion_sucursal: user.direccion_sucursal,
+                telefono_sucursal: user.telefono_sucursal,
+                usuario: saleInfo.nombre_usuario,
+                cliente: saleInfo.id_cliente ? `Cliente: ${cliente}` : "Público General",
+                folio: saleInfo.id_venta,
+                fecha: saleInfo.fecha_venta ? new Date(saleInfo.fecha_venta) : new Date(),
+                productos: items?.map((p: any) => ({
+                    cantidad: p.cantidad,
+                    nombre: `${p.nombre_producto} ${p.nombre_unidad}`,
+                    importe: p.subtotal
+                })) || [],
+                total: totalVenta,
+                pagoCon: saleInfo.monto_recibido,
+                cambio: Math.max(0, saleInfo.cambio || 0),
+                // @ts-ignore
+                ahorro: items.reduce((acc, item) => acc + (item.precio_mayoreo ? ((item.precio_normal || item.precio_unitario) - item.precio_unitario) * item.cantidad : 0), 0) || 0,
+                // @ts-ignore
+                turno: saleInfo.id_turno || "0",
+                isCopia: true
+            });
+
             if (printerName) {
                 const isCut = (await api?.getConfig("printer_cut")) !== false;
-                const ticketData = {
-                    printerName,
-                    sucursal: saleInfo.nombre_sucursal ? "Sucursal " + saleInfo.nombre_sucursal : "Sucursal",
-                    id_sucursal: user.id_sucursal,
-                    direccion_sucursal: user.direccion_sucursal,
-                    telefono_sucursal: user.telefono_sucursal,
-                    usuario: saleInfo.nombre_usuario,
-                    cliente: saleInfo.id_cliente ? `Cliente: ${cliente}` : "Público General",
-                    folio: saleInfo.id_venta,
-                    fecha: saleInfo.fecha_venta ? new Date(saleInfo.fecha_venta) : new Date(),
-                    productos: items?.map((p: any) => ({
-                        cantidad: p.cantidad,
-                        nombre: `${p.nombre_producto} ${p.nombre_unidad}`,
-                        importe: p.subtotal
-                    })) || [],
-                    total: totalVenta,
-                    pagoCon: saleInfo.monto_recibido,
-                    cambio: Math.max(0, saleInfo.cambio || 0),
-                    // @ts-ignore
-                    ahorro: items.reduce((acc, item) => acc + (item.precio_mayoreo ? ((item.precio_normal || item.precio_unitario) - item.precio_unitario) * item.cantidad : 0), 0) || 0,
-                    // @ts-ignore
-                    turno: saleInfo.id_turno || "0",
-                    cortar: isCut,
-                    isCopia: true
-                };
-
-                await api?.printTicketVentaEscPos(ticketData);
+                await api?.printTicketVentaEscPos({ ...buildData(), cortar: isCut });
+                toast.success("Ticket enviado a imprimir");
+            } else if (isWebPlatform()) {
+                await printWebTicket({ kind: "venta", data: buildData() });
                 toast.success("Ticket enviado a imprimir");
             } else {
                 toast.error("No se ha configurado una impresora en ajustes");

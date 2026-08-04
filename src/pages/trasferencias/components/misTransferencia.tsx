@@ -9,6 +9,7 @@ import { toZonedTime } from "date-fns-tz";
 import { ArrowRightLeft, Ban, CheckCircle, Clock, Eye, Package, PackageCheck, Send, XCircle, Printer } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
+import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
 import DialogConfirmarAceptarTranseferencia from "./dialogConfirmarAceptarTranseferencia";
 import DialogConfirmarCancelacion from "./dialogConfirmarCancelacion";
 
@@ -453,14 +454,7 @@ export default function MisTransferencias() {
         const api = window["electron-api"];
         const printerName = await api?.getConfig("printer_device");
 
-        if (!printerName) {
-          toast.error("No se ha configurado una impresora en ajustes");
-          return;
-        }
-
-        const isCut = (await api?.getConfig("printer_cut")) !== false;
         const ticketData = {
-          printerName,
           id_transferencia: transfer.id_transferencia,
           sucursal_origen: transfer.sucursal_origen,
           sucursal_destino: transfer.sucursal_destino,
@@ -468,11 +462,18 @@ export default function MisTransferencias() {
           fecha: transfer.fecha_envio || transfer.fecha_creacion,
           productos: transfer.productos, // [{ nombre_producto, nombre_presentacion, cantidad_enviada }]
           motivo: transfer.motivo,
-          cortar: isCut
         };
 
-        await api?.printTicketTransferenciaEscPos(ticketData);
-        toast.success("Ticket de transferencia enviado a imprimir");
+        if (printerName) {
+          const isCut = (await api?.getConfig("printer_cut")) !== false;
+          await api?.printTicketTransferenciaEscPos({ ...ticketData, cortar: isCut });
+          toast.success("Ticket de transferencia enviado a imprimir");
+        } else if (isWebPlatform()) {
+          await printWebTicket({ kind: "transferencia", data: ticketData });
+          toast.success("Ticket de transferencia enviado a imprimir");
+        } else {
+          toast.error("No se ha configurado una impresora en ajustes");
+        }
       } else {
         toast.error("No se pudo obtener el detalle para imprimir");
       }
