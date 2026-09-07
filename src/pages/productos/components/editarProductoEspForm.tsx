@@ -3,15 +3,18 @@
 
 import { obtenerCategoriasApi } from "@/api/categoriasApi/categoriasApi";
 import { actualizarProductoEspApi, getProductosInventario, obtenerProductoEspGeneral } from "@/api/productosApi/productosApi";
+import { obtenerSucursalesApi } from "@/api/sucursalApi/sucursalApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { Categoria } from "@/types/Categoria";
 import type { Producto } from "@/types/Producto";
+import type { Sucursal } from "@/types/Sucursal";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Badge } from "@/components/ui/badge";
@@ -24,14 +27,18 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  id_sucur: z.number(),
   isEspecial: z.number(),
   sku_pieza: z.string().min(1, 'El código es requerido'),
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
   descripcion: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
-  precio_venta: z.coerce.number().min(0, { message: 'El precio de venta debe ser mayor o igual a 0' }),
-  precio_mayoreo: z.coerce.number().min(0, { message: 'El precio de mayoreo debe ser mayor o igual a 0' }),
+  sucursales_venta: z.array(
+    z.object({
+      id_sucursal: z.number(),
+      precio_venta: z.coerce.number().min(0, { message: 'El precio de venta debe ser mayor o igual a 0' }),
+      precio_mayoreo: z.coerce.number().min(0, { message: 'El precio de mayoreo debe ser mayor o igual a 0' })
+    })
+  ).min(1, 'Debes asignar precios en al menos una sucursal'),
   componentes: z.array(
     z.object({
       id_unidad_venta: z.number(),
@@ -63,6 +70,7 @@ export default function EditarProductoCompuestoForm() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
 
@@ -70,19 +78,29 @@ export default function EditarProductoCompuestoForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      id_sucur: 0,
       isEspecial: 1,
       sku_pieza: "",
       nombre_producto: "",
       descripcion: "",
       id_categoria: "",
-      precio_venta: 0,
-      precio_mayoreo: 0,
+      sucursales_venta: [],
       componentes: []
     }
   });
 
+  const sucursalesVentaWatch = form.watch("sucursales_venta");
   const componentes = form.watch("componentes");
+
+  const toggleSucursalVenta = (idSucursalToggle: number) => {
+    const curr = form.getValues("sucursales_venta") || [];
+    const exists = curr.find(s => s.id_sucursal === idSucursalToggle);
+
+    if (exists) {
+      form.setValue("sucursales_venta", curr.filter(s => s.id_sucursal !== idSucursalToggle));
+    } else {
+      form.setValue("sucursales_venta", [...curr, { id_sucursal: idSucursalToggle, precio_venta: 0, precio_mayoreo: 0 }]);
+    }
+  };
 
   const productosFiltrados = productosDisponibles.filter(p => {
     const s = searchTerm.toLowerCase();
@@ -182,18 +200,21 @@ export default function EditarProductoCompuestoForm() {
           setProductosDisponibles([]);
         }
       }),
+      obtenerSucursalesApi().then(res => {
+        if (res.success) {
+          setSucursales(res.data);
+        }
+      }),
       obtenerProductoEspGeneral(parseInt(id_producto), parseInt(id_sucursal)).then(res => {
         if (res.success && res.data) {
           const data = res.data;
           form.reset({
-            id_sucur: parseInt(id_sucursal),
             isEspecial: 1,
             sku_pieza: data.sku_pieza,
             nombre_producto: data.nombre_producto,
             descripcion: data.descripcion ?? "",
             id_categoria: String(data.id_categoria),
-            precio_venta: data.precio_venta,
-            precio_mayoreo: data.precio_mayoreo,
+            sucursales_venta: data.sucursales_venta ?? [],
             componentes: data.componentes
           });
         } else {
@@ -392,83 +413,91 @@ export default function EditarProductoCompuestoForm() {
                       </Card>
 
                       {/* Precio final */}
+                      {/* Sucursales y Precios */}
+                      <div className="space-y-4 border-t pt-4 mt-4">
+                        <h4 className="font-semibold text-gray-800">Precios por Sucursal</h4>
+                        {sucursales.map(sucursal => {
+                          const isSelected = sucursalesVentaWatch.some(s => s.id_sucursal === sucursal.id_sucursal);
+                          const indexSucursal = sucursalesVentaWatch.findIndex(s => s.id_sucursal === sucursal.id_sucursal);
+
+                          return (
+                            <div key={sucursal.id_sucursal} className="p-4 border rounded-lg bg-gray-50/50">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex flex-col">
+                                  <span className="font-semibold">{sucursal.nombre}</span>
+                                  <span className="text-xs text-gray-500">
+                                    Habilitar venta en esta sucursal
+                                  </span>
+                                </div>
+                                <Switch
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSucursalVenta(sucursal.id_sucursal)}
+                                />
+                              </div>
+
+                              {isSelected && indexSucursal !== -1 && (
+                                <div className="grid grid-cols-2 gap-4 mt-2 pt-2 border-t border-gray-100">
+                                  <FormField
+                                    control={form.control}
+                                    name={`sucursales_venta.${indexSucursal}.precio_venta`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="text-xs">Precio de Venta *</FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            type="text" inputMode="decimal"
+                                            step="0.01"
+                                            value={field.value ?? ""}
+                                            onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                        {field.value > 0 && (
+                                          <p className="text-[10px] mt-1">
+                                            {field.value > costoTotal ? (
+                                              <span className="text-green-600">✓ Ganancia: ${(field.value - costoTotal).toFixed(2)}</span>
+                                            ) : field.value < costoTotal ? (
+                                              <span className="text-red-600">⚠ Pérdida: ${(costoTotal - field.value).toFixed(2)}</span>
+                                            ) : (
+                                              <span className="text-gray-600">Sin ganancia ni pérdida</span>
+                                            )}
+                                          </p>
+                                        )}
+                                      </FormItem>
+                                    )}
+                                  />
+
+                                  <FormField
+                                    control={form.control}
+                                    name={`sucursales_venta.${indexSucursal}.precio_mayoreo`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="text-xs">Precio Mayoreo *</FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            type="text" inputMode="decimal"
+                                            step="0.01"
+                                            value={field.value ?? ""}
+                                            onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
                       <FormField
                         control={form.control}
-                        name="precio_venta"
-                        render={({ field }) => (
+                        name="sucursales_venta"
+                        render={() => (
                           <FormItem>
-                            <FormLabel>Precio de Venta del Paquete *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={field.value ?? ""}
-                                onChange={(e) =>
-                                  field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
-                                }
-                                placeholder="Ej: 150.00"
-                              />
-                            </FormControl>
                             <FormMessage />
-
-                            {field.value > 0 && (
-                              <p className="text-sm mt-2">
-                                {field.value > costoTotal ? (
-                                  <span className="text-green-600">
-                                    ✓ Ganancia: ${(field.value - costoTotal).toFixed(2)}
-                                  </span>
-                                ) : field.value < costoTotal ? (
-                                  <span className="text-red-600">
-                                    ⚠ Pérdida: ${(costoTotal - field.value).toFixed(2)}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-600">
-                                    Sin ganancia ni pérdida
-                                  </span>
-                                )}
-                              </p>
-                            )}
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Precio mayoreo */}
-                      <FormField
-                        control={form.control}
-                        name="precio_mayoreo"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Precio de Mayoreo del Paquete *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={field.value ?? ""}
-                                onChange={(e) =>
-                                  field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
-                                }
-                                placeholder="Ej: 150.00"
-                              />
-                            </FormControl>
-                            <FormMessage />
-
-                            {field.value > 0 && (
-                              <p className="text-sm mt-2">
-                                {field.value > costoTotal ? (
-                                  <span className="text-green-600">
-                                    ✓ Ganancia: ${(field.value - costoTotal).toFixed(2)}
-                                  </span>
-                                ) : field.value < costoTotal ? (
-                                  <span className="text-red-600">
-                                    ⚠ Pérdida: ${(costoTotal - field.value).toFixed(2)}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-600">
-                                    Sin ganancia ni pérdida
-                                  </span>
-                                )}
-                              </p>
-                            )}
                           </FormItem>
                         )}
                       />
@@ -617,13 +646,27 @@ export default function EditarProductoCompuestoForm() {
                                         <FormLabel className="text-xs">Cantidad</FormLabel>
                                         <FormControl>
                                           <Input
-                                            type="number"
+                                            type="text" inputMode="decimal"
                                             min="1"
                                             max={comp.stock_disponible}
                                             value={field.value}
-                                            onChange={(e) =>
-                                              field.onChange(parseInt(e.target.value) || 1)
-                                            }
+                                            onFocus={(e) => e.target.select()}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              if (val === "" || val === "0") {
+                                                field.onChange(val);
+                                              } else {
+                                                const parsed = parseInt(val);
+                                                if (!isNaN(parsed)) {
+                                                  field.onChange(parsed);
+                                                }
+                                              }
+                                            }}
+                                            onBlur={() => {
+                                              if (!field.value || field.value === 0) {
+                                                field.onChange(1);
+                                              }
+                                            }}
                                           />
                                         </FormControl>
                                         <FormMessage />

@@ -66,7 +66,7 @@ export default function DialogSetGranel({
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="!top-auto !bottom-0 !left-0 !right-0 !translate-x-0 !translate-y-0 !max-w-full !rounded-t-3xl !rounded-b-none !border-0 max-h-[85dvh] overflow-y-auto sm:!top-1/2 sm:!left-1/2 sm:!bottom-auto sm:!right-auto sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:!max-w-md sm:!rounded-lg sm:!border sm:max-h-none">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold">Venta a Granel</DialogTitle>
                     <div className="text-sm text-muted-foreground">
@@ -84,10 +84,10 @@ export default function DialogSetGranel({
                         <div className="relative">
                             <Input
                                 id="cantidad"
-                                type="number"
+                                type="text" inputMode="decimal"
                                 step="0.001"
                                 autoFocus
-                                className="h-14 text-2xl font-bold text-center"
+                                className="h-16 sm:h-14 text-3xl sm:text-2xl font-bold text-center"
                                 placeholder="0.000"
                                 value={cantidad}
                                 onKeyDown={handleKeyDown}
@@ -105,14 +105,14 @@ export default function DialogSetGranel({
                         <span className="text-2xl font-bold text-primary">${totalEstimado}</span>
                     </div>
 
-                    <div className="flex justify-end gap-2">
-                        <Button type="button" variant="secondary" onClick={() => {
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                        <Button type="button" variant="secondary" className="w-full sm:w-auto h-12 sm:h-auto" onClick={() => {
                             setIsOpen(false);
                             setTimeout(() => inputRefMain.current?.focus(), 100);
                         }}>
                             Cancelar (ESC)
                         </Button>
-                        <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!cantidad || parseFloat(cantidad) <= 0}>
+                        <Button type="submit" size="lg" className="w-full sm:w-auto h-12 sm:h-auto" disabled={!cantidad || parseFloat(cantidad) <= 0}>
                             Confirmar Agregar
                         </Button>
                     </div>
@@ -121,3 +121,4 @@ export default function DialogSetGranel({
         </Dialog>
     );
 }
+

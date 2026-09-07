@@ -32,7 +32,7 @@ export default function DialogProducto({ isOpen, setIsOpen, idSucursal, inputRef
                     /* MÓVIL (FULL SCREEN) */
                     max-w-[100vw] 
                     w-screen 
-                    h-screen 
+                    h-[100dvh] 
                     rounded-none
                 "
             >

@@ -18,7 +18,7 @@ export default function DialogProductoAgotado({ isOpen, setIsOpen, inputRef }: p
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-[400px]">
+            <DialogContent className="!top-auto !bottom-0 !left-0 !right-0 !translate-x-0 !translate-y-0 !max-w-full !rounded-t-3xl !rounded-b-none !border-0 sm:!top-1/2 sm:!left-1/2 sm:!bottom-auto sm:!right-auto sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:!max-w-[400px] sm:!rounded-lg sm:!border">
                 <DialogHeader className="flex flex-col items-center gap-3 sm:text-center pt-4">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
                         <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-500" />
@@ -32,7 +32,7 @@ export default function DialogProductoAgotado({ isOpen, setIsOpen, inputRef }: p
                     <Button
                         variant="destructive"
                         onClick={handleClose}
-                        className="w-full sm:w-32"
+                        className="w-full sm:w-32 h-12 sm:h-auto"
                     >
                         Entendido
                     </Button>

@@ -147,7 +147,7 @@ export default function DetalleVentaPage() {
 
             if (printerName) {
                 const isCut = (await api?.getConfig("printer_cut")) !== false;
-                await api?.printTicketVentaEscPos({ ...buildData(), cortar: isCut });
+                await api?.printTicketVentaEscPos({ ...buildData(), printerName, cortar: isCut });
                 toast.success("Ticket enviado a imprimir");
             } else if (isWebPlatform()) {
                 await printWebTicket({ kind: "venta", data: buildData() });

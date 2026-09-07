@@ -69,6 +69,9 @@ export default function EditarProductoForm() {
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [initialQuantities, setInitialQuantities] = useState<Record<number, number>>({});
   const [adjustments, setAdjustments] = useState<Record<number, Record<number, number | undefined>>>({}); // sucursalId -> variantIndex -> cantidad
+  // Texto crudo de los inputs de ajuste (permite escribir el "-" y decimales parciales)
+  const [adjustTexts, setAdjustTexts] = useState<Record<string, string>>({}); // "sucursalId-variantIndex" -> texto
+  const adjustKey = (idSucursal: number, vIdx: number) => `${idSucursal}-${vIdx}`;
 
 
   const form = useForm<FormValues>({
@@ -412,11 +415,15 @@ export default function EditarProductoForm() {
               <FormLabel>Precio Costo *</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text" inputMode="decimal"
                   value={field.value ?? ""}
                   onFocus={(e) => e.target.select()}
-                  onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(',', '.');
+                    if (raw === '' || raw === '-' || raw === '.') { field.onChange(raw); return; }
+                    const num = parseFloat(raw);
+                    field.onChange(isNaN(num) ? raw : num);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -515,11 +522,16 @@ export default function EditarProductoForm() {
                     <FormControl>
                       <div className="relative">
                         <Input
-                          type="number"
+                          type="text" inputMode="decimal"
                           className="font-bold"
                           value={field.value}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(',', '.');
+                            if (raw === '' || raw === '.') { field.onChange(raw); return; }
+                            const num = parseFloat(raw);
+                            field.onChange(isNaN(num) ? raw : num);
+                          }}
                           disabled={index === 0}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">piezas</span>
@@ -633,7 +645,7 @@ export default function EditarProductoForm() {
 
                         <div className="flex items-center gap-2">
                           <Input
-                            type="number"
+                            type="text" inputMode="decimal"
                             placeholder={`Ej. ${initialQuantities[s.id_sucursal] || 0}`}
                             className="h-8 text-sm font-bold bg-white border-blue-300 focus:border-blue-500 text-slate-900"
                             value={form.watch(`sucursales_inventario.${invIndex}.cantidad_actual`) ?? ""}
@@ -666,13 +678,14 @@ export default function EditarProductoForm() {
                                 </div>
                                 <div className="flex items-center">
                                   <Input
-                                    type="number"
+                                    type="text" inputMode="text"
                                     placeholder="+/- 0"
                                     className="h-8 w-24 text-right font-bold text-sm bg-white border-red-600 focus:border-red-600"
-                                    value={adjustments[s.id_sucursal]?.[vIdx] ?? ""}
+                                    value={adjustTexts[adjustKey(s.id_sucursal, vIdx)] ?? adjustments[s.id_sucursal]?.[vIdx] ?? ""}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
                                       const text = e.target.value;
+                                      setAdjustTexts(prev => ({ ...prev, [adjustKey(s.id_sucursal, vIdx)]: text }));
                                       const val = text === "" ? undefined : parseFloat(text);
                                       handleVariantAdjustment(s.id_sucursal, vIdx, isNaN(val as number) ? undefined : val);
                                     }}
@@ -692,7 +705,7 @@ export default function EditarProductoForm() {
                             <div className="flex items-center justify-between">
                               <Label className="text-[10px] font-bold text-slate-500 uppercase">Aviso Stock Mínimo</Label>
                               <Input
-                                type="number"
+                                type="text" inputMode="decimal"
                                 className="h-7 w-20 text-center text-xs font-bold"
                                 {...f}
                                 onFocus={(e) => e.target.select()}
@@ -799,12 +812,11 @@ export default function EditarProductoForm() {
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                   <Input
-                                    type="number"
-                                    step="0.01"
+                                    type="text" inputMode="decimal"
                                     className="pl-7 text-xl font-bold h-10 border-green-100 focus:border-green-500"
                                     value={field.value}
                                     onFocus={(e) => e.target.select()}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onChange={(e) => field.onChange(e.target.value.replace(',', '.'))}
                                   />
                                 </div>
                               </FormControl>
@@ -822,12 +834,11 @@ export default function EditarProductoForm() {
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                   <Input
-                                    type="number"
-                                    step="0.01"
+                                    type="text" inputMode="decimal"
                                     className="pl-7 text-lg font-bold h-9 border-dashed border-slate-200"
                                     value={field.value}
                                     onFocus={(e) => e.target.select()}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onChange={(e) => field.onChange(e.target.value.replace(',', '.'))}
                                   />
                                 </div>
                               </FormControl>

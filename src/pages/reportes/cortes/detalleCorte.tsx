@@ -183,7 +183,7 @@ export default function DetalleCortePage() {
 
                             if (printerName) {
                                 const isCut = (await api?.getConfig("printer_cut")) !== false;
-                                await api?.printTicketCorteEscPos({ ...ticketData, cortar: isCut });
+                                await api?.printTicketCorteEscPos({ ...ticketData, printerName, cortar: isCut });
                             } else if (isWebPlatform()) {
                                 await printWebTicket({ kind: "corte", data: ticketData });
                             }

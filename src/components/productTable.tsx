@@ -272,8 +272,11 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
             <Input
               ref={searchInputRef}
               type="search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="Buscar productos por nombre o sku..."
-              className="w-1/2 rounded-lg bg-background pl-8"
+              className="w-full sm:w-1/2 rounded-lg bg-background pl-8"
               value={searchTerm}
               autoFocus
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -294,22 +297,22 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
         </div>
       </CardHeader>
       <div className="flex-1 overflow-y-auto w-full" ref={tableRef}>
-        <table className="w-full table-auto">
+        <table className="w-full table-auto product-table">
           <thead className="sticky top-0 bg-background">
             <tr className="text-left text-base font-bold text-muted-foreground border-b">
-              <th className="px-3 py-2">Sku Presentación</th>
-              <th className="px-3 py-2">Nombre</th>
-              <th className="px-3 py-2">Unidad</th>
-              <th className="px-3 py-2">Descripción</th>
-              <th className="px-3 py-2">Precio</th>
+              <th className="px-2 py-2 sm:px-3 sm:py-2 hide-on-mobile sm:table-cell">Sku Presentación</th>
+              <th className="px-2 py-2 sm:px-3 sm:py-2">Nombre</th>
+              <th className="px-2 py-2 sm:px-3 sm:py-2 hide-on-mobile sm:table-cell">Unidad</th>
+              <th className="px-2 py-2 sm:px-3 sm:py-2 hide-on-mobile sm:table-cell">Descripción</th>
+              <th className="px-2 py-2 sm:px-3 sm:py-2">Precio</th>
               {user.id_rol === 1 && (
                 <>
-                  <th className="px-3 py-2">Stock Disponible</th>
-                  <th className="px-3 py-2">Stock Piezas</th>
+                  <th className="px-2 py-2 sm:px-3 sm:py-2">Stock Disponible</th>
+                  <th className="px-2 py-2 sm:px-3 sm:py-2 hide-on-mobile sm:table-cell">Stock Piezas</th>
                 </>
               )}
-              <th className="px-3 py-2">Precio Mayoreo</th>
-              <th className="px-3 py-2 text-center">Acción</th>
+              <th className="px-2 py-2 sm:px-3 sm:py-2 hide-on-mobile sm:table-cell">Precio Mayoreo</th>
+              <th className="px-2 py-2 sm:px-3 sm:py-2 text-center">Acción</th>
             </tr>
           </thead>
           <tbody>
@@ -322,53 +325,62 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                 <tr
                   key={p.id_unidad_venta}
                   data-index={index}
-
                   className={`align-top border-t cursor-pointer transition-colors ${isSelected
                     ? 'bg-blue-300 border-blue-300 shadow-sm'
                     : 'hover:bg-blue-100/50'
                     } ${outStock && !allowOutOfStock ? 'opacity-50' : ''}`}
                 >
-                  <td className="px-3 py-3 align-middle text-base font-bold text-muted-foreground">{p.sku_presentacion}</td>
-                  <td className="px-3 py-3 align-middle">
-                    <div className="font-bold text-base">{p.nombre_producto + " " + (p.es_granel ? "Granel" : p.nombre_presentacion) + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
+                  {/* ─── SKU (solo desktop) ─── */}
+                  <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle text-sm sm:text-base font-bold text-muted-foreground hide-on-mobile sm:table-cell" data-label="Sku">{p.sku_presentacion}</td>
+
+                  {/* ─── NOMBRE ─── */}
+                  <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle" data-label="Nombre">
+                    <div className="font-bold text-sm sm:text-base leading-tight">{p.nombre_producto + " " + (p.es_granel ? "Granel" : p.nombre_presentacion) + " " + (p.factor_conversion_cantidad > 1 ? p.factor_conversion_cantidad + " Pzas" : "")}</div>
                   </td>
 
-                  <td className="px-3 py-3 align-middle text-base font-bold">
+                  {/* ─── BADGE UNIDAD (solo desktop) ─── */}
+                  <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle text-sm sm:text-base font-bold hide-on-mobile sm:table-cell" data-label="Unidad">
                     <Badge className={`${p.es_granel ? 'bg-green-600' : p.nombre_presentacion === "Pieza" ? 'bg-blue-600' : 'bg-orange-600'}`}>{p.es_granel ? "Granel" : p.nombre_presentacion}</Badge>
                   </td>
 
-                  <td className="px-3 py-3 align-middle">
-                    <div className="text-base font-bold text-muted-foreground max-w-md truncate">{p.descripcion}</div>
+                  {/* ─── DESCRIPCIÓN (solo desktop) ─── */}
+                  <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle hide-on-mobile sm:table-cell" data-label="Descripción">
+                    <div className="text-sm sm:text-base font-bold text-muted-foreground max-w-md truncate product-desc">{p.descripcion}</div>
                   </td>
-                  <td className="px-3 py-3 align-middle">
-                    <div className="text-base font-bold">${p.precio_venta.toFixed(2)}</div>
+
+                  {/* ─── PRECIO ─── */}
+                  <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle" data-label="Precio">
+                    <div className="text-sm sm:text-base font-bold">${p.precio_venta.toFixed(2)}</div>
                   </td>
+
+                  {/* ─── STOCK ─── */}
                   {
                     user.id_rol === 1 && (
                       <>
-                        <td className="px-3 py-3 align-middle">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-base">{p.stock_disponible_presentacion}</span>
+                        <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle" data-label="Stock Disponible">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                            <span className="font-bold text-sm sm:text-base">{p.stock_disponible_presentacion}</span>
                             {outStock ? (
-                              <Badge variant="destructive">Agotado</Badge>
+                              <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">Agotado</Badge>
                             ) : lowStock ? (
-                              <Badge variant="secondary" className="bg-red-500 text-white">Bajo</Badge>
+                              <Badge variant="secondary" className="bg-red-500 text-white text-[10px] px-1 py-0 h-4">Bajo</Badge>
                             ) : null}
                           </div>
                         </td>
-                        <td className="px-3 py-3 align-middle">
-                          <div className="text-base font-bold">{p.stock_piezas}</div>
+                        <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle hide-on-mobile sm:table-cell" data-label="Stock Piezas">
+                          <div className="text-sm sm:text-base font-bold">{p.stock_piezas}</div>
                         </td>
                       </>
                     )
                   }
-                  <td className="px-3 py-3 align-middle">
-                    <div className="text-base font-bold">${p.precio_mayoreo.toFixed(2)}</div>
+
+                  {/* ─── PRECIO MAYOREO (solo desktop) ─── */}
+                  <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle hide-on-mobile sm:table-cell" data-label="Precio Mayoreo">
+                    <div className="text-sm sm:text-base font-bold">${p.precio_mayoreo.toFixed(2)}</div>
                   </td>
 
-
-
-                  <td className="px-3 py-3 align-middle flex justify-center ">
+                  {/* ─── ACCIONES ─── */}
+                  <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle flex justify-center product-actions" data-label="Acción">
                     <Button
                       size="sm"
                       variant={isSelected ? "default" : "outline"}
@@ -495,7 +507,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
       />
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="!top-auto !bottom-0 !left-0 !right-0 !translate-x-0 !translate-y-0 max-w-[100vw] w-full max-h-[85dvh] overflow-y-auto !rounded-t-3xl !rounded-b-none !border-0 sm:!top-1/2 sm:!left-1/2 sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:max-h-none sm:max-w-[500px] sm:!rounded-lg sm:!border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
@@ -564,6 +576,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
+              className="h-12 sm:h-auto"
               onClick={() => setIsDeleteDialogOpen(false)}
               disabled={isDeleting}
             >
@@ -571,6 +584,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
             </Button>
             <Button
               variant="destructive"
+              className="h-12 sm:h-auto"
               onClick={handleDelete}
               disabled={isDeleting || (!isDeletingEverywhere && selectedBranches.length === 0)}
             >

@@ -163,7 +163,7 @@ export default function EstadoCuentaCliente() {
 
                 if (printerName) {
                     const isCut = (await api?.getConfig("printer_cut")) !== false;
-                    await api?.printTicketAbonoEscPos({ ...ticketData, cortar: isCut });
+                    await api?.printTicketAbonoEscPos({ ...ticketData, printerName, cortar: isCut });
                 } else if (isWebPlatform()) {
                     await printWebTicket({ kind: "abono", data: ticketData });
                 }
@@ -230,7 +230,7 @@ export default function EstadoCuentaCliente() {
 
                 if (printerName) {
                     const isCut = (await api?.getConfig("printer_cut")) !== false;
-                    await api?.printTicketAbonoEscPos({ ...ticketData, cortar: isCut });
+                    await api?.printTicketAbonoEscPos({ ...ticketData, printerName, cortar: isCut });
                 } else if (isWebPlatform()) {
                     await printWebTicket({ kind: "abono", data: ticketData });
                 }
@@ -589,7 +589,7 @@ export default function EstadoCuentaCliente() {
                         <div className="space-y-2">
                             <Label>Monto del abono *</Label>
                             <Input
-                                type="number"
+                                type="text" inputMode="decimal"
                                 min="0.01"
                                 step="0.01"
                                 placeholder="$0.00"
@@ -662,7 +662,7 @@ export default function EstadoCuentaCliente() {
                     <div className="space-y-2">
                         <Label>Límite en pesos</Label>
                         <Input
-                            type="number"
+                            type="text" inputMode="decimal"
                             min="0"
                             step="0.01"
                             placeholder="0 = sin límite"
@@ -687,3 +687,4 @@ export default function EstadoCuentaCliente() {
         </div>
     );
 }
+

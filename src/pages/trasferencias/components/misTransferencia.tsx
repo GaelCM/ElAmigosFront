@@ -466,7 +466,7 @@ export default function MisTransferencias() {
 
         if (printerName) {
           const isCut = (await api?.getConfig("printer_cut")) !== false;
-          await api?.printTicketTransferenciaEscPos({ ...ticketData, cortar: isCut });
+          await api?.printTicketTransferenciaEscPos({ ...ticketData, printerName, cortar: isCut });
           toast.success("Ticket de transferencia enviado a imprimir");
         } else if (isWebPlatform()) {
           await printWebTicket({ kind: "transferencia", data: ticketData });

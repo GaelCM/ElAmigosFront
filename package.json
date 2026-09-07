@@ -1,7 +1,7 @@
 {
   "name": "hermes-pos",
   "private": true,
-  "version": "5.2.0",
+  "version": "5.2.4",
   "type": "module",
   "main": "src/electron/main.js",
   "scripts": {

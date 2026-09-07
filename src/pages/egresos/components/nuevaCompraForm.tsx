@@ -230,7 +230,7 @@ export default function NuevaCompraForm() {
                                 <div className="flex items-center bg-slate-100 border rounded h-7 shrink-0">
                                     <Button variant="ghost" size="icon" className="h-6 w-5" onClick={() => decrementQuantity(item.product.id_unidad_venta)}><Minus className="w-2.5 h-2.5" /></Button>
                                     <input
-                                        type="number" className="w-8 text-center font-black text-[10px] bg-transparent border-none p-0 focus:ring-0"
+                                        type="text" inputMode="decimal" className="w-8 text-center font-black text-[10px] bg-transparent border-none p-0 focus:ring-0"
                                         value={tempValues[`qty-${item.product.id_unidad_venta}`] ?? item.quantity}
                                         onChange={(e) => {
                                             const val = e.target.value; setTempValues(prev => ({ ...prev, [`qty-${item.product.id_unidad_venta}`]: val }));
@@ -244,7 +244,7 @@ export default function NuevaCompraForm() {
                                     <div className="flex items-center bg-blue-50 border border-blue-100 rounded px-1 h-5">
                                         <span className="text-[9px] text-blue-500 font-black">$</span>
                                         <input
-                                            type="number"
+                                            type="text" inputMode="decimal"
                                             className="w-full text-right bg-transparent border-none p-0 focus:ring-0 text-[10px] font-black text-blue-700"
                                             value={tempValues[`prc-${item.product.id_unidad_venta}`] ?? (item.precio_compra ?? item.product.precio_costo)}
                                             onChange={(e) => {
@@ -297,7 +297,7 @@ export default function NuevaCompraForm() {
                                 <div className="flex items-center gap-1 leading-none">
                                     <span className="text-sm font-light text-blue-400">$</span>
                                     <input
-                                        type="number" className="bg-transparent border-none text-2xl font-black text-white w-full focus:ring-0 p-0 outline-none tabular-nums"
+                                        type="text" inputMode="decimal" className="bg-transparent border-none text-2xl font-black text-white w-full focus:ring-0 p-0 outline-none tabular-nums"
                                         value={montoTotalManual} onChange={e => setMontoTotalManual(e.target.value)}
                                     />
                                 </div>
@@ -314,3 +314,4 @@ export default function NuevaCompraForm() {
         </div>
     );
 }
+

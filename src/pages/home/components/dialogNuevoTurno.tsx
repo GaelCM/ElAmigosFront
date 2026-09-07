@@ -117,7 +117,7 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
                                         <FormLabel>Efectivo Inicial</FormLabel>
                                         <FormControl>
                                             <Input
-                                                type="number"
+                                                type="text" inputMode="decimal"
                                                 {...field}
                                                 onChange={(e) => field.onChange(Number(e.target.value))}
                                             />

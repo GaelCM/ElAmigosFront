@@ -224,7 +224,7 @@ export default function TablaGastos({ turnoId }: { turnoId: number | null }) {
                             <Label htmlFor="monto" className="text-right">Monto</Label>
                             <Input
                                 id="monto"
-                                type="number"
+                                type="text" inputMode="decimal"
                                 value={formData.monto || ''}
                                 onChange={(e) => setFormData({ ...formData, monto: Number(e.target.value) })}
                                 className="col-span-3"
@@ -274,3 +274,4 @@ export default function TablaGastos({ turnoId }: { turnoId: number | null }) {
         </div>
     );
 }
+

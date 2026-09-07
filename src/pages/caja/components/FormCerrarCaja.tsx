@@ -31,7 +31,7 @@ export default function FormCerrarCaja({ onSubmit, isLoading }: FormCerrarCajaPr
                     <Label htmlFor="efectivo">Efectivo Contado (Real en Caja)</Label>
                     <Input
                         id="efectivo"
-                        type="number"
+                        type="text" inputMode="decimal"
                         step="0.01"
                         min="0"
                         placeholder="0.00"
@@ -85,3 +85,4 @@ export default function FormCerrarCaja({ onSubmit, isLoading }: FormCerrarCajaPr
         </>
     )
 }
+

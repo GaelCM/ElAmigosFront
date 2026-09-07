@@ -105,8 +105,11 @@ export type ProductoEspecialInput = {
     nombre_producto: string;
     descripcion?: string | undefined;
     id_categoria: string | number;  // Puede venir como string del form
-    precio_venta: number;
-    precio_mayoreo: number;
+    sucursales_venta: {
+        id_sucursal: number;
+        precio_venta: number;
+        precio_mayoreo: number;
+    }[];
     isEspecial: number;  // 1 para especial, 0 para normal
     componentes: ComponenteProductoEspecial[];
 };

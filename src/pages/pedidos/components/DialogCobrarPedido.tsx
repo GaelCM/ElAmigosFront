@@ -106,7 +106,7 @@ export function DialogCobrarPedido({ pedido, isOpen, onClose, onSuccess }: Props
             if (printerName) {
                 if (isImprimir || Number(metodoPago) === 2) {
                     const isCut = (await api?.getConfig("printer_cut")) !== false;
-                    await api?.printTicketVentaEscPos({ ...buildData(), cortar: isCut });
+                    await api?.printTicketVentaEscPos({ ...buildData(), printerName, cortar: isCut });
                     toast.success("Ticket enviado a imprimir");
                 } else {
                     await api?.openCashDrawer(printerName);
@@ -238,7 +238,7 @@ export function DialogCobrarPedido({ pedido, isOpen, onClose, onSuccess }: Props
                                 </Label>
                                 <Input
                                     id="monto-recibido"
-                                    type="number"
+                                    type="text" inputMode="decimal"
                                     placeholder={`Mínimo $${total.toFixed(2)}`}
                                     value={montoRecibido}
                                     onChange={(e) => setMontoRecibido(e.target.value)}
@@ -336,3 +336,4 @@ export function DialogCobrarPedido({ pedido, isOpen, onClose, onSuccess }: Props
         </Dialog>
     );
 }
+

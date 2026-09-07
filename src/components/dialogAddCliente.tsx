@@ -164,8 +164,8 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
           }, 100);
         }
       }}>
-        <DialogContent noAnimation className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl border-none">
-          <DialogHeader className="p-6 pb-2 bg-gradient-to-r from-primary/10 to-transparent flex flex-row items-center justify-between pr-12">
+        <DialogContent noAnimation className="!top-auto !bottom-0 !left-0 !right-0 !translate-x-0 !translate-y-0 !max-w-full !rounded-t-3xl !rounded-b-none !border-0 max-h-[92dvh] sm:max-h-[85vh] flex flex-col p-0 overflow-hidden !shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.35)] sm:!top-1/2 sm:!left-1/2 sm:!bottom-auto sm:!right-auto sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:!max-w-[600px] sm:!rounded-lg sm:!shadow-2xl">
+          <DialogHeader className="p-4 pb-2 sm:p-6 sm:pb-2 bg-gradient-to-r from-primary/10 to-transparent flex flex-row items-center justify-between pr-12">
             <DialogTitle className="text-2xl flex items-center gap-2 font-bold text-primary">
               <UserPlus className="w-6 h-6" />
               Seleccionar Cliente
@@ -192,7 +192,7 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
             </div>
           </DialogHeader>
 
-          <div className="px-6 py-4 border-b bg-background/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="px-4 py-3 sm:px-6 sm:py-4 border-b bg-background/50 backdrop-blur-sm sticky top-0 z-10">
             <div className="relative group">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 group-focus-within:text-primary transition-colors" />
               <Input
@@ -200,13 +200,13 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="pl-11 h-12 text-lg rounded-xl border-2 focus-visible:ring-primary/20 transition-all shadow-sm"
+                className="pl-11 h-12 text-base sm:text-lg rounded-xl border-2 focus-visible:ring-primary/20 transition-all shadow-sm"
                 autoFocus
               />
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
             {loading && clientes.length === 0 ? (
               <div className="py-20 text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -231,7 +231,7 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
                         key={c.id_cliente}
                         id={`cliente-row-${index}`}
                         onClick={() => handleSelect(c)}
-                        className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left group
+                        className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-xl border-2 transition-all text-left group
                           ${index === selectedIndex
                             ? 'border-primary bg-primary/5 shadow-md ring-1 ring-primary/20'
                             : 'border-transparent bg-card hover:bg-accent hover:border-primary/30'
@@ -263,7 +263,7 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
                           )}
                         </div>
 
-                        <div className={`ml-4 flex items-center gap-2 transition-all scale-90 ${index === selectedIndex ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 group-hover:scale-100'}`}>
+                        <div className={`ml-4 flex items-center gap-2 transition-all ${index === selectedIndex ? 'opacity-100 scale-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-hover:scale-100 sm:scale-90'}`}>
                           <button
                             onClick={(e) => handleDelete(e, c)}
                             className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors z-10"
@@ -305,7 +305,7 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
       />
 
       <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <DialogContent noAnimation className="sm:max-w-[425px]">
+        <DialogContent noAnimation className="!top-auto !bottom-0 !left-0 !right-0 !translate-x-0 !translate-y-0 !max-w-full !rounded-t-3xl !rounded-b-none !border-0 sm:!top-1/2 sm:!left-1/2 sm:!bottom-auto sm:!right-auto sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:!max-w-[425px] sm:!rounded-lg sm:!border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="w-5 h-5" />
@@ -320,14 +320,14 @@ export default function AddCliente({ isOpen, setIsOpen, inputRef, onSelect }: pr
             <Button
               variant="outline"
               onClick={() => setIsConfirmOpen(false)}
-              className="rounded-xl"
+              className="rounded-xl h-12 sm:h-auto"
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
-              className="rounded-xl bg-red-600 hover:bg-red-700"
+              className="rounded-xl bg-red-600 hover:bg-red-700 h-12 sm:h-auto"
             >
               Eliminar Cliente
             </Button>

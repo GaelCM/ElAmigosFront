@@ -156,7 +156,7 @@ export default function CarritoTabs() {
       </div>
 
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent>
+        <DialogContent className="!top-auto !bottom-0 !left-0 !right-0 !translate-x-0 !translate-y-0 !max-w-full !rounded-t-3xl !rounded-b-none !border-0 sm:!top-1/2 sm:!left-1/2 sm:!bottom-auto sm:!right-auto sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:!max-w-lg sm:!rounded-lg sm:!border">
           <DialogHeader>
             <DialogTitle>¿Eliminar ticket?</DialogTitle>
             <DialogDescription>
@@ -164,10 +164,10 @@ export default function CarritoTabs() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
+            <Button variant="outline" className="h-12 sm:h-auto" onClick={() => setDeleteId(null)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" className="h-12 sm:h-auto" onClick={confirmDelete}>
               Eliminar Ticket
             </Button>
           </DialogFooter>

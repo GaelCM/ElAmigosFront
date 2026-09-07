@@ -120,7 +120,150 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@media (max-width: 767px) {
+  .product-table th.hide-on-mobile,
+  .product-table td.hide-on-mobile {
+    display: none !important;
+  }
+
+  .product-table thead {
+    display: none;
+  }
+
+  .product-table tbody {
+    display: block;
+    padding: 0.5rem 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .product-table tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    border: 1.5px solid var(--border);
+    border-radius: 1rem;
+    margin-bottom: 0;
+    padding: 0.75rem 0.75rem 0.75rem 1rem;
+    gap: 0.15rem 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    background: var(--background);
+  }
+
+  /* Nombre: primera columna, primera fila */
+  .product-table td[data-label="Nombre"] {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex !important;
+    border: none;
+    padding: 0;
+  }
+
+  /* Precio: segunda columna, primera fila, alineado a la derecha */
+  .product-table td[data-label="Precio"] {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex !important;
+    justify-content: flex-end;
+    border: none;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  /* Stock: primera fila segunda fila, abarca ambas columnas */
+  .product-table td[data-label="Stock Disponible"] {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    display: flex !important;
+    align-items: center;
+    border: none;
+    padding: 0;
+    padding-top: 0.15rem;
+  }
+
+  /* Acción (botones): última fila, abarca todas las columnas */
+  .product-table td.product-actions {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+    padding: 0.5rem 0 0 0;
+    gap: 0.5rem;
+    flex-direction: row;
+  }
+
+  /* Esconder el ::before label en este diseño tipo card grid */
+  .product-table td::before {
+    display: none;
+  }
+
+  .product-table td.product-actions::before {
+    content: none;
+  }
+
+  .product-table .product-desc {
+    max-width: none;
+    overflow: visible;
+    white-space: normal;
+  }
+}
+
+/* Ocultar botones de spin en inputs numéricos para diseño móvil (fix visualización Samsung) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ===== SAMSUNG / ANDROID SPECIFIC FIXES ===== */
+
+/*
+  Fix #1 — Prevent auto-zoom on input focus.
+  Samsung Internet y Chrome para Android hacen zoom automático cuando
+  el font-size de un input es menor a 16px. Esto fuerza el mínimo.
+  Se aplica SOLO en pantallas táctiles (móviles).
+*/
+@media (hover: none) and (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/*
+  Fix #2 — Eliminar el delay de 300ms en tap en botones.
+  Samsung Internet tiene un delay de 300ms para distinguir tap de
+  doble-tap. Con touch-action: manipulation se elimina ese delay.
+*/
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/*
+  Fix #3 — Prevenir que el teclado de Samsung cause scroll/salto
+  al aparecer dentro de un Dialog. Usa dvh (dynamic viewport height).
+*/
+.samsung-dialog-scroll {
+  max-height: 92dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }

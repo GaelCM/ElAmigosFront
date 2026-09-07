@@ -104,9 +104,9 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                 inputRef?.current?.focus();
             }, 100);
         }}>
-            <DialogContent className="sm:max-w-[500px] border-l-4 border-l-blue-500">
+            <DialogContent className="!top-auto !bottom-0 !left-0 !right-0 !translate-x-0 !translate-y-0 !max-w-full !rounded-t-3xl !rounded-b-none !border-0 max-h-[92dvh] overflow-y-auto sm:!top-1/2 sm:!left-1/2 sm:!bottom-auto sm:!right-auto sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:!max-w-[500px] sm:!rounded-lg sm:!border sm:!border-l-4 sm:!border-l-blue-500">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                    <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                         🛍️ Crear Producto Temporal
                     </DialogTitle>
                     <DialogDescription>
@@ -131,7 +131,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                             )}
                         />
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="precio_venta"
@@ -141,7 +141,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                                         <FormControl>
                                             <div className="relative">
                                                 <span className="absolute left-3 top-2.5 text-gray-400">$</span>
-                                                <Input type="number" step="0.50" placeholder="0.00" {...field} className="pl-7 focus-visible:ring-blue-500" />
+                                                <Input type="text" inputMode="decimal" step="0.50" placeholder="0.00" {...field} className="pl-7 focus-visible:ring-blue-500" />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
@@ -158,7 +158,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                                         <FormControl>
                                             <div className="relative">
                                                 <span className="absolute left-3 top-2.5 text-gray-400">$</span>
-                                                <Input type="number" step="0.50" placeholder="0.00" {...field} className="pl-7 focus-visible:ring-blue-500" />
+                                                <Input type="text" inputMode="decimal" step="0.50" placeholder="0.00" {...field} className="pl-7 focus-visible:ring-blue-500" />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
@@ -167,7 +167,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="nombre_presentacion"
@@ -189,7 +189,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
                                     <FormItem>
                                         <FormLabel className="font-semibold text-gray-700">Cantidad</FormLabel>
                                         <FormControl>
-                                            <Input type="number" {...field} className="focus-visible:ring-blue-500 text-center font-bold" />
+                                            <Input type="text" inputMode="decimal" {...field} className="focus-visible:ring-blue-500 text-center font-bold" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -217,7 +217,7 @@ export default function DialogNuevoProductoTemp({ isOpen, setIsOpen, inputRef }:
 
                         <DialogFooter className="gap-2 sm:gap-0">
 
-                            <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold transition-all duration-200">
+                            <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold transition-all duration-200 w-full sm:w-auto h-12 sm:h-auto">
                                 Agregar a Venta
                             </Button>
                         </DialogFooter>

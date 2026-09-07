@@ -350,7 +350,7 @@ export default function NuevoProductoForm() {
               <FormLabel>Precio Costo *</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
+                  type="text" inputMode="decimal"
                   step="0.01"
                   value={field.value ?? ""}
                   onFocus={(e) => e.target.select()}
@@ -453,7 +453,7 @@ export default function NuevoProductoForm() {
                     <FormControl>
                       <div className="relative">
                         <Input
-                          type="number"
+                          type="text" inputMode="decimal"
                           className="font-bold"
                           value={field.value}
                           onFocus={(e) => e.target.select()}
@@ -567,7 +567,7 @@ export default function NuevoProductoForm() {
                                 </div>
                                 <div className="flex items-center">
                                   <Input
-                                    type="number"
+                                    type="text" inputMode="decimal"
                                     placeholder="0"
                                     className="h-8 w-24 text-right font-bold text-sm bg-white border-red-600 focus:border-red-600"
                                     value={adjustments[s.id_sucursal]?.[vIdx] ?? ""}
@@ -593,7 +593,7 @@ export default function NuevoProductoForm() {
                             <div className="flex items-center justify-between">
                               <Label className="text-[10px] font-bold text-slate-500 uppercase">Aviso Stock Mínimo</Label>
                               <Input
-                                type="number"
+                                type="text" inputMode="decimal"
                                 className="h-7 w-20 text-center text-xs font-bold"
                                 {...f}
                                 onFocus={(e) => e.target.select()}
@@ -668,7 +668,7 @@ export default function NuevoProductoForm() {
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                   <Input
-                                    type="number"
+                                    type="text" inputMode="decimal"
                                     step="0.01"
                                     className="pl-7 text-xl font-bold h-10 border-green-100 focus:border-green-500"
                                     value={field.value}
@@ -692,7 +692,7 @@ export default function NuevoProductoForm() {
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                   <Input
-                                    type="number"
+                                    type="text" inputMode="decimal"
                                     step="0.01"
                                     className="pl-7 text-lg font-bold h-9 border-dashed border-slate-200"
                                     value={field.value}

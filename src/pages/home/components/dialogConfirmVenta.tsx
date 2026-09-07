@@ -41,6 +41,9 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
     const [modoTurbo, setModoTurbo] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const isProcessing = useRef(false);
+    // Fix Samsung IME: evita que el teclado Samsung duplique números
+    // durante la fase de composición del teclado predictivo
+
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -167,7 +170,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
             if (printerName) {
                 if (isImprimir || metodoPago === 2) {
                     const isCut = (await api?.getConfig("printer_cut")) !== false;
-                    await api?.printTicketVentaEscPos({ ...buildData(), cortar: isCut });
+                    await api?.printTicketVentaEscPos({ ...buildData(), printerName, cortar: isCut });
                     toast.success("Ticket enviado a imprimir");
                 } else {
                     await api?.openCashDrawer(printerName);
@@ -285,9 +288,9 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 }, 100);
             }
         }}>
-            <DialogContent className="sm:max-w-4xl max-h-[98vh] overflow-y-auto p-6 md:p-8">
+            <DialogContent className="!top-auto !bottom-0 !left-0 !right-0 !translate-x-0 !translate-y-0 !max-w-full !rounded-t-3xl !rounded-b-none !border-0 max-h-[92dvh] overflow-y-auto !p-4 sm:!p-6 md:!p-8 !shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.35)] sm:!top-1/2 sm:!left-1/2 sm:!bottom-auto sm:!right-auto sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:!max-w-4xl sm:!rounded-lg sm:!border sm:!shadow-lg sm:max-h-[98vh]">
                 <DialogHeader>
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center items-start justify-between gap-4">
                         <div>
                             <DialogTitle className="text-xl">Procesar Venta</DialogTitle>
                             <DialogDescription className="text-xs">Selecciona el método de pago para completar la venta</DialogDescription>
@@ -367,13 +370,24 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                                         <div className="relative max-w-md mx-auto">
                                             <span className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-4xl md:text-5xl font-black text-slate-400">$</span>
                                             <input
-                                                type="number"
-                                                step="any"
+                                                type="text"
+                                                inputMode="decimal"
+                                                autoComplete="off"
+                                                autoCorrect="off"
+                                                autoCapitalize="none"
+                                                spellCheck={false}
+                                                enterKeyHint="done"
                                                 className="text-5xl md:text-7xl text-center font-black w-full py-4 md:py-6 px-8 md:px-12 bg-slate-50 border-4 border-slate-200 rounded-3xl focus:border-primary focus:ring-0 transition-all outline-none tabular-nums"
                                                 placeholder="0.00"
                                                 autoFocus
                                                 value={montoRecibido}
-                                                onChange={(e) => setMontoRecibido(e.target.value)}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(',', '.'); // coma → punto
+                                                    // Solo permitir dígitos, punto decimal y vacío
+                                                    if (/^[0-9]*\.?[0-9]*$/.test(val) || val === '') {
+                                                        setMontoRecibido(val);
+                                                    }
+                                                }}
                                             />
                                         </div>
                                     ) : (
@@ -404,14 +418,14 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
 
                             {/* Actions */}
-                            <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                                <Button onClick={() => nuevaVenta(true)} className="flex-1 bg-green-700 h-10 text-xs font-bold uppercase tracking-wide" disabled={metodoPago === undefined}>
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-2">
+                                <Button onClick={() => nuevaVenta(true)} className="flex-1 bg-green-700 h-12 sm:h-10 text-xs font-bold uppercase tracking-wide" disabled={metodoPago === undefined}>
                                     Completar e imprimir ticket (F1)
                                 </Button>
-                                <Button onClick={() => nuevaVenta(false)} className="flex-1 bg-yellow-700 h-10 text-xs font-bold uppercase tracking-wide" disabled={metodoPago === undefined}>
+                                <Button onClick={() => nuevaVenta(false)} className="flex-1 bg-yellow-700 h-12 sm:h-10 text-xs font-bold uppercase tracking-wide" disabled={metodoPago === undefined}>
                                     Completar sin imprimir ticket (F2)
                                 </Button>
-                                <Button variant="destructive" onClick={() => onClose(false)} className="flex-1 h-10 text-xs font-bold uppercase tracking-wide" >
+                                <Button variant="destructive" onClick={() => onClose(false)} className="flex-1 h-12 sm:h-10 text-xs font-bold uppercase tracking-wide" >
                                     Cancelar
                                 </Button>
                             </div>
@@ -437,7 +451,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                             {metodoPago === 0 && (
                                 <p className="text-4xl font-bold">Cambio: ${Math.max(0, (cambioEfectivo - totalVenta)).toFixed(2)}</p>
                             )}
-                            <Button className="w-full h-9" autoFocus onClick={reloadVenta}>
+                            <Button className="w-full h-11 sm:h-9" autoFocus onClick={reloadVenta}>
                                 Cerrar
                             </Button>
                         </div>

@@ -12,7 +12,7 @@ export const getProductoVenta = async (sku: string, idSucursal: number) => {
     const data = await res.json();
     return data as ProductoVentaResponse;
 }
-
+//trae la lista de productos
 export const getProductos = async (idSucursal: number) => {
     const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/getProductos/${idSucursal}`, {
         method: "get",
@@ -51,7 +51,7 @@ export const insertarProductoEspecialApi = async (formData: ProductoEspecialInpu
     return data as { success: boolean, message: string, data: number | null };
 }
 
-
+//obtiene el producto global para editar, con sucursales,precios y demas
 export const obtenerProductoGeneral = async (idProducto: number) => {
     const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/getProducto/${idProducto}`, {
         method: "get",
@@ -64,6 +64,7 @@ export const obtenerProductoGeneral = async (idProducto: number) => {
     return data as ProductoGeneralResponse;
 }
 
+//este trae el producto compuesto por sucurssal al editar 
 export const obtenerProductoEspGeneral = async (idProducto: number, idSucursal: number) => {
     const res = await fetch(`https://elamigos-elamigosapi.xj7zln.easypanel.host/api/productos/getProductoEsp/${idProducto}/${idSucursal}`, {
         method: "get",

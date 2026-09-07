@@ -128,19 +128,38 @@ export default function Home() {
         }
     }, [selectedIndex]);
 
+    // Si el foco está en un campo de texto que NO es el scanner, los hotkeys
+    // del carrito no deben dispararse (ej. buscador del diálogo F10, inputs en móvil).
+    const isTypingInOtherField = () => {
+        const el = document.activeElement as HTMLElement | null;
+        if (!el || el === inputRef.current) return false;
+        return (
+            el.tagName === 'INPUT' ||
+            el.tagName === 'TEXTAREA' ||
+            el.tagName === 'SELECT' ||
+            el.isContentEditable
+        );
+    };
+
     // Navigation Hotkeys
     useHotkeys('up', (e) => {
+        if (e.key !== 'ArrowUp' && e.key !== 'Up') return;
+        if (isAnyDialogOpen || isTypingInOtherField()) return;
         e.preventDefault();
         setSelectedIndex(prev => Math.max(0, prev - 1));
     }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [isAnyDialogOpen]);
 
     useHotkeys('down', (e) => {
+        if (e.key !== 'ArrowDown' && e.key !== 'Down') return;
+        if (isAnyDialogOpen || isTypingInOtherField()) return;
         e.preventDefault();
         setSelectedIndex(prev => Math.min((carritoActual?.productos?.length ?? 0) - 1, prev + 1));
     }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [carritoActual?.productos?.length, isAnyDialogOpen]);
 
     // Action Hotkeys
-    useHotkeys('+, right', (e) => {
+    useHotkeys('right', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'Right') return;
+        if (isAnyDialogOpen || isTypingInOtherField()) return;
         if (idProducto) return;
         e.preventDefault();
         if (!carritoActual?.productos?.length) return;
@@ -148,7 +167,9 @@ export default function Home() {
         if (prod) incrementQuantity(prod.product.id_unidad_venta);
     }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [selectedIndex, carritoActual, idProducto, isAnyDialogOpen]);
 
-    useHotkeys('-, left', (e) => {
+    useHotkeys('left', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'Left') return;
+        if (isAnyDialogOpen || isTypingInOtherField()) return;
         if (idProducto) return;
         e.preventDefault();
         if (!carritoActual?.productos?.length) return;
@@ -157,6 +178,7 @@ export default function Home() {
     }, { enableOnFormTags: true, enabled: !isAnyDialogOpen }, [selectedIndex, carritoActual, idProducto, isAnyDialogOpen]);
 
     useHotkeys('f11', (e) => {
+        if (isAnyDialogOpen || isTypingInOtherField()) return;
         e.preventDefault();
         if (!carritoActual?.productos?.length) return;
         const prod = carritoActual.productos[selectedIndex];
@@ -317,9 +339,9 @@ export default function Home() {
     };
 
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 lg:gap-4 items-start p-4 lg:p-6">
+        <div className="flex flex-col sm:grid sm:grid-cols-1 xl:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 sm:items-start p-3 sm:p-4 lg:p-6 min-h-full">
             {/* Contenedor Principal Izquierdo */}
-            <div className="xl:col-span-2 space-y-2 flex flex-col">
+            <div className="xl:col-span-2 space-y-2 flex flex-col flex-1 min-h-0">
                 {/* Tabs de Carritos */}
                 <CarritoTabs />
 
@@ -330,7 +352,7 @@ export default function Home() {
                             <Badge variant="default" className="bg-primary hover:bg-primary h-5 px-2 text-[10px] font-black uppercase tracking-wider animate-pulse">
                                 Ticket Activo
                             </Badge>
-                            <span className="text-xs font-bold text-slate-600 uppercase truncate max-w-[200px]">
+                            <span className="text-xs font-bold text-slate-600 uppercase truncate max-w-[120px] sm:max-w-[200px]">
                                 {carritoActual?.cliente?.nombre_cliente || carritoActual?.nombre || "Sin Nombre"}
                             </span>
                         </div>
@@ -368,18 +390,18 @@ export default function Home() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-6 text-[10px] gap-1 px-2 text-slate-500 hover:text-primary transition-colors"
+                                    className="h-7 sm:h-6 text-[10px] gap-1 px-1.5 sm:px-2 text-slate-500 hover:text-primary transition-colors"
                                     onClick={() => syncProducts()}
                                     title="Actualizar productos (API)"
                                 >
-                                    actualizar
-                                    <RefreshCw className="h-3 w-3" />
+                                    <span className="hidden sm:inline">actualizar</span>
+                                    <RefreshCw className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                                 </Button>
                             </div>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="px-4 pb-1.5 pt-0">
-                        <form className="flex gap-2" onSubmit={buscarProducto}>
+                        <form className="flex gap-2" onSubmit={(e) => { if (isAnyDialogOpen) { e.preventDefault(); return; } buscarProducto(e); }}>
                             <div className="relative flex-1">
                                 <Scan className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
                                 <Input
@@ -387,19 +409,24 @@ export default function Home() {
                                     placeholder="Escanear producto..."
                                     onChange={(e) => setidProducto(e.target.value)}
                                     value={idProducto || ''}
-                                    className="pl-9 text-base h-9 bg-white border focus-visible:ring-primary shadow-sm"
+                                    className="pl-9 text-base h-12 sm:h-9 bg-white border focus-visible:ring-primary shadow-sm"
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    enterKeyHint="go"
                                     autoFocus
                                 />
                             </div>
-                            <Button type="submit" size="sm" className="px-6 h-9 text-sm font-bold shadow-sm">
-                                <Plus className="w-4 h-4 mr-1.5" />
+                            <Button type="submit" size="sm" className="px-4 sm:px-6 h-12 sm:h-9 text-sm font-bold shadow-sm">
+                                <Plus className="w-4 h-4 mr-1 sm:mr-1.5" />
                                 Agregar
                             </Button>
                         </form>
                     </CardContent>
                 </Card>
 
-                <Card className="flex-1 flex flex-col min-h-[600px] shadow-sm border-none">
+                <Card className="flex-1 flex flex-col min-h-0 sm:min-h-[600px] shadow-sm border-none">
                     <CardHeader className="shrink-0  px-4">
                         <CardTitle className="flex items-center justify-between">
                             <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
@@ -421,10 +448,10 @@ export default function Home() {
                             </Button>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="flex-1 overflow-hidden p-0">
+                    <CardContent className="flex flex-col sm:block flex-1 overflow-hidden p-0">
                         <div
                             ref={scrollRef}
-                            className="max-h-[calc(100vh-320px)] overflow-y-auto divide-y divide-slate-100"
+                            className="flex-1 overflow-y-auto sm:max-h-[calc(100vh-320px)] divide-y divide-slate-100"
                         >
                             {(carritoActual?.productos?.length ?? 0) === 0 ? (
                                 <div className="text-center py-20 text-muted-foreground bg-slate-50/30">
@@ -451,13 +478,13 @@ export default function Home() {
                                                     <span className="shrink-0 w-6 h-6 bg-primary/10 rounded flex items-center justify-center">
                                                         <Pill className="w-3.5 h-3.5 text-primary" />
                                                     </span>
-                                                    <p className="font-bold text-sm truncate uppercase tracking-tight text-slate-700">{producto.product.nombre_producto} {producto.product.nombre_presentacion}</p>
+                                                    <p className="font-bold text-sm uppercase tracking-tight text-slate-700 min-w-0 break-words">{producto.product.nombre_producto} {producto.product.nombre_presentacion}</p>
                                                     <Badge variant="outline" className={`h-4 text-[9px] px-1 font-bold ${producto.product.stock_disponible_presentacion == 0 ? 'border-red-500 text-red-600 bg-red-50/50' : producto.product.stock_disponible_presentacion <= 5 ? 'border-yellow-500 text-yellow-600 bg-yellow-50/50' : 'border-green-500 text-green-600 bg-green-300'}`}>
                                                         {user.id_rol === 1 && `${producto.product.stock_disponible_presentacion} STOCK`}
                                                     </Badge>
                                                 </div>
                                             </div>
-                                            <div className="flex items-end gap-4 shrink-0 text-right">
+                                            <div className="flex items-end gap-2 sm:gap-4 shrink-0 text-right">
                                                 <div className="flex flex-col">
                                                     <span className="text-[9px] font-bold text-muted-foreground uppercase leading-none">Precio</span>
                                                     <p className="text-sm font-black text-slate-600">
@@ -479,8 +506,8 @@ export default function Home() {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between gap-4 ml-8">
-                                            <div className="flex items-center bg-white border border-slate-200 rounded-md h-7 px-1">
+                                        <div className="flex items-center justify-between gap-4 ml-0 sm:ml-8">
+                                            <div className="flex items-center bg-white border border-slate-200 rounded-md h-9 sm:h-7 px-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -488,11 +515,11 @@ export default function Home() {
                                                         e.stopPropagation();
                                                         decrementQuantity(producto.product.id_unidad_venta);
                                                     }}
-                                                    className="w-5 h-5 p-0 hover:bg-slate-100"
+                                                    className="w-7 h-7 sm:w-5 sm:h-5 p-0 hover:bg-slate-100"
                                                 >
-                                                    <Minus className="w-2.5 h-2.5" />
+                                                    <Minus className="w-3.5 h-3.5 sm:w-2.5 sm:h-2.5" />
                                                 </Button>
-                                                <span className="min-w-[28px] text-center font-black text-xs text-slate-700">{producto.quantity}</span>
+                                                <span className="min-w-[32px] sm:min-w-[28px] text-center font-black text-sm sm:text-xs text-slate-700">{producto.quantity}</span>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -500,9 +527,9 @@ export default function Home() {
                                                         e.stopPropagation();
                                                         incrementQuantity(producto.product.id_unidad_venta);
                                                     }}
-                                                    className="w-5 h-5 p-0 hover:bg-slate-100"
+                                                    className="w-7 h-7 sm:w-5 sm:h-5 p-0 hover:bg-slate-100"
                                                 >
-                                                    <Plus className="w-2.5 h-2.5" />
+                                                    <Plus className="w-3.5 h-3.5 sm:w-2.5 sm:h-2.5" />
                                                 </Button>
                                             </div>
 
@@ -540,7 +567,7 @@ export default function Home() {
             </div>
 
             {/* Datos de la venta */}
-            <div className="xl:sticky xl:top-6 space-y-3">
+            <div className="hidden sm:block xl:sticky xl:top-6 space-y-3">
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base text-primary flex items-center gap-2">
@@ -650,6 +677,111 @@ export default function Home() {
 
 
                 <Reloj />
+            </div>
+
+            {/* Barra de Cobro Móvil (solo < sm) */}
+            <div className="sm:hidden sticky bottom-0 z-40 mt-auto bg-card border-t-2 border-primary/20 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] space-y-2 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.25)]">
+                <div className="flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total a Pagar</p>
+                        <p className="text-3xl font-black text-primary leading-none tabular-nums truncate">
+                            ${redondearPrecio(getTotalPrice()).toFixed(2)}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">
+                            {carritoActual?.productos?.length ?? 0} Prod
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-500"
+                            onClick={() => clearCart()}
+                            disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                            title="Cancelar Venta (vaciar carrito)"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5">
+                    <Button
+                        variant={"default"}
+                        className={`h-9 text-[11px] font-bold ${metodoPago === 0 ? "bg-blue-500 text-white border-blue-600 shadow-md" : "bg-gray-200 text-gray-700 border-gray-300"}`}
+                        disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                        onClick={() => setMetodoPago(0)}
+                    >
+                        Efectivo
+                    </Button>
+                    <Button
+                        variant={"default"}
+                        className={`h-9 text-[11px] font-bold ${metodoPago === 2 ? "bg-blue-500 text-white border-blue-600 shadow-md" : "bg-gray-200 text-gray-700 border-gray-300"}`}
+                        disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                        onClick={() => setMetodoPago(2)}
+                    >
+                        Crédito
+                    </Button>
+                    <Button
+                        className={`h-9 text-[11px] font-bold ${metodoPago === 1 ? "bg-blue-500 text-white border-blue-600 shadow-md" : "bg-gray-200 text-gray-700 border-gray-300"}`}
+                        disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                        onClick={() => setMetodoPago(1)}
+                    >
+                        Tarjeta
+                    </Button>
+                </div>
+
+                <Button
+                    className="w-full h-12 text-base font-bold shadow-lg"
+                    disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                    onClick={() => setIsOpen(true)}
+                >
+                    <CreditCard className="w-5 h-5 mr-1" />
+                    Cobrar ({metodoPago === 0 ? 'Efectivo' : metodoPago === 1 ? 'Tarjeta' : 'Crédito'})
+                </Button>
+
+                <div className="flex gap-1.5">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-9 text-xs"
+                        onClick={() => setOpenCliente(true)}
+                    >
+                        <Users className="w-4 h-4 shrink-0" />
+                        <span className="truncate">
+                            {carritoActual?.cliente ? carritoActual.cliente.nombre_cliente : "Cliente"}
+                        </span>
+                    </Button>
+                    {carritoActual?.cliente && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 w-9 p-0 shrink-0 text-red-500"
+                            onClick={() => carritoActual && desasignarClienteCarrito(carritoActual.id)}
+                            title="Quitar cliente"
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
+                    )}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-9 text-xs"
+                        onClick={() => setOpenNuevoProducto(true)}
+                    >
+                        <Plus className="w-4 h-4" />
+                        Nuevo
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1 h-9 text-xs"
+                        onClick={() => clearCart()}
+                        disabled={(carritoActual?.productos?.length ?? 0) === 0}
+                    >
+                        Vaciar
+                    </Button>
+                </div>
             </div>
 
             <DialogConfirmVenta isOpen={isOpen} onClose={setIsOpen} metodoPago={metodoPago} inputRef={inputRef} setMetodoPago={setMetodoPago} />
