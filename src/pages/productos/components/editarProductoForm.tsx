@@ -418,12 +418,7 @@ export default function EditarProductoForm() {
                   type="text" inputMode="decimal"
                   value={field.value ?? ""}
                   onFocus={(e) => e.target.select()}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(',', '.');
-                    if (raw === '' || raw === '-' || raw === '.') { field.onChange(raw); return; }
-                    const num = parseFloat(raw);
-                    field.onChange(isNaN(num) ? raw : num);
-                  }}
+                  onChange={(e) => field.onChange(e.target.value.replace(',', '.'))}
                 />
               </FormControl>
               <FormMessage />
@@ -524,14 +519,9 @@ export default function EditarProductoForm() {
                         <Input
                           type="text" inputMode="decimal"
                           className="font-bold"
-                          value={field.value}
+                          value={field.value ?? ""}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const raw = e.target.value.replace(',', '.');
-                            if (raw === '' || raw === '.') { field.onChange(raw); return; }
-                            const num = parseFloat(raw);
-                            field.onChange(isNaN(num) ? raw : num);
-                          }}
+                          onChange={(e) => field.onChange(e.target.value.replace(',', '.'))}
                           disabled={index === 0}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">piezas</span>

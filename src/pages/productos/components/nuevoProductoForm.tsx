@@ -354,7 +354,7 @@ export default function NuevoProductoForm() {
                   step="0.01"
                   value={field.value ?? ""}
                   onFocus={(e) => e.target.select()}
-                  onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                  onChange={(e) => field.onChange(e.target.value.replace(',', '.'))}
                 />
               </FormControl>
               <FormMessage />
@@ -455,9 +455,9 @@ export default function NuevoProductoForm() {
                         <Input
                           type="text" inputMode="decimal"
                           className="font-bold"
-                          value={field.value}
+                          value={field.value ?? ""}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                          onChange={(e) => field.onChange(e.target.value.replace(',', '.'))}
                           disabled={index === 0}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">piezas</span>

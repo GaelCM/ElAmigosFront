@@ -448,16 +448,16 @@ export default function EditarProductoCompuestoForm() {
                                             type="text" inputMode="decimal"
                                             step="0.01"
                                             value={field.value ?? ""}
-                                            onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                                            onChange={(e) => field.onChange(e.target.value.replace(',', '.'))}
                                           />
                                         </FormControl>
                                         <FormMessage />
-                                        {field.value > 0 && (
+                                        {Number(field.value) > 0 && (
                                           <p className="text-[10px] mt-1">
-                                            {field.value > costoTotal ? (
-                                              <span className="text-green-600">✓ Ganancia: ${(field.value - costoTotal).toFixed(2)}</span>
-                                            ) : field.value < costoTotal ? (
-                                              <span className="text-red-600">⚠ Pérdida: ${(costoTotal - field.value).toFixed(2)}</span>
+                                            {Number(field.value) > costoTotal ? (
+                                              <span className="text-green-600">✓ Ganancia: ${(Number(field.value) - costoTotal).toFixed(2)}</span>
+                                            ) : Number(field.value) < costoTotal ? (
+                                              <span className="text-red-600">⚠ Pérdida: ${(costoTotal - Number(field.value)).toFixed(2)}</span>
                                             ) : (
                                               <span className="text-gray-600">Sin ganancia ni pérdida</span>
                                             )}
@@ -478,7 +478,7 @@ export default function EditarProductoCompuestoForm() {
                                             type="text" inputMode="decimal"
                                             step="0.01"
                                             value={field.value ?? ""}
-                                            onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                                            onChange={(e) => field.onChange(e.target.value.replace(',', '.'))}
                                           />
                                         </FormControl>
                                         <FormMessage />
