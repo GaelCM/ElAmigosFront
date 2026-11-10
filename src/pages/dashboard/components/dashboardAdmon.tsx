@@ -8,7 +8,7 @@ import { Loader2, AlertCircle, RefreshCw, ChevronLeft, Store, User, Calendar, Cl
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 
-export default function DashboardAdmon() {
+export default function DashboardAdmon({ filterSucursalId }: { filterSucursalId?: number }) {
     const [turnosActivos, setTurnosActivos] = useState<TurnoActivo[] | null>(null);
     const [selectedTurnoId, setSelectedTurnoId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
@@ -28,7 +28,10 @@ export default function DashboardAdmon() {
                 });
                 const res: TurnosActivosResponse = await response.json();
                 if (res.success) {
-                    setTurnosActivos(res.data);
+                    const turnos = filterSucursalId
+                        ? res.data.filter(t => t.sucursal.id === filterSucursalId)
+                        : res.data;
+                    setTurnosActivos(turnos);
                 } else {
                     setError("No se pudieron cargar los turnos activos");
                 }

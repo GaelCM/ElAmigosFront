@@ -117,6 +117,25 @@ function offlineController() {
         }
     });
 
+    // Actualizar turno de una venta offline
+    ipcMain.handle('actualizar-turno-venta-offline', (event, { id, id_turno }) => {
+        try {
+            const stmt = db.prepare('SELECT data_venta FROM offline_ventas WHERE id = ?');
+            const row = stmt.get(id);
+            if (!row) return { success: false, error: 'Venta no encontrada' };
+
+            const data = JSON.parse(row.data_venta);
+            data.id_turno = Number(id_turno);
+
+            const updateStmt = db.prepare('UPDATE offline_ventas SET data_venta = ? WHERE id = ?');
+            updateStmt.run(JSON.stringify(data), id);
+            return { success: true };
+        } catch (error) {
+            console.error("Error al actualizar turno de venta offline:", error);
+            return { success: false, error: error.message };
+        }
+    });
+
     // --- Clientes Offline ---
 
     ipcMain.handle('sincronizar-clientes', (event, clientes) => {

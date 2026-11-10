@@ -25,28 +25,28 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  isEspecial: z.number(),
+  isEspecial: z.coerce.number(),
   sku_pieza: z.string().min(1, 'El código es requerido'),
   nombre_producto: z.string().min(1, 'El nombre del producto es requerido'),
   descripcion: z.string().optional(),
   id_categoria: z.string().min(1, 'La categoría es requerida'),
   sucursales_venta: z.array(
     z.object({
-      id_sucursal: z.number(),
+      id_sucursal: z.coerce.number(),
       precio_venta: z.coerce.number().min(0, { message: 'El precio de venta debe ser mayor o igual a 0' }),
       precio_mayoreo: z.coerce.number().min(0, { message: 'El precio de mayoreo debe ser mayor o igual a 0' })
     })
   ).min(1, 'Debes asignar precios en al menos una sucursal'),
   componentes: z.array(
     z.object({
-      id_unidad_venta: z.number(),
+      id_unidad_venta: z.coerce.number(),
       nombre_producto: z.string(),
       nombre_presentacion: z.string(),
-      cantidad: z.number().positive('La cantidad debe ser mayor a 0'),
-      precio_unitario: z.number(),
-      stock_disponible: z.number(),
-      es_producto_compuesto: z.number().optional(),
-      factor_conversion_cantidad: z.number().optional()
+      cantidad: z.coerce.number().positive('La cantidad debe ser mayor a 0'),
+      precio_unitario: z.coerce.number(),
+      stock_disponible: z.coerce.number(),
+      es_producto_compuesto: z.coerce.number().optional(),
+      factor_conversion_cantidad: z.coerce.number().optional()
     })
 
   ).min(1, 'Debes agregar al menos un componente al paquete')

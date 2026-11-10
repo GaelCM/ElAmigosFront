@@ -6,6 +6,7 @@ export interface ProductoTicket {
     cantidad?: number | string;
     nombre?: string;
     importe?: number;
+    factor_conversion_cantidad?: number;
 }
 
 export interface VentaTicketData {
@@ -183,9 +184,12 @@ export function encodeVentaTicket(data: VentaTicketData, cortar: boolean): Uint8
     for (const p of productos) {
         const cantidadVal = Number(p.cantidad || 0);
         const importeVal = Number(p.importe || 0);
+        const factor = Number(p.factor_conversion_cantidad) || 1;
 
         const cant = cantidadVal.toString().padEnd(3);
-        const descLines = wrapWords((p.nombre || "PRODUCTO SIN NOMBRE").toUpperCase(), 19);
+        const nombreBase = (p.nombre || "PRODUCTO SIN NOMBRE").toUpperCase();
+        const nombreConFactor = factor > 1 ? `${nombreBase} ${factor}PZS` : nombreBase;
+        const descLines = wrapWords(nombreConFactor, 19);
 
         line32(enc, `${cant} ${descLines[0].padEnd(19)} ${money(importeVal).padStart(8)}`);
 

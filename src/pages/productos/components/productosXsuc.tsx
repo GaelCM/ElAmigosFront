@@ -3,9 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/contexts/currentUser";
-import { ArrowLeft, ChevronDown, Plus} from "lucide-react";
+import { ArrowLeft, ChevronDown, Plus, Barcode } from "lucide-react";
 import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import { toast } from "sonner";
 
 
 export default function ProductosXSuc(){
@@ -20,7 +21,13 @@ export default function ProductosXSuc(){
         navigate(`/`);
         return;
         }
-     },[navigate,user.id_rol])
+        // Si es Encargado (id_rol === 3), solo puede acceder al inventario de su sucursal
+        if (user.id_rol === 3 && id && parseInt(id) !== user.id_sucursal) {
+            toast.error("Solo tienes acceso al inventario de tu sucursal asignada");
+            navigate(`/productos/sucursal?id=${user.id_sucursal}&sucursal=${encodeURIComponent(user.sucursal || "Mi Sucursal")}`, { replace: true });
+            return;
+        }
+     },[navigate,user.id_rol, user.id_sucursal, user.sucursal, id])
 
      if(!id || !sucursal){
         return(
@@ -42,7 +49,15 @@ export default function ProductosXSuc(){
                 </div>
                 <h1 className="text-primary text-4xl font-bold">Mis Productos</h1>
              </div>
-             <div className="flex justify-end px-10">
+             <div className="flex justify-end px-10 gap-3">
+                {(user.id_rol === 1 || user.id_rol === 3) && (
+                  <Button variant="outline" className="border-blue-600 text-blue-700 hover:bg-blue-50 font-semibold" asChild>
+                    <Link to={`/productos/ajuste-rapido?sucursalId=${id}`}>
+                      <Barcode className="mr-2 h-4 w-4 text-blue-600" />
+                      Ajuste Rápido
+                    </Link>
+                  </Button>
+                )}
                 <div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

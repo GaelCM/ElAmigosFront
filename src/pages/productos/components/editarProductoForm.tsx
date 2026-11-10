@@ -33,7 +33,7 @@ const formSchema = z.object({
   sku_pieza: z.string().min(1, 'El SKU de la pieza es requerido'),
   es_granel: z.boolean().default(false),
   sucursales_inventario: z.array(z.object({
-    id_sucursal: z.number(),
+    id_sucursal: z.coerce.number(),
     cantidad_actual: z.coerce.number().min(0, { message: 'La cantidad debe ser un número válido' }),
     cantidad_minima: z.coerce.number().min(0, { message: 'La cantidad mínima debe ser un número válido' })
   })).min(1, 'Selecciona al menos una sucursal para el inventario'),
@@ -41,12 +41,12 @@ const formSchema = z.object({
     z.object({
       id_unidad_venta: z.number().optional(), // ID para actualizar
       nombre_presentacion: z.string().min(1, 'El nombre es requerido'),
-      factor_conversion_cantidad: z.number().positive('El factor debe ser mayor a 0'),
+      factor_conversion_cantidad: z.coerce.number().positive('El factor debe ser mayor a 0'),
       sku_presentacion: z.string().min(1, 'El SKU de la presentación es requerido'),
       sucursales_venta: z.array(
         z.object({
           id_precio: z.number().optional(), // ID para actualizar
-          id_sucursal: z.number(),
+          id_sucursal: z.coerce.number(),
           precio_venta: z.coerce.number().min(0, { message: 'El precio de venta debe ser mayor o igual a 0' }),
           precio_mayoreo: z.coerce.number().min(0, { message: 'El precio de mayoreo debe ser mayor o igual a 0' })
         })

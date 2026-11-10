@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Check, Printer, Loader2, AlertCircle } from "lucide-react";
 import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 
 type Props = {
     pedido: Pedido | null;
@@ -45,12 +46,8 @@ export function DialogCobrarPedido({ pedido, isOpen, onClose, onSuccess }: Props
     // Cargar turno automáticamente
     useEffect(() => {
         const loadSettings = async () => {
-            // @ts-ignore
-            const api = window["electron-api"];
-            const tDataStore = await api?.getConfig("open_caja");
-            const tDataLocal = localStorage.getItem("open_caja");
-            const tData = tDataStore || (tDataLocal ? JSON.parse(tDataLocal) : null);
-            setTurnoData(tData);
+            const currentCaja = await getOpenCajaSession();
+            setTurnoData(currentCaja);
         };
         if (isOpen) {
             setEstado("Inicio");
@@ -90,10 +87,11 @@ export function DialogCobrarPedido({ pedido, isOpen, onClose, onSuccess }: Props
                 cliente: pedido?.nombre_cliente || "Público General",
                 folio,
                 fecha: new Date(),
-                productos: (pedido?.detalle ?? []).map((d) => ({
+                productos: (pedido?.detalle ?? []).map((d: any) => ({
                     cantidad: d.cantidad,
                     nombre: `${d.nombre_producto}${d.nombre_presentacion ? " " + d.nombre_presentacion : ""}`,
                     importe: d.subtotal,
+                    factor_conversion_cantidad: d.factor_conversion_cantidad || 1,
                 })),
                 total,
                 pagoCon: metodoPago === "0" ? montoNum : total,

@@ -10,6 +10,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
+import { setOpenCajaSession } from "@/utils/cajaSession"
 
 const formSchema = z.object({
     efectivo_inicial: z.number(),
@@ -55,13 +56,7 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
             })
             if (res.success) {
                 console.log(res.data)
-                // @ts-ignore
-                const api = window["electron-api"];
-                if (api) {
-                    await api.setConfig("open_caja", res.data);
-                } else {
-                    localStorage.setItem("open_caja", JSON.stringify(res.data));
-                }
+                await setOpenCajaSession(res.data);
 
                 toast.success("Turno abierto exitosamente.", {
                     description: "El turno se abrió correctamente.",
@@ -69,6 +64,8 @@ export default function DialogNuevoTurno({ isOpen, onOpenChange, onCajaOpened }:
                 onOpenChange(false)
                 onCajaOpened()
 
+                // @ts-ignore
+                const api = window["electron-api"];
                 // Abrir cajón de dinero al iniciar turno nuevo
                 const printerName = await api?.getConfig("printer_device");
                 if (printerName) {

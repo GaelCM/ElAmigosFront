@@ -3,6 +3,7 @@ import DashboardAdmon from "./components/dashboardAdmon";
 import DashboardUser from "./components/dashboardUser";
 import NoTurnoError from "./components/noTurnoError";
 import { useCurrentUser } from "@/contexts/currentUser";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 
 
 export default function DashboardPage() {
@@ -11,22 +12,18 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const checkTurno = async () => {
-            // @ts-ignore
-            const api = window["electron-api"];
-            const storeCaja = await api?.getConfig("open_caja");
-            const turnoDataString = localStorage.getItem("open_caja");
-
-            const data = storeCaja || (turnoDataString ? JSON.parse(turnoDataString) : null);
-
-            if (data && data.id_turno) {
-                setTurnoId(data.id_turno);
+            const session = await getOpenCajaSession();
+            if (session && session.id_turno) {
+                setTurnoId(session.id_turno);
+            } else {
+                setTurnoId(null);
             }
         };
         checkTurno();
     }, []);
 
-    if (!turnoId && user.id_rol == 1) {
-        return <DashboardAdmon />;
+    if (!turnoId && (user.id_rol === 1 || user.id_rol === 3)) {
+        return <DashboardAdmon filterSucursalId={user.id_rol === 3 ? user.id_sucursal : undefined} />;
     }
 
     if (!turnoId) {
@@ -35,7 +32,7 @@ export default function DashboardPage() {
 
     return (
         <div>
-            {turnoId && user.id_rol == 1 ? <DashboardAdmon /> : <DashboardUser idTurno={turnoId} />}
+            {turnoId && (user.id_rol === 1 || user.id_rol === 3) ? <DashboardAdmon filterSucursalId={user.id_rol === 3 ? user.id_sucursal : undefined} /> : <DashboardUser idTurno={turnoId} />}
         </div>
     )
 }

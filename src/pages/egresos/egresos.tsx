@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TablaCompras from "./components/tablaCompras";
 import TablaGastos from "./components/tablaGastos";
 import TablaMovimientos from "./components/tablaMovimientos";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 
 type TabOption = "compras" | "gastos" | "movimientos";
 
@@ -14,16 +15,13 @@ export default function EgresosPage() {
 
     useEffect(() => {
         const checkTurno = async () => {
-            // @ts-ignore
-            const api = window["electron-api"];
-            const storeCaja = await api?.getConfig("open_caja");
-            const turnoDataString = localStorage.getItem("open_caja");
-
-            const data = storeCaja || (turnoDataString ? JSON.parse(turnoDataString) : null);
-
-            if (data && data.id_turno) {
+            const session = await getOpenCajaSession();
+            if (session && session.id_turno) {
                 setHasTurno(true);
-                setTurnoId(data.id_turno);
+                setTurnoId(session.id_turno);
+            } else {
+                setHasTurno(false);
+                setTurnoId(null);
             }
         };
         checkTurno();

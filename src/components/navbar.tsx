@@ -78,7 +78,7 @@ export default function NavBar({ setSidebarOpen }: navBarProps) {
             <div className="flex items-center gap-2 lg:gap-4">
 
               {
-                user.id_rol === 1 && (
+                (user.id_rol === 1 || user.id_rol === 3) && (
                   <div className="relative hidden sm:block">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" color="white" />
                     <Button variant={"secondary"} className="px-10 cursor-pointer" onClick={moverAInventario}>Inventario (F4)</Button>

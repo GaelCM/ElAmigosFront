@@ -17,8 +17,14 @@ export function UsuarioCard({ usuario, onEdit }: UsuarioCardProps) {
                     <CardTitle className="text-lg font-semibold text-foreground truncate" title={usuario.nombre}>
                         {usuario.nombre}
                     </CardTitle>
-                    <Badge variant="outline" className="shrink-0">
-                        {usuario.id_rol === 1 ? "Admin" : "Empleado"}
+                    <Badge variant="outline" className={`shrink-0 ${
+                        usuario.id_rol === 1
+                            ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                            : usuario.id_rol === 3
+                            ? "border-emerald-500 text-emerald-600 bg-emerald-50/50 font-semibold"
+                            : ""
+                    }`}>
+                        {usuario.id_rol === 1 ? "Admin" : usuario.id_rol === 3 ? "Encargado" : "Empleado"}
                     </Badge>
                 </div>
             </CardHeader>

@@ -17,6 +17,7 @@ import { crearCompra } from "@/api/egresosApi/compras";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 
 export default function NuevaCompraForm() {
     const navigate = useNavigate();
@@ -53,12 +54,8 @@ export default function NuevaCompraForm() {
 
     useEffect(() => {
         const loadCaja = async () => {
-            // @ts-ignore
-            const api = window["electron-api"];
-            const storeCaja = await api?.getConfig("open_caja");
-            const localCaja = localStorage.getItem("open_caja");
-            if (storeCaja) setOpenCaja(storeCaja);
-            else if (localCaja) setOpenCaja(JSON.parse(localCaja));
+            const session = await getOpenCajaSession();
+            setOpenCaja(session);
         };
         loadCaja();
     }, []);

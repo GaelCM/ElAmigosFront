@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2, DollarSign, ArrowUp, ShoppingCart, ShoppingBag, Wallet } from "lucide-react"
 import type { DashboardTurno, DashboardTurnoResponse } from "@/types/Dashboard";
 import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
+import { getOpenCajaSession, clearOpenCajaSession } from "@/utils/cajaSession";
 
 export default function CerrarCajaPage() {
     const { user } = useCurrentUser();
@@ -23,31 +24,14 @@ export default function CerrarCajaPage() {
 
     useEffect(() => {
         const checkOpenCaja = async () => {
-            // @ts-ignore
-            const api = window["electron-api"];
-            const corteStore = await api?.getConfig("open_caja");
-            const corteStorage = localStorage.getItem("open_caja");
-
-            const rawData = corteStore || (corteStorage ? JSON.parse(corteStorage) : null);
-
-            if (rawData) {
-                try {
-                    let currentId: number | null = null;
-                    if (typeof rawData === 'number') {
-                        currentId = rawData;
-                    } else if (rawData && typeof rawData === 'object' && (rawData.id || rawData.id_turno)) {
-                        currentId = rawData.id || rawData.id_turno;
-                    }
-
-                    if (currentId) {
-                        setIdTurno(currentId);
-                        if (user?.id_rol === 1) {
-                            fetchDashboardData(currentId);
-                        }
-                    }
-                } catch (e) {
-                    console.error("Error parsing caja data:", e);
+            const session = await getOpenCajaSession();
+            if (session && session.id_turno) {
+                setIdTurno(session.id_turno);
+                if (user?.id_rol === 1 || user?.id_rol === 3) {
+                    fetchDashboardData(session.id_turno);
                 }
+            } else {
+                setIdTurno(null);
             }
         };
         checkOpenCaja();
@@ -98,13 +82,7 @@ export default function CerrarCajaPage() {
 
             if (response.success) {
                 setResumenData(response.data);
-                // @ts-ignore
-                const api = window["electron-api"];
-                if (api) {
-                    await api.setConfig("open_caja", null);
-                } else {
-                    localStorage.removeItem("open_caja");
-                }
+                await clearOpenCajaSession();
             } else {
                 setError(response.message);
             }
@@ -263,9 +241,9 @@ export default function CerrarCajaPage() {
                 <p className="text-slate-500">Confirma los montos finales para finalizar tu turno de trabajo.</p>
             </div>
 
-            <div className={`grid grid-cols-1 ${user?.id_rol === 1 ? 'lg:grid-cols-3' : ''} gap-6`}>
+            <div className={`grid grid-cols-1 ${(user?.id_rol === 1 || user?.id_rol === 3) ? 'lg:grid-cols-3' : ''} gap-6`}>
                 {/* Panel de Resumen (Izquierda/Arriba) */}
-                {user?.id_rol === 1 && (
+                {(user?.id_rol === 1 || user?.id_rol === 3) && (
                     <div className="lg:col-span-2 space-y-6">
                         {loadingDashboard ? (
                             <Card className="h-full flex items-center justify-center p-20">
@@ -400,7 +378,7 @@ export default function CerrarCajaPage() {
                 )}
 
                 {/* Formulario de Cierre (Derecha) */}
-                <div className={user?.id_rol === 1 ? "lg:col-span-1" : "lg:col-span-3 max-w-lg mx-auto w-full"}>
+                <div className={(user?.id_rol === 1 || user?.id_rol === 3) ? "lg:col-span-1" : "lg:col-span-3 max-w-lg mx-auto w-full"}>
                     <Card className="sticky top-6 border-2 border-blue-100 shadow-xl overflow-hidden">
                         <CardHeader className="bg-blue-600 text-white">
                             <CardTitle className="text-xl">Finalizar Turno</CardTitle>

@@ -13,6 +13,7 @@ import logo from "../assets/logo.jpg"
 
 
 import { toast } from "sonner";
+import { clearOpenCajaSession } from "@/utils/cajaSession";
 
 const formSchema = z.object({
   usuario: z.string().min(2, {
@@ -45,6 +46,7 @@ export default function LoginPage() {
     const res = await iniciarSesionApi(values.usuario, values.password);
     if (res.success) {
       localStorage.setItem('tkn', res.token);
+      await clearOpenCajaSession();
       addUser(res.data)
       navigate(res.ruta);
       toast.success('Sesion iniciada correctamente');
@@ -94,7 +96,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-xs text-center text-muted-foreground">version 5.2.5</p>
+        <p className="text-xs text-center text-muted-foreground">version 5.3.1</p>
       </Card>
     </div>
   );

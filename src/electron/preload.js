@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("electron-api", {
     guardarVentaOffline: (venta) => ipcRenderer.invoke('guardar-venta-offline', venta),
     obtenerVentasPendientes: () => ipcRenderer.invoke('obtener-ventas-pendientes'),
     eliminarVentaSincronizada: (id) => ipcRenderer.invoke('eliminar-venta-sincronizada', id),
+    actualizarTurnoVentaOffline: (id, id_turno) => ipcRenderer.invoke('actualizar-turno-venta-offline', { id, id_turno }),
 
     sincronizarClientes: (clientes) => ipcRenderer.invoke('sincronizar-clientes', clientes),
     crearClienteLocal: (cliente) => ipcRenderer.invoke('crear-cliente-local', cliente),

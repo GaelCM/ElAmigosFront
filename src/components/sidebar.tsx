@@ -10,6 +10,7 @@ import { useCurrentUser } from "@/contexts/currentUser";
 import logo from "../assets/logo.jpg";
 
 import { useListaProductos } from "@/contexts/listaProductos";
+import { getOpenCajaSession, clearOpenCajaSession } from "@/utils/cajaSession";
 
 type sideBarProps = {
     sidebarOpen: boolean,
@@ -133,6 +134,16 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                             <span className="hidden sm:inline">Nuevo Pedido</span>
                             <span className="sm:hidden">Pedidos</span>
                         </Button>
+                        <Button
+                            variant="default"
+                            className="w-full justify-start gap-2  text-sm lg:text-base bg-red-800"
+                            size="sm"
+                            onClick={() => { navigate("/productos/ajuste-rapido") }}
+                        >
+                            <LucideIcons.ScanBarcode className="w-4 h-4" />
+                            <span className="hidden sm:inline">Ajuste rapido</span>
+                            <span className="sm:hidden">Ajuste rapido</span>
+                        </Button>
                     </div>
 
                     <nav className="space-y-1 lg:space-y-2">
@@ -183,25 +194,18 @@ export default function Sidebar({ setSidebarOpen, sidebarOpen }: sideBarProps) {
                             variant="destructive"
                             className="w-full justify-start gap-2 bg-red-500 hover:bg-red-500 border-red-500 text-white hover:text-white font-semibold"
                             onClick={async () => {
-                                // @ts-ignore
-                                const api = window["electron-api"];
-                                const storeCaja = await api?.getConfig("open_caja");
-                                const localCaja = localStorage.getItem("open_caja");
+                                const session = await getOpenCajaSession();
 
-                                if (storeCaja != null || localCaja != null) {
+                                if (session && session.id_turno) {
                                     // Si hay un turno abierto, primero enviamos a cerrar caja
                                     navigate("/cerrar-caja");
                                     return;
                                 }
 
-                                // Si no hay turno, cerramos sesión directo
-                                if (api) {
-                                    await api.setConfig("open_caja", null);
-                                }
-                                localStorage.removeItem("open_caja");
+                                // Si no hay turno, cerramos sesión directo y limpiamos
+                                await clearOpenCajaSession();
                                 localStorage.removeItem("tkn");
                                 localStorage.removeItem("currentUser");
-                                localStorage.removeItem("openCaja"); // fallback removal
                                 navigate("/login");
                             }}
                         >

@@ -13,6 +13,7 @@ import { RefreshCw, LayoutList } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 
 export default function MisVentasReport() {
     const timeZone = 'America/Mexico_City';
@@ -43,11 +44,8 @@ export default function MisVentasReport() {
 
     useEffect(() => {
         const checkCaja = async () => {
-            // @ts-ignore
-            const api = window["electron-api"];
-            const storeCaja = await api?.getConfig("open_caja");
-            if (storeCaja) setHasOpenCaja(true);
-            else setHasOpenCaja(!!localStorage.getItem("openCaja"));
+            const session = await getOpenCajaSession();
+            setHasOpenCaja(!!(session && session.id_turno));
         };
         checkCaja();
     }, []);
@@ -60,14 +58,9 @@ export default function MisVentasReport() {
 
             // Si el usuario quiere filtrar por turno y hay una caja abierta
             if (soloTurnoActual) {
-                // @ts-ignore
-                const api = window["electron-api"];
-                const storeCaja = await api?.getConfig("open_caja");
-                const turnoDataString = localStorage.getItem("openCaja");
-
-                const data = storeCaja || (turnoDataString ? JSON.parse(turnoDataString) : null);
-                if (data) {
-                    idTurno = data.id_turno;
+                const session = await getOpenCajaSession();
+                if (session && session.id_turno) {
+                    idTurno = session.id_turno;
                 }
             }
 

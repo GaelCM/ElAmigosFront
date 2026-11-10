@@ -5,11 +5,12 @@ import { Badge } from "./ui/badge"
 import type { ProductoVenta } from "@/types/Producto"
 import { useListaProductos } from "@/contexts/listaProductos"
 import { getProductos } from "@/api/productosApi/productosApi"
-import { ShoppingCart, Search, SquarePen, RefreshCw, Trash2, AlertTriangle } from "lucide-react"
+import { ShoppingCart, Search, SquarePen, RefreshCw, Trash2, AlertTriangle, FileSpreadsheet } from "lucide-react"
 import { Input } from "./ui/input"
 import { toast } from "sonner"
 import { Link } from "react-router"
 import { useCurrentUser } from "@/contexts/currentUser"
+import { exportarInventarioExcel } from "@/lib/exportInventario"
 import DialogSetGranel from "@/pages/home/components/dialogSetGranel"
 import { eliminarProductoApi, obtenerSucursalesProductoApi, eliminarProductoDeSucursalesApi } from "@/api/productosApi/productosApi"
 import { Checkbox } from "./ui/checkbox"
@@ -22,8 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog"
-
-
 
 
 type Props = {
@@ -77,6 +76,31 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
   };
 
   const addProductFn = onAddProduct || addProductVenta;
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<{ current: number; total: number; status?: string } | null>(null);
+
+  const exportToExcel = async () => {
+    if (filteredProductos.length === 0) return;
+    setIsExporting(true);
+    setExportProgress({ current: 0, total: filteredProductos.length });
+    // Un tick para que React pinte el spinner ANTES de que empiece el trabajo pesado
+    await new Promise((r) => setTimeout(r, 50));
+    try {
+      await exportarInventarioExcel(
+        filteredProductos,
+        idSucursal,
+        (current, total, status) => setExportProgress({ current, total, status })
+      );
+      toast.success(`Inventario exportado: ${filteredProductos.length} productos`);
+    } catch (err) {
+      console.error("Error al exportar:", err);
+      toast.error("Error al generar el Excel");
+    } finally {
+      setIsExporting(false);
+      setExportProgress(null);
+    }
+  };
 
   const handleTryAddProduct = useCallback((p: ProductoVenta) => {
     if (searchLocal && Boolean(p.es_granel)) {
@@ -294,6 +318,29 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           )}
+          {!searchLocal && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToExcel}
+              title="Exportar inventario a Excel con códigos de barras"
+              disabled={filteredProductos.length === 0 || isExporting}
+              className="border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800"
+            >
+              {isExporting
+                ? <RefreshCw className="h-4 w-4 animate-spin" />
+                : <FileSpreadsheet className="h-4 w-4" />
+              }
+              <span className="hidden sm:inline">
+                {isExporting && exportProgress
+                  ? exportProgress.status || `${exportProgress.current}/${exportProgress.total}`
+                  : isExporting
+                    ? "Generando..."
+                    : "Excel"
+                }
+              </span>
+            </Button>
+          )}
         </div>
       </CardHeader>
       <div className="flex-1 overflow-y-auto w-full" ref={tableRef}>
@@ -305,7 +352,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
               <th className="px-2 py-2 sm:px-3 sm:py-2 hide-on-mobile sm:table-cell">Unidad</th>
               <th className="px-2 py-2 sm:px-3 sm:py-2 hide-on-mobile sm:table-cell">Descripción</th>
               <th className="px-2 py-2 sm:px-3 sm:py-2">Precio</th>
-              {user.id_rol === 1 && (
+              {(user.id_rol === 1 || user.id_rol === 3) && (
                 <>
                   <th className="px-2 py-2 sm:px-3 sm:py-2">Stock Disponible</th>
                   <th className="px-2 py-2 sm:px-3 sm:py-2 hide-on-mobile sm:table-cell">Stock Piezas</th>
@@ -355,7 +402,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
 
                   {/* ─── STOCK ─── */}
                   {
-                    user.id_rol === 1 && (
+                    (user.id_rol === 1 || user.id_rol === 3) && (
                       <>
                         <td className="px-2 py-2 sm:px-3 sm:py-3 align-middle" data-label="Stock Disponible">
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
@@ -394,7 +441,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                       <ShoppingCart></ShoppingCart>
                     </Button>
 
-                    {user.id_rol === 1 && p.es_producto_compuesto === 0 ? (
+                    {(user.id_rol === 1 || user.id_rol === 3) && p.es_producto_compuesto === 0 ? (
                       <Link to={`/productos/editProducto?id=${p.id_producto}`} >
                         <Button size="sm" variant={"default"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`} onClick={() => { setIsOpen?.(false) }}>
                           <SquarePen></SquarePen>
@@ -402,7 +449,7 @@ export function ProductTable({ idSucursal, inputRef, searchLocal = false, onAddP
                       </Link>
                     ) : null}
 
-                    {user.id_rol === 1 && p.es_producto_compuesto === 1 ? (
+                    {(user.id_rol === 1 || user.id_rol === 3) && p.es_producto_compuesto === 1 ? (
                       <Link to={`/productos/editProductoEspecial?id=${p.id_producto}&suc=${idSucursal}`} >
                         <Button size="sm" variant={"outline"} className="ml-2" aria-label={`Editar ${p.nombre_producto}`} onClick={() => { setIsOpen?.(false) }}>
                           <SquarePen></SquarePen>

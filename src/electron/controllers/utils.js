@@ -272,7 +272,9 @@ function utilsController() {
                 const priceWidth = 10;
                 const impWidth = 11;
 
-                const nombreFull = (p.nombre || "PRODUCTO SIN NOMBRE").toUpperCase();
+                const factor = Number(p.factor_conversion_cantidad) || 1;
+                const nombreBase = (p.nombre || "PRODUCTO SIN NOMBRE").toUpperCase();
+                const nombreFull = factor > 1 ? `${nombreBase} ${factor}PZS` : nombreBase;
                 let words = nombreFull.split(' ');
                 let lines = [];
                 let currentLine = '';

@@ -6,6 +6,7 @@ import { useState } from "react";
 import DialogNuevoTurno from "./components/dialogNuevoTurno";
 import { existCorteApi } from "@/api/cortesApi/cortesApi";
 import { toast } from "sonner";
+import { setOpenCajaSession } from "@/utils/cajaSession";
 
 interface BienvenidaProps {
     onCajaOpened: () => void;
@@ -20,17 +21,13 @@ export default function Bienvenida({ onCajaOpened }: BienvenidaProps) {
 
         const res = await existCorteApi(user.id_usuario!, user.id_sucursal!);
         if (res.data.existe) {
-            // @ts-ignore
-            const api = window["electron-api"];
-            if (api) {
-                await api.setConfig("open_caja", res.data);
-            } else {
-                localStorage.setItem("open_caja", JSON.stringify(res.data));
-            }
+            await setOpenCajaSession(res.data);
 
             onCajaOpened();
             toast.success("Caja abierta");
 
+            // @ts-ignore
+            const api = window["electron-api"];
             // Abrir cajón de dinero al iniciar
             const printerName = await api?.getConfig("printer_device");
             if (printerName) {

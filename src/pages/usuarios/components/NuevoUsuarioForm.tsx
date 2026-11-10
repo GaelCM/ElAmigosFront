@@ -185,6 +185,7 @@ export default function NuevoUsuarioForm() {
                                                 <SelectContent>
                                                     <SelectItem value="1">Administrador</SelectItem>
                                                     <SelectItem value="2">Empleado</SelectItem>
+                                                    <SelectItem value="3">Encargado</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />

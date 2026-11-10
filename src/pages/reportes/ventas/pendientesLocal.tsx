@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { redondearPrecio } from "@/lib/utils";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 
 interface VentaPendiente {
     id: number;
@@ -41,10 +42,14 @@ export default function VentasPendientesLocal() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [selectedVenta, setSelectedVenta] = useState<VentaPendiente | null>(null);
     const [vEliminar, setVEliminar] = useState<number | null>(null);
+    const [currentTurnoId, setCurrentTurnoId] = useState<number | null>(null);
 
     const cargarVentas = async () => {
         setLoading(true);
         try {
+            const session = await getOpenCajaSession();
+            setCurrentTurnoId(session?.id_turno || null);
+
             // @ts-ignore
             const res = await window["electron-api"]?.obtenerVentasPendientes();
             setVentas(res || []);
@@ -53,6 +58,21 @@ export default function VentasPendientesLocal() {
             toast.error("No se pudieron cargar las ventas locales");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const reasignarTurno = async (id: number, nuevoTurno: number) => {
+        try {
+            // @ts-ignore
+            const res = await window["electron-api"]?.actualizarTurnoVentaOffline(id, nuevoTurno);
+            if (res?.success) {
+                toast.success(`Venta #${id} reasignada al turno #${nuevoTurno}`);
+                cargarVentas();
+            } else {
+                toast.error(res?.error || "No se pudo actualizar el turno");
+            }
+        } catch (err) {
+            toast.error("Error al reasignar turno");
         }
     };
 
@@ -83,7 +103,17 @@ export default function VentasPendientesLocal() {
     const sincronizarUna = async (v: VentaPendiente) => {
         try {
             const { nuevaVentaApi } = await import("@/api/ventasApi/ventasApi");
-            const res = await nuevaVentaApi(v.venta);
+            const payload = { ...v.venta };
+            if (!payload.id_turno || Number(payload.id_turno) <= 0) {
+                if (currentTurnoId) {
+                    payload.id_turno = currentTurnoId;
+                } else {
+                    toast.error(`Venta ${v.id} no tiene un turno asignado y no hay turno abierto.`);
+                    return;
+                }
+            }
+
+            const res = await nuevaVentaApi(payload);
             if (res?.success) {
                 // @ts-ignore
                 await window["electron-api"]?.eliminarVentaSincronizada(v.id);
@@ -109,7 +139,14 @@ export default function VentasPendientesLocal() {
 
         for (const v of ventas) {
             try {
-                const res = await nuevaVentaApi(v.venta);
+                const payload = { ...v.venta };
+                if (!payload.id_turno || Number(payload.id_turno) <= 0) {
+                    if (currentTurnoId) {
+                        payload.id_turno = currentTurnoId;
+                    }
+                }
+
+                const res = await nuevaVentaApi(payload);
                 if (res?.success) {
                     // @ts-ignore
                     await window["electron-api"]?.eliminarVentaSincronizada(v.id);
@@ -212,6 +249,7 @@ export default function VentasPendientesLocal() {
                             <TableRow>
                                 <TableHead className="font-black text-xs uppercase text-slate-500 py-4 px-6">ID Local</TableHead>
                                 <TableHead className="font-black text-xs uppercase text-slate-500 py-4 px-6">Fecha/Hora</TableHead>
+                                <TableHead className="font-black text-xs uppercase text-slate-500 py-4 px-6">Turno Ligado</TableHead>
                                 <TableHead className="font-black text-xs uppercase text-slate-500 py-4 px-6">Cliente</TableHead>
                                 <TableHead className="font-black text-xs uppercase text-slate-500 py-4 px-6">Cajero</TableHead>
                                 <TableHead className="font-black text-xs uppercase text-slate-500 py-4 px-6 text-right">Total</TableHead>
@@ -221,7 +259,7 @@ export default function VentasPendientesLocal() {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-64 text-center">
+                                    <TableCell colSpan={7} className="h-64 text-center">
                                         <div className="flex flex-col items-center gap-2">
                                             <RefreshCw className="h-8 w-8 animate-spin text-primary" />
                                             <p className="text-muted-foreground font-bold">Buscando en base de datos local...</p>
@@ -230,7 +268,7 @@ export default function VentasPendientesLocal() {
                                 </TableRow>
                             ) : ventas.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-64 text-center">
+                                    <TableCell colSpan={7} className="h-64 text-center">
                                         <div className="flex flex-col items-center gap-4 opacity-50">
                                             <CheckCircle2 className="h-16 w-16 text-green-500" />
                                             <div className="space-y-1">
@@ -241,75 +279,112 @@ export default function VentasPendientesLocal() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                ventas.map((v) => (
-                                    <TableRow key={v.id} className="hover:bg-slate-50/80 transition-colors border-b last:border-0">
-                                        <TableCell className="px-6 py-4 font-black">
-                                            <Badge variant="outline" className="bg-slate-100 font-mono">
-                                                LCL-{v.id}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-slate-700 capitalize">
-                                                    {format(new Date(v.fecha), "eeee dd 'de' MMM", { locale: es })}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                                                    <Clock className="h-3 w-3" />
-                                                    {format(new Date(v.fecha), "HH:mm:ss")}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-blue-100 p-1.5 rounded-lg text-blue-600">
-                                                    <User className="h-3.5 w-3.5" />
+                                ventas.map((v) => {
+                                    const turnoVenta = v.venta.id_turno ? Number(v.venta.id_turno) : null;
+                                    const esTurnoActual = currentTurnoId && turnoVenta === currentTurnoId;
+
+                                    return (
+                                        <TableRow key={v.id} className="hover:bg-slate-50/80 transition-colors border-b last:border-0">
+                                            <TableCell className="px-6 py-4 font-black">
+                                                <Badge variant="outline" className="bg-slate-100 font-mono">
+                                                    LCL-{v.id}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-slate-700 capitalize">
+                                                        {format(new Date(v.fecha), "eeee dd 'de' MMM", { locale: es })}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        {format(new Date(v.fecha), "HH:mm:ss")}
+                                                    </span>
                                                 </div>
-                                                <span className="font-bold text-slate-700">
-                                                    {v.venta.id_cliente ? `Cliente #${v.venta.id_cliente}` : "Público General"}
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <div className="flex flex-col gap-1 items-start">
+                                                    {turnoVenta ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={
+                                                                esTurnoActual
+                                                                    ? "bg-green-50 text-green-700 border-green-300 font-bold"
+                                                                    : "bg-amber-50 text-amber-800 border-amber-300 font-bold"
+                                                            }
+                                                        >
+                                                            Turno #{turnoVenta}
+                                                            {esTurnoActual ? " (Actual)" : ""}
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="destructive" className="font-bold">
+                                                            Sin Turno
+                                                        </Badge>
+                                                    )}
+                                                    {currentTurnoId && !esTurnoActual && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-0 h-auto font-semibold"
+                                                            onClick={() => reasignarTurno(v.id, currentTurnoId)}
+                                                            title={`Reasignar esta venta al turno actual #${currentTurnoId}`}
+                                                        >
+                                                            Cambiar a #{currentTurnoId}
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-blue-100 p-1.5 rounded-lg text-blue-600">
+                                                        <User className="h-3.5 w-3.5" />
+                                                    </div>
+                                                    <span className="font-bold text-slate-700">
+                                                        {v.venta.id_cliente ? `Cliente #${v.venta.id_cliente}` : "Público General"}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <span className="text-sm font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                                                    {v.venta.usuario}
                                                 </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4">
-                                            <span className="text-sm font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded">
-                                                {v.venta.usuario}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4 text-right">
-                                            <span className="text-lg font-black text-primary tabular-nums">
-                                                ${calcularTotal(v.venta).toFixed(2)}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    className="font-bold h-9"
-                                                    onClick={() => setSelectedVenta(v)}
-                                                >
-                                                    <Eye className="h-4 w-4 md:mr-2" />
-                                                    <span className="hidden md:inline">Ver Detalle</span>
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="font-bold h-9 border-orange-200 text-orange-600 hover:bg-orange-50"
-                                                    onClick={() => sincronizarUna(v)}
-                                                >
-                                                    <RefreshCw className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-red-400 hover:text-red-600 hover:bg-red-50 h-9"
-                                                    onClick={() => setVEliminar(v.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4 text-right">
+                                                <span className="text-lg font-black text-primary tabular-nums">
+                                                    ${calcularTotal(v.venta).toFixed(2)}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        className="font-bold h-9"
+                                                        onClick={() => setSelectedVenta(v)}
+                                                    >
+                                                        <Eye className="h-4 w-4 md:mr-2" />
+                                                        <span className="hidden md:inline">Ver Detalle</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="font-bold h-9 border-orange-200 text-orange-600 hover:bg-orange-50"
+                                                        onClick={() => sincronizarUna(v)}
+                                                    >
+                                                        <RefreshCw className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-red-400 hover:text-red-600 hover:bg-red-50 h-9"
+                                                        onClick={() => setVEliminar(v.id)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>

@@ -25,6 +25,7 @@ import DialogSetGranel from "./components/dialogSetGranel";
 import type { ProductoVenta } from "@/types/Producto";
 import { redondearPrecio } from "@/lib/utils";
 import DialogProductoAgotado from "./Dialogs/agotado";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 
 
 export default function Home() {
@@ -277,13 +278,24 @@ export default function Home() {
                     if (pendingSales && pendingSales.length > 0) {
                         toast.info(`Sincronizando ${pendingSales.length} ventas pendientes...`);
                         const { nuevaVentaApi } = await import("@/api/ventasApi/ventasApi");
+                        const activeSession = await getOpenCajaSession();
 
                         for (const s of pendingSales) {
                             try {
-                                const res = await nuevaVentaApi(s.venta);
+                                const payload = { ...s.venta };
+                                // Si la venta offline no trae turno válido, asignamos el turno activo actual
+                                if (!payload.id_turno || Number(payload.id_turno) <= 0) {
+                                    if (activeSession?.id_turno) {
+                                        payload.id_turno = Number(activeSession.id_turno);
+                                    }
+                                }
+
+                                const res = await nuevaVentaApi(payload);
                                 if (res?.success) {
                                     // @ts-ignore
                                     await window["electron-api"]?.eliminarVentaSincronizada(s.id);
+                                } else {
+                                    console.warn(`Respuesta fallida al sincronizar venta local #${s.id}:`, res?.message);
                                 }
                             } catch (err) {
                                 console.error("Error sincronizando venta individual:", err);
@@ -480,7 +492,7 @@ export default function Home() {
                                                     </span>
                                                     <p className="font-bold text-sm uppercase tracking-tight text-slate-700 min-w-0 break-words">{producto.product.nombre_producto} {producto.product.nombre_presentacion}</p>
                                                     <Badge variant="outline" className={`h-4 text-[9px] px-1 font-bold ${producto.product.stock_disponible_presentacion == 0 ? 'border-red-500 text-red-600 bg-red-50/50' : producto.product.stock_disponible_presentacion <= 5 ? 'border-yellow-500 text-yellow-600 bg-yellow-50/50' : 'border-green-500 text-green-600 bg-green-300'}`}>
-                                                        {user.id_rol === 1 && `${producto.product.stock_disponible_presentacion} STOCK`}
+                                                        {(user.id_rol === 1 || user.id_rol === 3) && `${producto.product.stock_disponible_presentacion} STOCK`}
                                                     </Badge>
                                                 </div>
                                             </div>

@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Zap } from "lucide-react";
 import { redondearPrecio } from "@/lib/utils";
 import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 
 
 type dialogProps = {
@@ -47,14 +48,12 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
 
     useEffect(() => {
         const loadSettings = async () => {
+            const currentCaja = await getOpenCajaSession();
+            setTurnoData(currentCaja);
+
             // @ts-ignore
             const api = window["electron-api"];
-            const tDataStore = await api?.getConfig("open_caja");
-            const tDataLocal = localStorage.getItem("open_caja");
-            const tData = tDataStore || (tDataLocal ? JSON.parse(tDataLocal) : null);
             const mTurbo = await api?.getConfig("modo_turbo");
-
-            if (tData) setTurnoData(tData);
             if (mTurbo !== undefined) setModoTurbo(!!mTurbo);
         };
         if (isOpen) {
@@ -157,7 +156,8 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 productos: carritoActual?.productos?.map((p: any) => ({
                     cantidad: p.quantity,
                     nombre: `${p.product.nombre_producto} ${p.product.nombre_presentacion}`,
-                    importe: (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity
+                    importe: (p.usarPrecioMayoreo && p.product.precio_mayoreo !== 0 ? p.product.precio_mayoreo : p.product.precio_venta) * p.quantity,
+                    factor_conversion_cantidad: p.product.factor_conversion_cantidad || 1,
                 })) || [],
                 total: totalVenta,
                 pagoCon: cambioEfectivo,
@@ -193,6 +193,20 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
         };
 
         try {
+            // BLINDAJE DE TURNO ACTIVO
+            const activeSession = await getOpenCajaSession();
+            const activeTurnoId = activeSession?.id_turno || turnoData?.id_turno;
+
+            if (!activeTurnoId || Number(activeTurnoId) <= 0) {
+                toast.error("Error crítico de turno", {
+                    description: "No hay un turno de caja activo válido. Debes abrir un turno para poder vender.",
+                    duration: 5000
+                });
+                setErrorMessage("No hay un turno de caja abierto válido. Por favor abre caja.");
+                setEstado("Error");
+                isProcessing.current = false;
+                return;
+            }
 
             const ventaFinal = {
                 id_usuario: user.id_usuario,
@@ -201,8 +215,9 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 monto_recibido: cambioEfectivo,
                 metodo_pago: metodoPago,
                 productos: getCarritoActivo()?.productos || [],
-                id_cliente: carritoActual?.cliente?.id_cliente.toLocaleString() || "",
-                id_turno: turnoData.id_turno
+                id_cliente: carritoActual?.cliente?.id_cliente ? String(carritoActual.cliente.id_cliente) : "",
+                id_turno: Number(activeTurnoId),
+                fecha_captura: new Date().toISOString()
             };
             console.log("Venta final a enviar:", ventaFinal);
 
@@ -213,7 +228,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                 const offlineRes = await window["electron-api"]?.guardarVentaOffline(ventaFinal);
                 if (offlineRes?.success) {
                     toast.success('Venta guardada localmente (Modo Offline)', {
-                        description: `La venta se sincronizará automáticamente al detectar internet.`,
+                        description: `Turno #${activeTurnoId}. La venta se sincronizará automáticamente al detectar internet.`,
                     });
 
                     // Lógica de impresión (ESC/POS o Web Bluetooth)
@@ -224,6 +239,7 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                     }
 
                     setEstado("Listo");
+                    setMetodoPago(0);
                     return;
                 } else {
                     throw new Error("No se pudo guardar la venta localmente");
@@ -257,13 +273,59 @@ export default function DialogConfirmVenta({ isOpen, onClose, inputRef, metodoPa
                     description: `${res.message}`,
                 });
             }
-        } catch (error) {
+        } catch (error: any) {
+            console.error("Error al procesar la venta:", error);
+            const isNetworkFailure = !navigator.onLine || 
+                error?.name === 'TypeError' || 
+                error?.message?.toLowerCase().includes('fetch') || 
+                error?.message?.toLowerCase().includes('network') ||
+                error?.message?.toLowerCase().includes('conexion') ||
+                error?.message?.toLowerCase().includes('failed to fetch');
+
+            // @ts-ignore
+            const api = window["electron-api"];
+            // Si fue un fallo de red durante el intento online, salvaguardar automáticamente la venta offline
+            if (isNetworkFailure && api) {
+                try {
+                    const activeSession = await getOpenCajaSession();
+                    const activeTurnoId = activeSession?.id_turno || turnoData?.id_turno;
+                    const ventaFinal = {
+                        id_usuario: user.id_usuario,
+                        usuario: user.usuario,
+                        id_sucursal: user.id_sucursal,
+                        monto_recibido: cambioEfectivo,
+                        metodo_pago: metodoPago,
+                        productos: getCarritoActivo()?.productos || [],
+                        id_cliente: carritoActual?.cliente?.id_cliente ? String(carritoActual.cliente.id_cliente) : "",
+                        id_turno: Number(activeTurnoId),
+                        fecha_captura: new Date().toISOString()
+                    };
+
+                    const offlineRes = await api.guardarVentaOffline(ventaFinal);
+                    if (offlineRes?.success) {
+                        toast.warning('Conexión perdida: Venta protegida offline', {
+                            description: `Se detectó pérdida de red. La venta se guardó offline con turno #${activeTurnoId} y se sincronizará al volver internet.`,
+                            duration: 5000
+                        });
+                        try {
+                            await imprimirVenta("OFL-" + offlineRes.id, new Date());
+                        } catch (e) {
+                            console.error("Error al imprimir ticket offline tras fallo de red:", e);
+                        }
+                        setEstado("Listo");
+                        setMetodoPago(0);
+                        return;
+                    }
+                } catch (offlineErr) {
+                    console.error("Error al guardar venta offline tras fallo de red:", offlineErr);
+                }
+            }
+
             setErrorMessage(error instanceof Error ? error.message : String(error));
             setEstado("Error");
             isProcessing.current = false;
-            console.error("Error al procesar la venta:", error);
             toast.error("Error al procesar la venta", {
-                description: `${error}`,
+                description: `${error?.message || error}`,
             });
         }
     }

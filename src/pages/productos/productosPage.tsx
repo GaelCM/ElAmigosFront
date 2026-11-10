@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCurrentUser } from "@/contexts/currentUser";
 import type { Sucursal } from "@/types/Sucursal";
-import { ArrowRight, Building2, MapPin, Package } from "lucide-react";
+import { ArrowRight, Building2, MapPin, Package, Barcode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -19,9 +19,14 @@ export default function ProductosPage() {
       navigate(`/`);
       return;
     }
+    // Si es Encargado (id_rol === 3), redirigir directamente al inventario de su sucursal
+    if (user.id_rol === 3 && user.id_sucursal) {
+      navigate(`/productos/sucursal?id=${user.id_sucursal}&sucursal=${encodeURIComponent(user.sucursal || "Mi Sucursal")}`, { replace: true });
+      return;
+    }
     setLoading(true);
     obtenerSucursalesApi().then(data => setSucursales(data.data)).catch(err => { setError(err.message) }).finally(() => setLoading(false));
-  }, [user.id_rol, navigate]);
+  }, [user.id_rol, user.id_sucursal, user.sucursal, navigate]);
 
   if (loading) {
     return (
@@ -49,24 +54,35 @@ export default function ProductosPage() {
     <div className="h-screen bg-linear-to-br from-slate-50 to-slate-100 p-6">
       <div className="p-6 mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Package className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-slate-900">
-              Administración de Productos
-            </h1>
+        <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Package className="w-8 h-8 text-blue-600" />
+              <h1 className="text-3xl font-bold text-slate-900">
+                Administración de Productos
+              </h1>
+            </div>
+            <p className="text-slate-600 text-lg">
+              Bienvenido, <span className="font-semibold">{user.usuario}</span>
+            </p>
+            <p className="text-slate-500 mt-1">
+              Selecciona la sucursal que deseas gestionar
+            </p>
           </div>
-          <p className="text-slate-600 text-lg">
-            Bienvenido, <span className="font-semibold">{user.usuario}</span>
-          </p>
-          <p className="text-slate-500 mt-1">
-            Selecciona la sucursal que deseas gestionar
-          </p>
+          {(user.id_rol === 1 || user.id_rol === 3) && (
+            <Button
+              onClick={() => navigate(user.id_rol === 3 ? `/productos/ajuste-rapido?sucursalId=${user.id_sucursal}` : "/productos/ajuste-rapido")}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-2 shadow-sm shrink-0"
+            >
+              <Barcode className="w-5 h-5" />
+              Ajuste Rápido de Stock
+            </Button>
+          )}
         </div>
 
         {/* Cards responsive en grid */}
         <div className="flex flex-col gap-6 md:gap-8">
-          {sucursales.map((sucursal) => (
+          {(user.id_rol === 3 ? sucursales.filter(s => s.id_sucursal === user.id_sucursal) : sucursales).map((sucursal) => (
             <Card
               key={sucursal.id_sucursal}
               className="hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-blue-500 group w-full"

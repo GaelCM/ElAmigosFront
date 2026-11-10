@@ -9,6 +9,7 @@ import {
 } from "@/api/creditosApi/creditosApi";
 import type { CreditoCliente, MovimientoCredito } from "@/types/Creditos";
 import { isWebPlatform, printWebTicket } from "@/utils/webPrinterService";
+import { getOpenCajaSession } from "@/utils/cajaSession";
 import { useCurrentUser } from "@/contexts/currentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,11 +120,7 @@ export default function EstadoCuentaCliente() {
         setAccionLoading(true);
         setAccionMsg(null);
         try {
-            // @ts-ignore
-            const api = window["electron-api"];
-            const storeCaja = await api?.getConfig("open_caja");
-            const localCaja = localStorage.getItem("open_caja");
-            const data = storeCaja || (localCaja ? JSON.parse(localCaja) : null);
+            const data = await getOpenCajaSession();
             const id_turno = data?.id_turno;
 
             if (!id_turno) {
@@ -188,11 +185,7 @@ export default function EstadoCuentaCliente() {
         setAccionLoading(true);
         setAccionMsg(null);
         try {
-            // @ts-ignore
-            const api = window["electron-api"];
-            const storeCaja = await api?.getConfig("open_caja");
-            const localCaja = localStorage.getItem("open_caja");
-            const data = storeCaja || (localCaja ? JSON.parse(localCaja) : null);
+            const data = await getOpenCajaSession();
             const id_turno = data?.id_turno;
 
             if (!id_turno) {

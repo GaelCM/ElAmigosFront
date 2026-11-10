@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { useNavigate } from "react-router"
+import { clearOpenCajaSession } from "@/utils/cajaSession"
 
 interface FormCerrarCajaProps {
     onSubmit: (efectivoContado: number, observaciones: string) => void;
@@ -69,15 +70,9 @@ export default function FormCerrarCaja({ onSubmit, isLoading }: FormCerrarCajaPr
                 </Button>
             </form>
             <Button className="w-full cursor-pointer mt-4" size="icon" variant="destructive" onClick={async () => {
-                // @ts-ignore
-                const api = window["electron-api"];
-                if (api) {
-                    await api.setConfig("open_caja", null);
-                }
+                await clearOpenCajaSession();
                 localStorage.removeItem("tkn");
                 localStorage.removeItem("currentUser");
-                localStorage.removeItem("openCaja");
-                localStorage.removeItem("open_caja");
                 navigate("/login");
             }}>
                 Salir del sistema con turno abierto

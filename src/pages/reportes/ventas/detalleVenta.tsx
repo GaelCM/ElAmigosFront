@@ -133,7 +133,8 @@ export default function DetalleVentaPage() {
                 productos: items?.map((p: any) => ({
                     cantidad: p.cantidad,
                     nombre: `${p.nombre_producto} ${p.nombre_unidad}`,
-                    importe: p.subtotal
+                    importe: p.subtotal,
+                    factor_conversion_cantidad: p.factor_conversion_cantidad || 1
                 })) || [],
                 total: totalVenta,
                 pagoCon: saleInfo.monto_recibido,
